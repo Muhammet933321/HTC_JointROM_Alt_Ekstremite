@@ -1,0 +1,380 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{gensymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\definecolor{bugred}{rgb}{0.75,0.1,0.1}
+\definecolor{solgreen}{rgb}{0.1,0.5,0.1}
+\definecolor{warnblue}{rgb}{0.1,0.2,0.7}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Full-Body IK -- Sorun Analizi Raporu}
+\fancyhead[R]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ================================================================
+\begin{document}
+
+% -- Baslik --
+\begin{center}
+    {\LARGE\bfseries Full-Body IK Sistemi:\\[4pt]
+    Dirsek/Diz B\"uk\"ulme ve\\[4pt]
+    Avatar-Kullan{\i}c{\i} Boy Uyumsuzlu\u{g}u Raporu}\\[12pt]
+    {\normalsize Mart 2026}
+\end{center}
+
+\vspace{6pt}
+
+\begin{abstract}
+Bu rapor, HTC VIVE tracker tabanl{\i} full-body IK sisteminde tespit
+edilen iki temel sorunu analiz etmektedir: (1)~dirsek ve diz
+eklemlerinin yanl{\i}\c{s} d\"uzlemde veya beklenmeyen a\c{c}{\i}da b\"uk\"ulmesi,
+(2)~avatar ile kullan{\i}c{\i} aras{\i}ndaki boy ve uzuv orant{\i}
+farkl{\i}l{\i}\u{g}{\i}ndan kaynaklanan hareket \"ol\c{c}ek uyumsuzlu\u{g}u.
+Her iki sorunun k\"ok nedeni, matematiksel modellenmesi ve
+\"onerilen \c{c}\"oz\"umler sunulmaktad{\i}r.
+\end{abstract}
+
+\tableofcontents
+\vspace{8pt}
+
+% ================================================================
+\section{Mevcut Sistem \"Ozeti}
+\label{sec:sistem}
+
+Sistem, 3~tracker (g\"o\u{g}\"us/pelvis, sol ayak, sa\u{g} ayak), 2~kontrolc\"u
+(eller) ve 1~HMD (ba\c{s}) ile Mixamo humanoid avatar\"un\"u s\"urer.
+\textbf{Delta-based mapping} ile kalibrasyon an{\i}ndaki cihaz--hedef
+\c{c}iftleri kaydedilir; \c{c}al{\i}\c{s}ma zaman{\i}nda her cihaz{\i}n kalibrasyon
+pozisyonuna g\"ore fark{\i} (delta) hesaplan{\i}r ve IK hedeflerine
+uygulan{\i}r.
+
+Kol ve bacak IK \c{c}\"oz\"um\"u \textbf{TwoBoneIKSolver} ile
+ger\c{c}ekle\c{s}tirilir. Bu solver, Ko\c{s}in\"us Yasas{\i}na dayal{\i} olarak
+\"u\c{c}gen kenar uzunluklar{\i}ndan (\"ust kemik, alt kemik, hedefe
+mesafe) eklem a\c{c}{\i}lar{\i}n{\i} hesaplar ve bir \textbf{hint noktaS{\i}}
+\"uzerinden b\"uk\"ulme d\"uzlemini belirler.
+
+% ================================================================
+\section{Sorun 1: Dirsek ve Diz B\"uk\"ulme Y\"on\"u/A\c{c}{\i}s{\i}}
+\label{sec:hint}
+
+\subsection{Belirti}
+
+\begin{itemize}[nosep]
+    \item Dirsek, v\"ucudun \"on\"une veya yukar{\i}ya do\u{g}ru b\"uk\"ul\"ur
+          (beklenen: arkaya ve yanlara do\u{g}ru).
+    \item Diz, yana veya arkaya do\u{g}ru b\"uk\"ul\"ur
+          (beklenen: \"one do\u{g}ru).
+    \item B\"uk\"ulme y\"on\"u, pelvis rotasyonuna ba\u{g}l{\i} olarak
+          beklenmedik \c{s}ekilde de\u{g}i\c{s}ebilir.
+\end{itemize}
+
+\subsection{K\"ok Neden: Hint Pozisyonu Hesaplamas{\i}}
+\label{sec:hint_kok}
+
+TwoBoneIK solver'da b\"uk\"ulme d\"uzlemi, \textbf{hint noktaS{\i}}
+(pole target) taraf{\i}ndan belirlenir. Hint, root--target
+do\u{g}rusunun d{\i}\c{s}{\i}nda bir nokta olarak solver'a b\"uk\"ulmenin hangi
+y\"one olaca\u{g}{\i}n{\i} s\"oyler.
+
+Sistemde hint iki bi\c{c}imde sa\u{g}lan{\i}r:
+\begin{enumerate}[nosep]
+    \item \textbf{Manuel:} Inspector'da atanm{\i}\c{s} bir Transform
+          (\texttt{leftKneeHintTarget}, \texttt{rightElbowHintTarget}, vb.)
+    \item \textbf{Otomatik:} Atanmam{\i}\c{s}sa, \texttt{FullBodyIKSolver}
+          i\c{c}inde statik y\"on vekt\"orleriyle hesaplan{\i}r.
+\end{enumerate}
+
+Mevcut otomatik hesaplama:
+
+\textbf{Diz:}
+\begin{equation}
+    \vec{d}_{\text{knee}} = 0.85\,\hat{f}_{\text{hips}} + 0.20\,\hat{s}_{\text{hips}} + 0.05\,\hat{u}
+    \label{eq:knee_hint}
+\end{equation}
+
+\textbf{Dirsek:}
+\begin{equation}
+    \vec{d}_{\text{elbow}} = -0.55\,\hat{f}_{\text{hips}} + 0.45\,\hat{s}_{\text{hips}} - 0.15\,\hat{u}
+    \label{eq:elbow_hint}
+\end{equation}
+
+burada $\hat{f}$, $\hat{s}$ ve $\hat{u}$ s{\i}ras{\i}yla pelvis'in forward,
+side (sa\u{g}/sol) ve up vekt\"orleridir.
+
+\subsubsection{Sorunun Matematiksel A\c{c}{\i}klamas{\i}}
+
+Hint noktas{\i} $\mathbf{h}$ \c{s}\"oyle hesaplan{\i}r:
+\begin{equation}
+    \mathbf{h} = \mathbf{p}_{\text{root}} + \hat{d} \cdot r
+    \label{eq:hint_pos}
+\end{equation}
+burada $\mathbf{p}_{\text{root}}$ \"ust kemi\u{g}in d\"unya pozisyonu, $\hat{d}$
+normalize y\"on vekt\"or\"u ve $r$ hint uzakl{\i}\u{g}{\i}d{\i}r (varsay{\i}lan:
+dirsek i\c{c}in 0.3\,m, diz i\c{c}in 0.4\,m).
+
+\textbf{Sorun 1a -- Sabit katsay{\i}lar:} Denklem~\ref{eq:knee_hint}
+ve~\ref{eq:elbow_hint}'deki a\u{g}{\i}rl{\i}k katsay{\i}lar{\i} t\"um
+kullan{\i}c{\i}lar ve pozlar i\c{c}in sabit tan{\i}mlanm{\i}\c{s}t{\i}r. Kol yukar{\i}
+kald{\i}r{\i}ld{\i}\u{g}{\i}nda dirsek hint'i h\^al\^a a\c{s}a\u{g}{\i} ve arkada kald{\i}\u{g}{\i}ndan
+b\"uk\"ulme y\"on\"u anlams{\i}zla\c{s}{\i}r.
+
+\textbf{Sorun 1b -- Hint uzakl{\i}\u{g}{\i} orant{\i}s{\i}z:}
+$r$ de\u{g}eri sabit metredir. K{\i}sa boylu bir kullan{\i}c{\i}da
+$r = 0.4$\,m, uzuv uzunlu\u{g}unun b\"uy\"uk y\"uzdesi olabilirken
+uzun boylu kullan{\i}c{\i}da yetersiz kalabilir.
+Kod i\c{c}inde minimum $r$ zaten $0.35 \times L_{\text{limb}}$ ile
+s{\i}n{\i}rland{\i}r{\i}lm{\i}\c{s}t{\i}r ama bu sadece alt s{\i}n{\i}rd{\i}r.
+
+\textbf{Sorun 1c -- Pelvis rotasyonuna ba\u{g}{\i}ml{\i}l{\i}k:}
+$\hat{f}_{\text{hips}}$ ve $\hat{s}_{\text{hips}}$ pelvis
+kemi\u{g}inden al{\i}n{\i}r. Pelvis d\"ond\"uk\c{c}e hint y\"on\"u de
+d\"oner; fakat kol veya bacak hedefi ayn{\i} yerde ise b\"uk\"ulme
+d\"uzlemi ``kayar'' ve anat\"omik olmayan \c{s}ekiller ortaya \c{c}{\i}kar.
+
+\subsection{\"Onerilen \c{C}\"oz\"um}
+
+\begin{enumerate}[nosep]
+    \item \textbf{Dinamik hint y\"on\"u:} Dirsek hint'ini
+          \textit{upper arm} ve \textit{hedef} vekt\"orlerinden
+          t\"uretmek; kol kald{\i}r{\i}ld{\i}\u{g}{\i}nda hint otomatik olarak
+          a\c{s}a\u{g}{\i}/arkaya do\u{g}ru kayar:
+          \begin{equation}
+              \hat{d}_{\text{elbow}}^{\prime} = \text{normalize}\!\left(
+              \text{ProjectOnPlane}\!\left(-\hat{f}_{\text{chest}},\;
+              \overrightarrow{\text{shoulder} \to \text{hand}}\right)\right)
+              \label{eq:dynamic_elbow}
+          \end{equation}
+
+    \item \textbf{Diz hint'ini ayak y\"on\"unden t\"uretmek:}
+          Ayak tracker'{\i}n{\i}n forward vekt\"or\"u, dizin b\"uk\"ulece\u{g}i y\"on\"u
+          do\u{g}al olarak verir (ayak nereye bak{\i}yorsa diz oraya b\"uk\"ul\"ur):
+          \begin{equation}
+              \hat{d}_{\text{knee}}^{\prime} = \text{normalize}\!\left(
+              \text{ProjectOnPlane}\!\left(\hat{f}_{\text{foot}},\;
+              \overrightarrow{\text{hip} \to \text{ankle}}\right)\right)
+              \label{eq:dynamic_knee}
+          \end{equation}
+
+    \item \textbf{Hint uzakl{\i}\u{g}{\i}n{\i} uzuv uzunlu\u{g}una orantlamak:}
+          \begin{equation}
+              r = k \cdot (L_{\text{upper}} + L_{\text{lower}}), \quad k \approx 0.4
+              \label{eq:hint_dist}
+          \end{equation}
+\end{enumerate}
+
+% ================================================================
+\section{Sorun 2: Avatar--Kullan{\i}c{\i} Boy ve Orant{\i} Uyumsuzlu\u{g}u}
+\label{sec:boy}
+
+\subsection{Belirti}
+
+\begin{itemize}[nosep]
+    \item Kullan{\i}c{\i} kolunu b\"ukerken avatar kolunun h\^al\^a tam
+          a\c{c}{\i}k g\"or\"unmesi.
+    \item Kullan{\i}c{\i} ayak kald{\i}r{\i}rken avatarr{\i}n yeterince
+          kald{\i}rmamas{\i} veya a\c{s}{\i}r{\i} kald{\i}rmas{\i}.
+    \item Kalibrasyon sonras{\i} eller do\u{g}ru yerde ba\c{s}l{\i}yor fakat
+          hareket ettik\c{c}e tutars{\i}zl{\i}k artar.
+\end{itemize}
+
+\subsection{K\"ok Neden: \"Ol\c{c}eklenmemi\c{s} Uzuv Uzunluklar{\i}}
+\label{sec:boy_kok}
+
+Delta-based mapping, pozisyon fark{\i}n{\i} 1:1 oran{\i}nda IK hedefine
+aktar{\i}r:
+\begin{equation}
+    \mathbf{p}_{\text{target}}^{t} = \mathbf{p}_{\text{target}}^{\text{calib}} +
+    \underbrace{\left(\mathbf{p}_{\text{device}}^{t} - \mathbf{p}_{\text{device}}^{\text{calib}}\right)}_{\Delta \mathbf{p}}
+    \label{eq:delta}
+\end{equation}
+
+TwoBoneIK, hedef ile root aras{\i}ndaki mesafeye ($d$) g\"ore kol/bacak
+a\c{c}{\i}s{\i}n{\i} hesaplar:
+\begin{equation}
+    \cos\beta = \frac{L_u^2 + L_l^2 - d^2}{2\,L_u\,L_l}
+    \label{eq:cos}
+\end{equation}
+burada $L_u$ \"ust kemik, $L_l$ alt kemik uzunlu\u{g}u, $\beta$ orta
+eklem a\c{c}{\i}s{\i}d{\i}r.
+
+\subsubsection{Boyut Uyumsuzlu\u{g}unun Etkisi}
+
+Kullan{\i}c{\i}n{\i}n kol uzunlu\u{g}u $A_u$ (ger\c{c}ek) ve avatar{\i}n kol
+uzunlu\u{g}u $L_u + L_l$ (model) farkl{\i} oldu\u{g}unda:
+
+\begin{itemize}[nosep]
+    \item Kullan{\i}c{\i} kolunu tam uzatt{\i}\u{g}{\i}nda el, omuzdan
+          $A_u + A_l$ mesafe uzakla\c{s}{\i}r.
+    \item Delta mapping bu mesafeyi oldu\u{g}u gibi aktard{\i}\u{g}{\i}ndan
+          avatar i\c{c}in $d = A_u + A_l$.
+    \item E\u{g}er $A_u + A_l > L_u + L_l$ (kullan{\i}c{\i} avatardan
+          uzun kollu) ise $d > L_u + L_l$ olur;
+          TwoBoneIK hedefi clamp eder ve kol \textbf{her zaman tam
+          uzam{\i}\c{s}} g\"or\"un\"ur.
+    \item E\u{g}er $A_u + A_l < L_u + L_l$ (kullan{\i}c{\i} avatardan
+          k{\i}sa kollu) ise kol \textbf{hi\c{c}bir zaman tam uzamaz};
+          kullan{\i}c{\i} tam uzatsa bile avatarda dirsek b\"uk\"uk kal{\i}r.
+\end{itemize}
+
+Tablo~\ref{tab:ornek} bunu say{\i}sal olarak g\"osterir.
+
+\begin{table}[H]
+\centering
+\caption{Boy uyumsuzlu\u{g}unun kol IK'ya etkisi (\"ornek de\u{g}erler)}
+\label{tab:ornek}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcccc}
+\toprule
+ & $L_u$\,(m) & $L_l$\,(m) & Toplam & Sonu\c{c} \\
+\midrule
+Avatar kolu    & 0.28 & 0.25 & 0.53 & -- \\
+Kullan{\i}c{\i} kolu (180\,cm) & 0.33 & 0.28 & 0.61 & $d > 0.53$ $\Rightarrow$ clamp \\
+Kullan{\i}c{\i} kolu (160\,cm) & 0.25 & 0.22 & 0.47 & $d < 0.53$ $\Rightarrow$ b\"uk\"uk kal{\i}r \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{\"Onerilen \c{C}\"oz\"um: Uzuv Orant{\i} \"Ol\c{c}eklemesi}
+
+Kalibrasyon an{\i}nda kullan{\i}c{\i}n{\i}n ve avatar{\i}n uzuv uzunluklar{\i}
+kar\c{s}{\i}la\c{s}t{\i}r{\i}l{\i}r ve her uzuv i\c{c}in bir \textbf{\"ol\c{c}ek fakt\"or\"u}
+hesaplan{\i}r:
+
+\begin{equation}
+    s_{\text{arm}} = \frac{L_u^{\text{avatar}} + L_l^{\text{avatar}}}
+    {A_u^{\text{user}} + A_l^{\text{user}}}
+    \label{eq:scale_arm}
+\end{equation}
+
+\c{C}al{\i}\c{s}ma zaman{\i}nda delta, uzuv bazl{\i} olarak \"ol\c{c}eklenir:
+
+\begin{equation}
+    \mathbf{p}_{\text{target}}^{t} = \mathbf{p}_{\text{target}}^{\text{calib}} +
+    s \cdot \Delta \mathbf{p}
+    \label{eq:scaled_delta}
+\end{equation}
+
+\subsubsection{Kullan{\i}c{\i} Uzuv Uzunlu\u{g}unu Tahmin Etme}
+
+Tracker/kontrolc\"u sistemi do\u{g}rudan uzuv uzunlu\u{g}u vermez. Kalibrasyon
+pozunda (T-pose) uzuv uzunlu\u{g}u \c{s}\"oyle tahmin edilir:
+
+\textbf{Kol:} Omuz pozisyonu avatardan al{\i}n{\i}r (kemik hiyerar\c{s}isindeki
+\texttt{LeftUpperArm} pozisyonu). Elin pozisyonu kontrolc\"uden
+(\texttt{leftControllerTransform}) al{\i}n{\i}r. Aradaki mesafe kullan{\i}c{\i}
+kol uzunlu\u{g}unu verir:
+\begin{equation}
+    A_{\text{arm}} = \left\|\mathbf{p}_{\text{controller}} - \mathbf{p}_{\text{shoulder}}\right\|
+    \label{eq:user_arm}
+\end{equation}
+
+\textbf{Bacak:} Pelvis pozisyonu tracker'dan, ayak bile\u{g}i pozisyonu
+ayak tracker'{\i}ndan al{\i}n{\i}r:
+\begin{equation}
+    A_{\text{leg}} = \left\|\mathbf{p}_{\text{footTracker}} - \mathbf{p}_{\text{pelvisTracker}}\right\|
+    \label{eq:user_leg}
+\end{equation}
+
+Avatar uzuv uzunluklar{\i} ise kemik hiyerar\c{s}isinden do\u{g}rudan al{\i}n{\i}r:
+\begin{equation}
+    L_{\text{arm}} = \left\|\mathbf{p}_{\text{forearm}} - \mathbf{p}_{\text{upperarm}}\right\| +
+    \left\|\mathbf{p}_{\text{hand}} - \mathbf{p}_{\text{forearm}}\right\|
+    \label{eq:avatar_arm}
+\end{equation}
+
+\subsection{\"Ol\c{c}eklemenin Hint Mesafesiyle Entegrasyonu}
+
+Uzuv \"ol\c{c}ek fakt\"or\"u, Denklem~\ref{eq:hint_dist}'deki hint
+uzakl{\i}\u{g}{\i}na da uygulan{\i}r:
+\begin{equation}
+    r^{\prime} = k \cdot s \cdot (L_u + L_l)
+    \label{eq:scaled_hint}
+\end{equation}
+
+B\"oylece hint mesafesi, hem avatar boyutuna hem de kullan{\i}c{\i}
+orant{\i}s{\i}na uyumlu hale gelir.
+
+% ================================================================
+\section{Etki Analizi ve \"Oncelik}
+\label{sec:etki}
+
+\begin{table}[H]
+\centering
+\caption{Sorunlar{\i}n etki kar\c{s}{\i}la\c{s}t{\i}rmas{\i}}
+\label{tab:etki}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{lllX}
+\toprule
+\textbf{Sorun} & \textbf{Etki} & \textbf{\"Oncelik} & \textbf{A\c{c}{\i}klama} \\
+\midrule
+Hint y\"on\"u & Y\"uksek & 1 & T\"um kullan{\i}c{\i}larda g\"or\"ul\"ur; klinik ROM \"ol\c{c}\"um\"un\"u ge\c{c}ersiz k{\i}lar \\
+Uzuv orant{\i}s{\i} & Y\"uksek & 1 & Boy fark{\i} artt{\i}k\c{c}a hata artar; \"ozellikle kol b\"ukme testlerinde kritik \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ================================================================
+\section{Uygulama Plan{\i}}
+\label{sec:plan}
+
+\subsection{Faz 1: Dinamik Hint Hesaplamas{\i}}
+\begin{enumerate}[nosep]
+    \item \texttt{FullBodyIKSolver.SolveArm} i\c{c}inde dirsek hint'ini
+          Denklem~\ref{eq:dynamic_elbow} ile hesapla.
+    \item \texttt{FullBodyIKSolver.SolveLeg} i\c{c}inde diz hint'ini
+          Denklem~\ref{eq:dynamic_knee} ile hesapla (ayak tracker forward'u kullan).
+    \item Hint uzakl{\i}\u{g}{\i}n{\i} uzuv uzunlu\u{g}una orant{\i}la
+          (Denklem~\ref{eq:hint_dist}).
+\end{enumerate}
+
+\subsection{Faz 2: Uzuv Orant{\i} \"Ol\c{c}eklemesi}
+\begin{enumerate}[nosep]
+    \item Kalibrasyon an{\i}nda kullan{\i}c{\i} uzuv uzunluklar{\i}n{\i}
+          Denklem~\ref{eq:user_arm} ve~\ref{eq:user_leg} ile tahmin et.
+    \item Avatar uzuv uzunluklar{\i}n{\i} kemik hiyerar\c{s}isinden al
+          (Denklem~\ref{eq:avatar_arm}).
+    \item \"Ol\c{c}ek fakt\"or\"u $s$ hesapla (Denklem~\ref{eq:scale_arm}).
+    \item \texttt{FullBodyTrackingManager.ApplyMapping} i\c{c}inde kol ve
+          bacak deltalar{\i}n{\i} $s$ ile \c{c}arp
+          (Denklem~\ref{eq:scaled_delta}).
+\end{enumerate}
+
+\subsection{Faz 3: Test ve Do\u{g}rulama}
+\begin{enumerate}[nosep]
+    \item Farkl{\i} boylarda (160\,cm, 175\,cm, 190\,cm) T-pose kalibrasyonu yap.
+    \item Kol b\"ukme (fleksiyon 0--150\degree) ve bacak b\"ukme
+          (diz fleksiyon 0--130\degree) testleri.
+    \item B\"uk\"ulme y\"on\"un\"un animasyon d\"uzlemiyle tutarl{\i}l{\i}\u{g}{\i}n{\i}
+          g\"orsel olarak do\u{g}rula.
+\end{enumerate}
+
+% ================================================================
+\section{Sonu\c{c}}
+\label{sec:sonuc}
+
+Mevcut sistemde iki ba\u{g}{\i}ms{\i}z fakat birbirini kuvvetlendiren sorun
+tespit edilmi\c{s}tir. Hint y\"on vekt\"orlerinin statik tan{\i}m{\i}, poz
+de\u{g}i\c{s}tikle b\"uk\"ulme d\"uzleminin ``kaymas{\i}na'' yol a\c{c}maktad{\i}r.
+Avatar--kullan{\i}c{\i} boy fark{\i} ise 1:1 delta aktarimi nedeniyle IK
+hedefinin ula\c{s}{\i}labilir aral{\i}\u{g}{\i}n d{\i}\c{s}{\i}na \c{c}{\i}kmas{\i}na veya aral{\i}k
+i\c{c}inde yetersiz kalmas{\i}na neden olmaktad{\i}r. Dinamik hint
+hesaplamas{\i} ve uzuv oran{\i} \"ol\c{c}eklemesi birlikte uyguland{\i}\u{g}{\i}nda
+her iki sorun \c{c}\"oz\"ulecektir.
+
+\end{document}

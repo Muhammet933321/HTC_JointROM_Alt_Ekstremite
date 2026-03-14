@@ -1,0 +1,20 @@
+\babel@toc {turkish}{}\relax 
+\contentsline {section}{\numberline {1}Mevcut Sistem \"Ozeti}{1}{section.1}%
+\contentsline {section}{\numberline {2}Sorun 1: Dirsek ve Diz B\"uk\"ulme Y\"on\"u/A\c {c}{\i }s{\i }}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Belirti}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}K\"ok Neden: Hint Pozisyonu Hesaplamas{\i }}{2}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Sorunun Matematiksel A\c {c}{\i }klamas{\i }}{2}{subsubsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.3}\"Onerilen \c {C}\"oz\"um}{2}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Sorun 2: Avatar--Kullan{\i }c{\i } Boy ve Orant{\i } Uyumsuzlu\u {g}u}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Belirti}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}K\"ok Neden: \"Ol\c {c}eklenmemi\c {s} Uzuv Uzunluklar{\i }}{3}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Boyut Uyumsuzlu\u {g}unun Etkisi}{3}{subsubsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.3}\"Onerilen \c {C}\"oz\"um: Uzuv Orant{\i } \"Ol\c {c}eklemesi}{3}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Kullan{\i }c{\i } Uzuv Uzunlu\u {g}unu Tahmin Etme}{4}{subsubsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.4}\"Ol\c {c}eklemenin Hint Mesafesiyle Entegrasyonu}{4}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Etki Analizi ve \"Oncelik}{4}{section.4}%
+\contentsline {section}{\numberline {5}Uygulama Plan{\i }}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Faz 1: Dinamik Hint Hesaplamas{\i }}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Faz 2: Uzuv Orant{\i } \"Ol\c {c}eklemesi}{4}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Faz 3: Test ve Do\u {g}rulama}{5}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Sonu\c {c}}{5}{section.6}%
