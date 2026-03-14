@@ -1,0 +1,419 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{gensymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{cite}
+
+\definecolor{bugred}{rgb}{0.75,0.1,0.1}
+\definecolor{solgreen}{rgb}{0.1,0.5,0.1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Alt Ekstremite ROM -- Sens\"or Raporu}
+\fancyhead[R]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ================================================================
+\begin{document}
+
+% -- Baslik --
+\begin{center}
+    {\LARGE\bfseries HTC VIVE Ultimate Tracker ile\\[4pt]
+    Alt Ekstremite Eklem ROM \"Ol\c{c}\"um\"u:\\[4pt]
+    Sens\"or Yerle\c{s}imi ve Kalibrasyon Raporu}\\[12pt]
+    {\normalsize Mart 2026}
+\end{center}
+
+\vspace{6pt}
+
+\begin{abstract}
+Bu rapor, \"u\c{c} adet HTC VIVE Ultimate Tracker kullan{\i}larak sa\u{g} alt
+ekstremitenin (kal\c{c}a ve diz eklemi) hareket a\c{c}{\i}kl{\i}\u{g}{\i}n{\i}n (ROM) ger\c{c}ek
+zamanl{\i} \"ol\c{c}\"ulmesine y\"onelik bir sistemin sens\"or yerle\c{s}im kararlar{\i}n{\i},
+kalibrasyon y\"ontemini ve tespit edilen yaz{\i}l{\i}m sorunlar{\i}n{\i}
+sunmaktad{\i}r. Tracker'lar pelvis, femur ve tibia segmentlerine
+ba\u{g}lanarak forward kinematics (FK) ile eklem a\c{c}{\i}lar{\i}
+hesaplanmaktad{\i}r. Kalibrasyon, statik referans poz y\"ontemiyle
+ger\c{c}ekle\c{s}tirilmi\c{s}tir. Test s\"urecinde iskelet hiyerar\c{s}isinden
+kaynaklanan iki hata tespit edilmi\c{s} ve k\"ok neden analizi
+yap{\i}lm{\i}\c{s}t{\i}r.
+\end{abstract}
+
+\tableofcontents
+\vspace{8pt}
+
+% ================================================================
+\section{Giri\c{s}}
+\label{sec:giris}
+
+Eklem hareket a\c{c}{\i}kl{\i}\u{g}{\i} (ROM) \"ol\c{c}\"um\"u, ortopedik de\u{g}erlendirme ve
+rehabilitasyon s\"urecinde temel bir klinik parametredir~\cite{norkin2016}.
+Geleneksel olarak universal gonyometre ile yap{\i}lan bu \"ol\c{c}\"um, g\"ozlemciler
+aras{\i} de\u{g}i\c{s}kenlik ve statik \"ol\c{c}\"um s{\i}n{\i}rl{\i}l{\i}\u{g}{\i} ta\c{s}{\i}r~\cite{gajdosik1987}.
+Giyilebilir ataletsel \"ol\c{c}\"um birimleri (IMU) ve optik tabanl{\i} takip
+sistemleri, bu s{\i}n{\i}rl{\i}l{\i}klar{\i} a\c{s}mak i\c{c}in alternatif olarak
+kullan{\i}lmaktad{\i}r~\cite{cuesta2010,seel2014}.
+
+HTC VIVE Ultimate Tracker, iki geni\c{s} g\"or\"u\c{s} a\c{c}{\i}l{\i} kamera ve bilgisayarl{\i}
+g\"or\"u (computer vision) algoritmalar{\i} ile 6-serbestlik dereceli (6DoF)
+inside-out takip sa\u{g}layan kompakt bir sens\"ord\"ur
+(77$\times$58.6$\times$27.3\,mm, 94\,g)~\cite{htcvive2024}. Baz istasyonu
+gerektirmeden \c{c}al{\i}\c{s}mas{\i}, klinik ortamlarda pratik bir avantaj
+sunmaktad{\i}r~\cite{niehorster2017}.
+
+Bu \c{c}al{\i}\c{s}mada, \"u\c{c} adet VIVE Ultimate Tracker kullan{\i}larak sa\u{g} alt
+ekstremitenin kal\c{c}a ve diz fleksiyon/ekstansiyon a\c{c}{\i}lar{\i}
+\"ol\c{c}\"ulm\"u\c{s}t\"ur. Sistem Unity~6 ve VIVE OpenXR Plugin~2.5.1 altyap{\i}s{\i}
+\"uzerinde \c{c}al{\i}\c{s}maktad{\i}r.
+
+% ================================================================
+\section{VIVE Ultimate Tracker: \c{C}al{\i}\c{s}ma Prensibi}
+\label{sec:tracker}
+
+VIVE Ultimate Tracker, \textbf{inside-out} takip mimarisine sahiptir;
+yani konum ve y\"onelim bilgisini kendi \"uzerindeki sens\"orlerden
+t\"uretir, d{\i}\c{s} bir baz istasyonuna ihtiya\c{c} duymaz~\cite{htcvive2024}.
+
+\textbf{Optik takip (pozisyon + y\"onelim):}
+Tracker \"uzerinde iki adet geni\c{s} g\"or\"u\c{s} a\c{c}{\i}l{\i} (wide-FOV) kamera
+bulunur. Bu kameralar \c{c}evredeki g\"orsel \"ozellikleri (kenarlar,
+k\"o\c{s}eler, doku farklar{\i}) ger\c{c}ek zamanl{\i} olarak alg{\i}lar. Bilgisayarl{\i}
+g\"or\"u (SLAM -- Simultaneous Localization and Mapping) algoritmalar{\i},
+ard{\i}\c{s}{\i}k kareler aras{\i}ndaki g\"orsel yer de\u{g}i\c{s}tirmeyi analiz ederek
+tracker'{\i}n 6DoF pozunu (3 eksen pozisyon + 3 eksen y\"onelim)
+hesaplar~\cite{cadena2016}.
+
+\textbf{Ataletsel \"ol\c{c}\"um birimi (IMU):}
+Dahili IMU (ivme\"ol\c{c}er + jiroskop), y\"uksek frekansl{\i} rotasyon
+de\u{g}i\c{s}imlerini yakalar ve optik takibin zaman \"oz\"un\"url\"u\u{g}\"un\"u
+art{\i}r{\i}r. Kameralar ortam{\i}n g\"orsel haritasna dayanarak mutlak
+pozisyon sa\u{g}larken, IMU k{\i}sa s\"ureli h{\i}zl{\i} hareketlerde
+s\"ur\"ukleni\c{s}i (drift) telafi eder. \.Iki sens\"or tipi bir f\"uzyon
+filtresiyle birle\c{s}tirilerek d\"u\c{s}\"uk gecikmeli, kararl{\i} bir poz
+\"uretilir~\cite{seel2014}.
+
+\textbf{Kablosuz ba\u{g}lant{\i}:}
+Tracker, 2.4\,GHz tescilli protokol \"uzerinden VIVE Wireless Dongle'a
+ba\u{g}lan{\i}r. Tek bir dongle, e\c{s} zamanl{\i} olarak 5 adede kadar
+tracker'{\i} destekler. Ba\u{g}lant{\i} gecikme s\"uresi d\"u\c{s}\"uk tutularak
+ger\c{c}ek zamanl{\i} hareket takibi sa\u{g}lan{\i}r.
+
+Tablo~\ref{tab:tracker_bilesenler} tracker bile\c{s}enlerini \"ozetler.
+
+\begin{table}[H]
+\centering
+\caption{VIVE Ultimate Tracker bile\c{s}enleri ve i\c{s}levleri}
+\label{tab:tracker_bilesenler}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Bile\c{s}en} & \textbf{\.I\c{s}lev} & \textbf{\c{C}{\i}k{\i}\c{s}} \\
+\midrule
+Wide-FOV kamera $\times$2 & SLAM ile mutlak pozisyon ve y\"onelim & 6DoF poz \\
+IMU (ivme\"ol\c{c}er + jiroskop) & Y\"uksek frekansl{\i} rotasyon takibi, drift telafisi & A\c{c}{\i}sal h{\i}z, ivme \\
+Yapay zek\^a motoru & G\"or\"u + IMU f\"uzyonu, poz tahmini & Filtrelenmi\c{s} poz \\
+2.4\,GHz radyo & HMD'ye kablosuz veri iletimi & Poz verisi \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ================================================================
+\section{Sens\"or Yerle\c{s}imi}
+\label{sec:yerlesim}
+
+\subsection{Yerle\c{s}im Kriterleri}
+
+Sens\"or konumlar{\i} belirlenirken a\c{s}a\u{g}{\i}daki \"ol\c{c}\"utler dikkate
+al{\i}nm{\i}\c{s}t{\i}r~\cite{cuesta2010,niswander2020}:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Yumu\c{s}ak doku artefakt{\i}n{\i}n minimizasyonu:} Sens\"or, kemik
+          y\"uzeyine yak{\i}n b\"olgelere yerle\c{s}tirilerek kas kas{\i}lmas{\i} ve
+          deri kaymas{\i}ndan kaynaklanan hata azalt{\i}l{\i}r~\cite{leardini2005}.
+    \item \textbf{Segment temsil yeterlili\u{g}i:} Her sens\"or, ba\u{g}l{\i} oldu\u{g}u
+          rijit kemik segmentinin rotasyonunu do\u{g}ru temsil etmelidir.
+    \item \textbf{Hareket s{\i}ras{\i}nda stabilite:} Sens\"or, dinamik hareketlerde
+          (y\"ur\"ume, \c{c}\"omelme) kaymamal{\i}d{\i}r.
+    \item \textbf{Kom\c{s}u sens\"orlerle \c{c}ak{\i}\c{s}mama:} Tracker'lar birbirine
+          fiziksel olarak temas etmemelidir.
+\end{enumerate}
+
+\subsection{Nihai Sens\"or Konumlar{\i}}
+
+\begin{table}[H]
+\centering
+\caption{Tracker yerle\c{s}im konumlar{\i} ve anatomik referanslar{\i}}
+\label{tab:konumlar}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{llXl}
+\toprule
+\textbf{Tracker} & \textbf{Segment} & \textbf{Anatomik Konum} & \textbf{Sabitleme} \\
+\midrule
+0 -- Pelvis & G\"ovde & Umbilikus hizas{\i}, anterior abdomen, orta hat & Elastik bant \\
+1 -- Femur  & \"Ust bacak & Patella proksimali ($\sim$5--10\,cm), femur distal 1/3 anterolateral & Elastik bant \\
+2 -- Tibia  & Alt bacak & Lateral malleolus proksimali ($\sim$5--8\,cm), tibia distal 1/3 anterolateral & Elastik bant \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Pelvis tracker g\"obek b\"olgesine yerle\c{s}tirilmi\c{s}tir \c{c}\"unk\"u Mixamo iskelet
+modelinde \texttt{pelvisBone} olarak kullan{\i}lan kemik, g\"ovde
+rotasyonunu temsil etmektedir. Femur tracker'{\i}, diz kapa\u{g}{\i}n{\i}n
+hemen proksimaline konumland{\i}r{\i}lm{\i}\c{s}t{\i}r; bu b\"olge anteriorda kemik
+y\"uzeyine yak{\i}nd{\i}r ve yumu\c{s}ak doku artefakt{\i} d\"u\c{s}\"ukt\"ur~\cite{leardini2005}.
+Tibia tracker'{\i}, tibian{\i}n distal anterolateral y\"uzeyine
+yerle\c{s}tirilmi\c{s}tir; bu b\"olgede subk\"utan yumu\c{s}ak doku kal{\i}nl{\i}\u{g}{\i}
+v\"ucuttaki en d\"u\c{s}\"uk de\u{g}erler aras{\i}ndad{\i}r.
+
+% ================================================================
+\section{Kalibrasyon Y\"ontemi}
+\label{sec:kalibrasyon}
+
+\subsection{Statik Poz Kalibrasyonu}
+
+Giyilebilir sens\"orlerle eklem a\c{c}{\i}s{\i} \"ol\c{c}\"um\"unde, sens\"or y\"onelimi ile
+anatomik segment y\"onelimi aras{\i}ndaki fark{\i}n telafi edilmesi
+gerekir. Bu \c{c}al{\i}\c{s}mada \textbf{statik referans poz} (anatomical
+calibration) y\"ontemi kullan{\i}lm{\i}\c{s}t{\i}r~\cite{favre2006,palermo2014}. Bu
+y\"ontemde kullan{\i}c{\i}, bilinen bir anatomik pozisyonda (dik duru\c{s},
+bacaklar d\"uz) hareketsiz durur ve sens\"or-kemik y\"onelim fark{\i}
+kaydedilir.
+
+\subsection{Matematiksel Form\"ulasyon}
+
+\subsubsection{Sens\"or-Kemik Offset}
+Kalibrasyon an{\i}nda, her tracker ($T$) ile kar\c{s}{\i}l{\i}k gelen kemik ($B$)
+aras{\i}ndaki rotasyon fark{\i} hesaplan{\i}r:
+
+\begin{equation}
+    Q_{\text{offset}} = Q_{T}^{-1} \cdot Q_{B}
+    \label{eq:offset}
+\end{equation}
+
+\c{C}al{\i}\c{s}ma zaman{\i}nda kemi\u{g}in d\"unya rotasyonu \c{s}\"oyle elde edilir:
+
+\begin{equation}
+    Q_{B}^{t} = Q_{T}^{t} \cdot Q_{\text{offset}}
+    \label{eq:runtime}
+\end{equation}
+
+\subsubsection{Hiyerar\c{s}ik Lokal Rotasyon (FK)}
+Eklem a\c{c}{\i}lar{\i}, ebeveyn-\c{c}ocuk kemik ili\c{s}kisinden t\"uretilir. Forward
+kinematics yakla\c{s}{\i}m{\i}yla~\cite{craig2005}:
+
+\begin{align}
+    Q_{\text{hip}}^{\text{local}} &= Q_{\text{pelvis}}^{-1} \cdot Q_{\text{thigh}} \label{eq:hip} \\
+    Q_{\text{knee}}^{\text{local}} &= Q_{\text{thigh}}^{-1} \cdot Q_{\text{shin}} \label{eq:knee}
+\end{align}
+
+Kalibrasyon pozundaki lokal rotasyonlar ($Q^{\text{calib}}$) referans
+al{\i}narak delta rotasyon hesaplan{\i}r ve modelin ba\c{s}lang{\i}\c{c} yerel
+rotasyonuna uygulan{\i}r:
+
+\begin{equation}
+    Q_{\text{joint}}^{\text{model}} = Q_{\text{joint}}^{\text{initial}} \cdot
+    \left(Q_{\text{joint}}^{\text{calib}}\right)^{-1} \cdot Q_{\text{joint}}^{\text{current}}
+    \label{eq:delta}
+\end{equation}
+
+\subsubsection{Klinik A\c{c}{\i} Hesab{\i} (Gonyometri)}
+Kal\c{c}a fleksiyon a\c{c}{\i}s{\i}, \"ust bacak y\"on vekt\"or\"un\"un pelvis \c{c}er\c{c}evesinde
+sagittal d\"uzleme (Y-Z) projeksiyonuyla hesaplan{\i}r~\cite{norkin2016}:
+
+\begin{equation}
+    \theta_{\text{hip}} = -\;\text{atan2}\!\left(v_z^{\text{proj}},\; -v_y^{\text{proj}}\right)
+    \label{eq:hip_angle}
+\end{equation}
+
+Diz fleksiyon a\c{c}{\i}s{\i}, alt bacak y\"on\"un\"un \"ust bacak \c{c}er\c{c}evesinde
+benzer projeksiyonuyla elde edilir:
+
+\begin{equation}
+    \theta_{\text{knee}} = \text{atan2}\!\left(v_z,\; -v_y\right)
+    \label{eq:knee_angle}
+\end{equation}
+
+Pozitif de\u{g}erler fleksiyonu, negatif de\u{g}erler ekstansiyonu ifade eder.
+
+\subsection{Kalibrasyon Prosed\"ur\"u}
+
+\begin{enumerate}[nosep]
+    \item Tracker'lar a\c{c}{\i}l{\i}r ve HMD ile e\c{s}le\c{s}tirilir.
+    \item Tracker'lar Tablo~\ref{tab:konumlar}'daki konumlara elastik
+          bantlarla sabitlenir.
+    \item Unity uygulamas{\i} ba\c{s}lat{\i}l{\i}r; \texttt{LegTrackerAutoAssigner}
+          aktif tracker'lar{\i} otomatik tespit eder.
+    \item Kullan{\i}c{\i} dik durur (bacaklar d\"uz, g\"ovde dik).
+    \item Sa\u{g} el kontrolc\"us\"unde A/B butonuna 2\,s bas{\i}l{\i} tutulur
+          (veya klavyede \texttt{L} tu\c{s}u).
+    \item Ekranda ``Kalibrasyon tamamland{\i}'' mesaj{\i} do\u{g}rulan{\i}r;
+          kal\c{c}a ve diz a\c{c}{\i}lar{\i} $0\degree$ g\"ostermelidir.
+\end{enumerate}
+
+% ================================================================
+\section{Tespit Edilen Hatalar ve K\"ok Neden Analizi}
+\label{sec:hatalar}
+
+Test s\"urecinde iki hata g\"ozlemlenmi\c{s}tir. Her ikisinin de \textbf{ayn{\i}
+k\"ok nedenden} kaynakland{\i}\u{g}{\i} belirlenmi\c{s}tir.
+
+\subsection{Hata Tan{\i}mlar{\i}}
+
+\begin{itemize}[nosep]
+    \item \textcolor{bugred}{\textbf{Hata 1 -- G\"ovde e\u{g}ildi\u{g}inde bacaklar havaya kalk{\i}yor:}}
+    Bacaklar d\"uz dururken g\"ovde \"one e\u{g}ildi\u{g}inde, modeldeki bacak
+    yukar{\i} do\u{g}ru d\"on\"uyor.
+    \item \textcolor{bugred}{\textbf{Hata 2 -- Aksiyel d\"on\"u\c{s}te bacaklar d\"onm\"uyor:}}
+    Kullan{\i}c{\i} sa\u{g}a/sola d\"ond\"u\u{g}\"unde g\"ovde d\"oner fakat bacaklar eski
+    y\"onlerinde kal{\i}r; bacak kald{\i}r{\i}ld{\i}\u{g}{\i}nda yanl{\i}\c{s} y\"one gider.
+\end{itemize}
+
+\subsection{K\"ok Neden: Kemik Hiyerar\c{s}isi Uyu\c{s}mazl{\i}\u{g}{\i}}
+
+Mixamo iskelet yap{\i}s{\i}nda hiyerar\c{s}i \c{s}u \c{s}ekildedir:
+
+\begin{center}
+\texttt{Hips} $\rightarrow$ \{\texttt{Spine},\; \texttt{LeftUpLeg},\;
+\texttt{RightUpLeg}\}
+\end{center}
+
+\texttt{Spine} ve \texttt{RightUpLeg}, \texttt{Hips}'in \textbf{karde\c{s}
+(sibling)} \c{c}ocuklar{\i}d{\i}r. Mevcut sistemde \texttt{pelvisBone} olarak
+\texttt{mixamorig1:Spine} atanm{\i}\c{s}t{\i}r. Solver, pelvisBone'u
+d\"ond\"urd\"u\u{g}\"unde bu rotasyon sadece Spine alt a\u{g}ac{\i}n{\i} etkiler;
+karde\c{s} olan RightUpLeg \textbf{etkilenmez}.
+
+\textbf{Hata 1 mekani\u{g}i:} Pelvis tracker \"one e\u{g}ildi\u{g}inde
+$Q_{\text{pelvis}}$ de\u{g}i\c{s}ir fakat $Q_{\text{thigh}}$ sabit kal{\i}r.
+Denklem~\ref{eq:hip}'e g\"ore $Q_{\text{hip}}^{\text{local}}$ negatif delta
+\"uretir; bu, baca\u{g}{\i}n yukar{\i} kalkmas{\i}na neden olur.
+
+\textbf{Hata 2 mekani\u{g}i:} Pelvis tracker yaw d\"on\"u\c{s}\"u yapt{\i}\u{g}{\i}nda
+Spine d\"oner fakat Hips (bacaklar{\i}n ger\c{c}ek ebeveyni) d\"onmez;
+bacaklar d\"unya koordinat{\i}nda sabit kal{\i}r.
+
+\subsection{\c{C}\"oz\"um \"Onerisi}
+
+\texttt{pelvisBone} atamasinin \texttt{mixamorig1:Spine} yerine
+\textcolor{solgreen}{\texttt{mixamorig1:Hips}} olarak de\u{g}i\c{s}tirilmesi
+her iki hatay{\i} da \c{c}\"ozer. Hips, t\"um alt hiyerar\c{s}inin (Spine +
+bacaklar) ger\c{c}ek ebeveynidir; d\"ond\"ur\"uld\"u\u{g}\"unde t\"um \c{c}ocuk kemikler
+birlikte d\"oner.
+
+% ================================================================
+\section{Video G\"osterimi}
+\label{sec:video}
+
+Sistemin kurulumu, kalibrasyonu ve hata g\"osterimini i\c{c}eren bir video
+haz{\i}rlanm{\i}\c{s}t{\i}r.
+
+\textbf{Video i\c{c}eri\u{g}i:} (1)~Tracker'lar{\i}n v\"ucuda ba\u{g}lanmas{\i},
+(2)~Unity uygulamas{\i}n{\i}n ba\c{s}lat{\i}lmas{\i} ve tracker alg{\i}lama,
+(3)~Dik duru\c{s}ta kalibrasyon (A/B butonu, 2\,s),
+(4)~Kal\c{c}a ve diz fleksiyon testleri,
+(5)~Hata 1 ve 2'nin canl{\i} g\"osterimi.
+
+% ================================================================
+\section{Sonu\c{c} ve Gelecek \c{C}al{\i}\c{s}malar}
+\label{sec:sonuc}
+
+VIVE Ultimate Tracker'{\i}n 6DoF inside-out takip yetene\u{g}i, baz
+istasyonu gerektirmeden klinik ortamda alt ekstremite ROM \"ol\c{c}\"um\"u
+i\c{c}in uygulanabilir bir \c{c}\"oz\"um sunmaktad{\i}r. Statik poz
+kalibrasyonu, farkl{\i} kullan{\i}c{\i}lara ve montaj a\c{c}{\i}lar{\i}na uyum
+sa\u{g}lamaktad{\i}r. Tespit edilen iskelet hiyerar\c{s}isi hatas{\i}
+(\texttt{Spine} $\neq$ \texttt{Hips}), forward kinematics
+sistemlerinde ebeveyn-\c{c}ocuk ili\c{s}kisinin kritik \"onemini ortaya
+koymaktad{\i}r.
+
+% ================================================================
+\begin{thebibliography}{99}
+
+\bibitem{norkin2016}
+C.~C.~Norkin and D.~J.~White, \textit{Measurement of Joint Motion: A Guide
+to Goniometry}, 5th~ed. Philadelphia: F.A.~Davis Company, 2016.
+\url{https://books.google.com/books?id=TSluDQAAQBAJ}
+
+\bibitem{gajdosik1987}
+R.~L.~Gajdosik and R.~W.~Bohannon, ``Clinical measurement of range of
+motion: Review of goniometry emphasizing reliability and validity,''
+\textit{Physical Therapy}, vol.~67, no.~12, pp.~1867--1872, 1987.
+\url{https://doi.org/10.1093/ptj/67.12.1867}
+
+\bibitem{cuesta2010}
+A.~Cuesta-Vargas, A.~Gal\'an-Mercant, and J.~M.~Williams, ``The use of
+inertial sensors system for human motion analysis,''
+\textit{Physical Therapy Reviews}, vol.~15, no.~6, pp.~462--473, 2010.
+\url{https://doi.org/10.1179/1743288X11Y.0000000006}
+
+\bibitem{seel2014}
+T.~Seel, J.~Raisch, and T.~Schauer, ``IMU-based joint angle measurement
+for gait analysis,'' \textit{Sensors}, vol.~14, no.~4, pp.~6891--6909,
+2014.
+\url{https://doi.org/10.3390/s140406891}
+
+\bibitem{htcvive2024}
+HTC Corporation, ``VIVE Ultimate Tracker -- Specifications,'' 2024.
+[Online]. Available:
+\url{https://www.vive.com/us/accessory/vive-ultimate-tracker/}.
+
+\bibitem{niehorster2017}
+D.~C.~Niehorster, L.~Li, and M.~Lappe, ``The accuracy and precision of
+position and orientation tracking in the HTC Vive virtual reality system
+for scientific research,'' \textit{i-Perception}, vol.~8, no.~3, 2017.
+\url{https://doi.org/10.1177/2041669517708205}
+
+\bibitem{leardini2005}
+A.~Leardini, L.~Chiari, U.~Della~Croce, and A.~Cappozzo, ``Human
+movement analysis using stereophotogrammetry -- Part~3: Soft tissue
+artifact assessment and compensation,'' \textit{Gait \& Posture}, vol.~21,
+no.~2, pp.~212--225, 2005.
+\url{https://doi.org/10.1016/j.gaitpost.2004.05.002}
+
+\bibitem{niswander2020}
+W.~Niswander, W.~Wang, and K.~Kontson, ``Optimization of IMU sensor
+placement for the measurement of lower limb joint kinematics,''
+\textit{Sensors}, vol.~20, no.~21, p.~5993, 2020.
+\url{https://doi.org/10.3390/s20215993}
+
+\bibitem{favre2006}
+J.~Favre, B.~M.~Jolles, O.~Siegrist, and K.~Aminian, ``Quaternion-based
+fusion of gyroscopes and accelerometers to improve 3D angle
+measurement,'' \textit{Electronics Letters}, vol.~42, no.~11,
+pp.~612--614, 2006.
+\url{https://doi.org/10.1049/el:20060124}
+
+\bibitem{palermo2014}
+E.~Palermo, S.~Rossi, F.~Marini, F.~Patanè, and P.~Cappa,
+``Experimental evaluation of accuracy and repeatability of a novel
+body-to-sensor calibration procedure for inertial sensor-based gait
+analysis,'' \textit{Measurement}, vol.~52, pp.~145--155, 2014.
+\url{https://doi.org/10.1016/j.measurement.2014.03.004}
+
+\bibitem{craig2005}
+J.~J.~Craig, \textit{Introduction to Robotics: Mechanics and Control},
+3rd~ed. Upper Saddle River, NJ: Pearson Prentice Hall, 2005.
+ISBN: 978-0-13-123629-8.
+
+\bibitem{cadena2016}
+C.~Cadena \textit{et al.}, ``Past, present, and future of simultaneous
+localization and mapping: Toward the robust-perception age,''
+\textit{IEEE Trans.~Robotics}, vol.~32, no.~6, pp.~1309--1332, 2016.
+\url{https://doi.org/10.1109/TRO.2016.2624754}
+
+\end{thebibliography}
+
+\end{document}
