@@ -117,7 +117,6 @@ public class FullBodyIKSolver : MonoBehaviour
 
     // Tracker → Bone offset quaternions
     private Quaternion _pelvisOffset = Quaternion.identity;
-    private Vector3 _pelvisPosOffset = Vector3.zero;
     private Quaternion _leftFootOffset = Quaternion.identity;
     private Quaternion _rightFootOffset = Quaternion.identity;
     private Quaternion _headOffset = Quaternion.identity;
@@ -131,11 +130,6 @@ public class FullBodyIKSolver : MonoBehaviour
     private Quaternion _spine2InitLocal;
     private Quaternion _neckInitLocal;
     private Quaternion _headInitLocal;
-
-    // Avatar height info
-    private float _avatarHeight = 1.7f;
-    private float _userHeight = 1.7f;
-    private float _heightScale = 1f;
 
     // Calibration version
     public int CalibrationVersion { get; private set; }
@@ -191,7 +185,6 @@ public class FullBodyIKSolver : MonoBehaviour
         if (pelvisTarget)
         {
             _pelvisOffset = Quaternion.Inverse(pelvisTarget.rotation) * hipsBone.rotation;
-            _pelvisPosOffset = hipsBone.position - pelvisTarget.position;
         }
 
         // Head offset
@@ -220,22 +213,9 @@ public class FullBodyIKSolver : MonoBehaviour
             _rightHandOffset = Quaternion.Inverse(rightHandTarget.rotation) * rightHandBone.rotation;
         }
 
-        // Height estimation
-        if (headTarget)
-        {
-            _userHeight = headTarget.position.y;
-        }
-        if (headBone)
-        {
-            _avatarHeight = headBone.position.y - hipsBone.position.y + (hipsBone.position.y * 0.5f);
-            if (_avatarHeight < 0.5f) _avatarHeight = 1.7f; // fallback
-        }
-        _heightScale = _userHeight / Mathf.Max(_avatarHeight, 0.5f);
-
         _calibrated = true;
         CalibrationVersion++;
-        Debug.Log($"[FullBodyIKSolver] Kalibrasyon tamamlandı. Kullanıcı yüksekliği: {_userHeight:F2}m, " +
-                  $"Avatar yüksekliği: {_avatarHeight:F2}m, Ölçek: {_heightScale:F2}");
+        Debug.Log("[FullBodyIKSolver] Kalibrasyon tamamlandı.");
     }
 
     /// <summary>
@@ -283,7 +263,7 @@ public class FullBodyIKSolver : MonoBehaviour
         // Hips is the parent of both Spine and legs, so rotating Hips
         // correctly rotates the entire body including legs.
         Quaternion targetRot = pelvisTarget.rotation * _pelvisOffset;
-        Vector3 targetPos = pelvisTarget.position + pelvisTarget.rotation * _pelvisPosOffset;
+        Vector3 targetPos = pelvisTarget.position;
 
         if (pelvisWeight >= 1f)
         {

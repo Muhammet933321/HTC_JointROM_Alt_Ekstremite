@@ -91,6 +91,16 @@ public class FullBodyCalibrator : MonoBehaviour
             return;
         }
 
+        // 1. Ensure tracker data is fresh in this frame
+        trackingManager.RefreshAndDriveTargetsNow();
+
+        // 2. Snap IK targets to avatar's current bone positions (T-pose)
+        ikSolver.SnapTargetsToCurrentBones();
+
+        // 3. Capture device↔target pairs for delta-based mapping
+        trackingManager.CalibrateMapping();
+
+        // 4. Compute rotation offsets between targets and bones
         ikSolver.Calibrate();
 
         if (calibrationStatusText)

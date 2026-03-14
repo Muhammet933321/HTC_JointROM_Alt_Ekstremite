@@ -87,6 +87,13 @@ public class FullBodyTrackingManager : MonoBehaviour
     [Tooltip("Pelvis rotasyonunda sadece yaw (Y ekseni) kullanilsin.")]
     [SerializeField] private bool pelvisYawOnly = true;
 
+    [Header("=== Explicit Atama Dayanimi ===")]
+    [Tooltip("Explicit indexlerden biri aktif degilse, otomatik uzaysal atamaya duser.")]
+    [SerializeField] private bool fallbackToAutoWhenExplicitInvalid = true;
+
+    [Header("=== Debug ===")]
+    [SerializeField] private bool verboseRuntimeLogs = false;
+
     // Internal state
     private readonly List<InputDevice> _devices = new();
     private readonly List<int> _activeTrackerIndices = new();
@@ -99,6 +106,26 @@ public class FullBodyTrackingManager : MonoBehaviour
     private int _rightFootIdx = -1;
     private int _leftKneeIdx = -1;
     private int _rightKneeIdx = -1;
+
+    // ───────────────────────── Delta Mapping ─────────────────────────
+
+    private struct CalibrationPair
+    {
+        public Vector3 devicePos;
+        public Quaternion deviceRot;
+        public Vector3 targetPos;
+        public Quaternion targetRot;
+    }
+
+    private bool _mappingCalibrated;
+    private CalibrationPair _calibHead;
+    private CalibrationPair _calibLeftHand;
+    private CalibrationPair _calibRightHand;
+    private CalibrationPair _calibPelvis;
+    private CalibrationPair _calibLeftFoot;
+    private CalibrationPair _calibRightFoot;
+    private CalibrationPair _calibLeftKnee;
+    private CalibrationPair _calibRightKnee;
 
     // ───────────────────────── Unity Lifecycle ─────────────────────────
 
@@ -157,6 +184,12 @@ public class FullBodyTrackingManager : MonoBehaviour
             if (assignmentMode == TrackerAssignmentMode.ExplicitIndices)
             {
                 _assigned = AssignTrackersByExplicitIndices();
+
+                if (!_assigned && fallbackToAutoWhenExplicitInvalid)
+                {
+                    AssignTrackersBySpatialAnalysis();
+                    _assigned = _pelvisIdx >= 0 && _leftFootIdx >= 0 && _rightFootIdx >= 0;
+                }
             }
             else
             {
@@ -246,9 +279,12 @@ public class FullBodyTrackingManager : MonoBehaviour
             _rightKneeIdx = -1;
         }
 
-        Debug.Log($"[FullBodyTrackingManager] Atama: Pelvis=T{_pelvisIdx}, " +
-                  $"SolAyak=T{_leftFootIdx}, SağAyak=T{_rightFootIdx}, " +
-                  $"SolDiz=T{_leftKneeIdx}, SağDiz=T{_rightKneeIdx}");
+        if (verboseRuntimeLogs)
+        {
+            Debug.Log($"[FullBodyTrackingManager] Atama: Pelvis=T{_pelvisIdx}, " +
+                      $"SolAyak=T{_leftFootIdx}, SağAyak=T{_rightFootIdx}, " +
+                      $"SolDiz=T{_leftKneeIdx}, SağDiz=T{_rightKneeIdx}");
+        }
     }
 
     /// <summary>
@@ -292,65 +328,92 @@ public class FullBodyTrackingManager : MonoBehaviour
         // HMD → Head target
         if (hmdTransform && headIKTarget)
         {
-            headIKTarget.SetPositionAndRotation(hmdTransform.position, hmdTransform.rotation);
+            ApplyMapping(hmdTransform, headIKTarget, ref _calibHead);
         }
 
         // Controllers → Hand targets
         if (leftControllerTransform && leftHandIKTarget)
         {
-            leftHandIKTarget.SetPositionAndRotation(
-                leftControllerTransform.position, leftControllerTransform.rotation);
+            ApplyMapping(leftControllerTransform, leftHandIKTarget, ref _calibLeftHand);
         }
         if (rightControllerTransform && rightHandIKTarget)
         {
-            rightHandIKTarget.SetPositionAndRotation(
-                rightControllerTransform.position, rightControllerTransform.rotation);
+            ApplyMapping(rightControllerTransform, rightHandIKTarget, ref _calibRightHand);
         }
 
         // Trackers → Body targets
         if (_pelvisIdx >= 0 && pelvisIKTarget)
         {
             Transform t = allTrackerTransforms[_pelvisIdx];
-            Vector3 pelvisPos = t.position;
-            Quaternion pelvisRot = t.rotation;
+            Vector3 devicePos = t.position;
+            Quaternion deviceRot = t.rotation;
 
             if (torsoTrackerMount == TorsoTrackerMount.Chest)
             {
-                pelvisPos = t.position + t.rotation * chestToPelvisOffset;
+                devicePos += t.rotation * chestToPelvisOffset;
             }
 
-            if (pelvisYawOnly)
+            if (_mappingCalibrated)
             {
-                Vector3 euler = pelvisRot.eulerAngles;
-                pelvisRot = Quaternion.Euler(0f, euler.y, 0f);
-            }
+                Vector3 posDelta = devicePos - _calibPelvis.devicePos;
+                Quaternion rotDelta = deviceRot * Quaternion.Inverse(_calibPelvis.deviceRot);
 
-            pelvisIKTarget.SetPositionAndRotation(pelvisPos, pelvisRot);
+                if (pelvisYawOnly)
+                {
+                    Vector3 euler = rotDelta.eulerAngles;
+                    rotDelta = Quaternion.Euler(0f, euler.y, 0f);
+                }
+
+                pelvisIKTarget.SetPositionAndRotation(
+                    _calibPelvis.targetPos + posDelta,
+                    rotDelta * _calibPelvis.targetRot);
+            }
+            else
+            {
+                if (pelvisYawOnly)
+                {
+                    Vector3 euler = deviceRot.eulerAngles;
+                    deviceRot = Quaternion.Euler(0f, euler.y, 0f);
+                }
+                pelvisIKTarget.SetPositionAndRotation(devicePos, deviceRot);
+            }
         }
 
         if (_leftFootIdx >= 0 && leftFootIKTarget)
         {
-            Transform t = allTrackerTransforms[_leftFootIdx];
-            leftFootIKTarget.SetPositionAndRotation(t.position, t.rotation);
+            ApplyMapping(allTrackerTransforms[_leftFootIdx], leftFootIKTarget, ref _calibLeftFoot);
         }
 
         if (_rightFootIdx >= 0 && rightFootIKTarget)
         {
-            Transform t = allTrackerTransforms[_rightFootIdx];
-            rightFootIKTarget.SetPositionAndRotation(t.position, t.rotation);
+            ApplyMapping(allTrackerTransforms[_rightFootIdx], rightFootIKTarget, ref _calibRightFoot);
         }
 
         // Optional knee trackers
         if (_leftKneeIdx >= 0 && leftKneeIKTarget)
         {
-            Transform t = allTrackerTransforms[_leftKneeIdx];
-            leftKneeIKTarget.SetPositionAndRotation(t.position, t.rotation);
+            ApplyMapping(allTrackerTransforms[_leftKneeIdx], leftKneeIKTarget, ref _calibLeftKnee);
         }
 
         if (_rightKneeIdx >= 0 && rightKneeIKTarget)
         {
-            Transform t = allTrackerTransforms[_rightKneeIdx];
-            rightKneeIKTarget.SetPositionAndRotation(t.position, t.rotation);
+            ApplyMapping(allTrackerTransforms[_rightKneeIdx], rightKneeIKTarget, ref _calibRightKnee);
+        }
+    }
+
+    private void ApplyMapping(Transform device, Transform ikTarget, ref CalibrationPair pair)
+    {
+        if (_mappingCalibrated)
+        {
+            Vector3 posDelta = device.position - pair.devicePos;
+            Quaternion rotDelta = device.rotation * Quaternion.Inverse(pair.deviceRot);
+            ikTarget.SetPositionAndRotation(
+                pair.targetPos + posDelta,
+                rotDelta * pair.targetRot);
+        }
+        else
+        {
+            ikTarget.SetPositionAndRotation(device.position, device.rotation);
         }
     }
 
@@ -387,6 +450,7 @@ public class FullBodyTrackingManager : MonoBehaviour
                           $"Aktif tracker: [{active}]\n" +
                           $"HMD: {(hmdTransform ? "Var" : "Yok")}\n" +
                           $"Kontrolcüler: {(leftControllerTransform ? "L" : "-")}/{(rightControllerTransform ? "R" : "-")}\n" +
+                          $"Hand Source: {(leftControllerTransform && rightControllerTransform ? "Controllers" : "Controller Missing")}\n" +
                           $"{assignment}";
     }
 
@@ -401,6 +465,90 @@ public class FullBodyTrackingManager : MonoBehaviour
     // ───────────────────────── Public Accessors ─────────────────────────
 
     public bool IsAssigned => _assigned;
+    public bool IsMappingCalibrated => _mappingCalibrated;
+
+    /// <summary>
+    /// Forces an immediate scan and target update in the same frame.
+    /// Useful before calibration so offsets are computed from up-to-date targets.
+    /// </summary>
+    public void RefreshAndDriveTargetsNow()
+    {
+        ScanAndAssign();
+        if (_assigned)
+        {
+            DriveIKTargets();
+        }
+    }
+
+    /// <summary>
+    /// Captures current device↔IK-target pairs for delta-based mapping.
+    /// Call AFTER IK targets have been snapped to avatar bones (T-pose).
+    /// </summary>
+    public void CalibrateMapping()
+    {
+        if (!_assigned)
+        {
+            Debug.LogWarning("[FullBodyTrackingManager] CalibrateMapping failed: trackers not assigned.");
+            return;
+        }
+
+        // HMD
+        if (hmdTransform && headIKTarget)
+            _calibHead = CaptureCalibrationPair(hmdTransform.position, hmdTransform.rotation, headIKTarget);
+
+        // Controllers
+        if (leftControllerTransform && leftHandIKTarget)
+            _calibLeftHand = CaptureCalibrationPair(leftControllerTransform.position, leftControllerTransform.rotation, leftHandIKTarget);
+        if (rightControllerTransform && rightHandIKTarget)
+            _calibRightHand = CaptureCalibrationPair(rightControllerTransform.position, rightControllerTransform.rotation, rightHandIKTarget);
+
+        // Pelvis (apply chest offset if needed)
+        if (_pelvisIdx >= 0 && pelvisIKTarget)
+        {
+            Transform t = allTrackerTransforms[_pelvisIdx];
+            Vector3 dPos = t.position;
+            if (torsoTrackerMount == TorsoTrackerMount.Chest)
+                dPos += t.rotation * chestToPelvisOffset;
+            _calibPelvis = CaptureCalibrationPair(dPos, t.rotation, pelvisIKTarget);
+        }
+
+        // Feet
+        if (_leftFootIdx >= 0 && leftFootIKTarget)
+            _calibLeftFoot = CaptureCalibrationPair(allTrackerTransforms[_leftFootIdx], leftFootIKTarget);
+        if (_rightFootIdx >= 0 && rightFootIKTarget)
+            _calibRightFoot = CaptureCalibrationPair(allTrackerTransforms[_rightFootIdx], rightFootIKTarget);
+
+        // Knees
+        if (_leftKneeIdx >= 0 && leftKneeIKTarget)
+            _calibLeftKnee = CaptureCalibrationPair(allTrackerTransforms[_leftKneeIdx], leftKneeIKTarget);
+        if (_rightKneeIdx >= 0 && rightKneeIKTarget)
+            _calibRightKnee = CaptureCalibrationPair(allTrackerTransforms[_rightKneeIdx], rightKneeIKTarget);
+
+        _mappingCalibrated = true;
+        Debug.Log("[FullBodyTrackingManager] Delta mapping calibrated.");
+    }
+
+    private static CalibrationPair CaptureCalibrationPair(Transform device, Transform target)
+    {
+        return new CalibrationPair
+        {
+            devicePos = device.position,
+            deviceRot = device.rotation,
+            targetPos = target.position,
+            targetRot = target.rotation
+        };
+    }
+
+    private static CalibrationPair CaptureCalibrationPair(Vector3 devicePos, Quaternion deviceRot, Transform target)
+    {
+        return new CalibrationPair
+        {
+            devicePos = devicePos,
+            deviceRot = deviceRot,
+            targetPos = target.position,
+            targetRot = target.rotation
+        };
+    }
 
     public bool GetAssignment(out int pelvis, out int leftFoot, out int rightFoot,
                                out int leftKnee, out int rightKnee)

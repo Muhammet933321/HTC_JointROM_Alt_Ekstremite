@@ -40,6 +40,18 @@ namespace Wave.Generic.Sample
 		[SerializeField]
 		private List<string> s_GraphicTags = new List<string>();
 		public List<string> GraphicTags { get { return s_GraphicTags; } set { s_GraphicTags = value; } }
+
+		[SerializeField]
+		private bool m_EnableIntervalLog = false;
+		public bool EnableIntervalLog { get { return m_EnableIntervalLog; } set { m_EnableIntervalLog = value; } }
+
+		[SerializeField]
+		private int m_LogIntervalFrames = 300;
+		public int LogIntervalFrames
+		{
+			get { return m_LogIntervalFrames; }
+			set { m_LogIntervalFrames = Mathf.Max(1, value); }
+		}
 		#endregion
 
 		private Camera m_Camera = null;
@@ -72,9 +84,10 @@ namespace Wave.Generic.Sample
 		protected bool m_Interactable = true;
 		protected virtual void Update()
 		{
+			int interval = Mathf.Max(1, m_LogIntervalFrames);
 			logFrame++;
-			logFrame %= 300;
-			printIntervalLog = (logFrame == 0);
+			logFrame %= interval;
+			printIntervalLog = m_EnableIntervalLog && (logFrame == 0);
 
 			if (!m_Interactable) return;
 
