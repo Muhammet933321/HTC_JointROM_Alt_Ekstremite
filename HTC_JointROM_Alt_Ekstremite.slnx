@@ -2,7 +2,7 @@
   <Project Path="VIVE.OpenXR.Samples.csproj" />
   <Project Path="HTC.VIVE.OPENXR.SceneUnderstandingSample.csproj" />
   <Project Path="VIVE.OpenXR.Toolkits.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="VIVE.TMPCheck.csproj" />
 </Solution>
