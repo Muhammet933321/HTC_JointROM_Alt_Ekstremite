@@ -1599,8 +1599,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9549,8 +9549,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -12929,8 +12929,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -14814,8 +14814,8 @@ MonoBehaviour:
   rightFootTarget: {fileID: 1657215722}
   leftElbowHintTarget: {fileID: 0}
   rightElbowHintTarget: {fileID: 0}
-  leftKneeTracker: {fileID: 1843112251}
-  rightKneeTracker: {fileID: 1104557590}
+  leftKneeHintTarget: {fileID: 1843112251}
+  rightKneeHintTarget: {fileID: 1104557590}
   armIKWeight: 1
   legIKWeight: 1
   headWeight: 1
@@ -14999,11 +14999,9 @@ MonoBehaviour:
   - {fileID: 1445146447}
   - {fileID: 1362971966}
   - {fileID: 1030522860}
-  - {fileID: 2003644520}
-  - {fileID: 1396036843}
   hmdTransform: {fileID: 308494379}
-  leftControllerTransform: {fileID: 224568548}
-  rightControllerTransform: {fileID: 209816298}
+  leftControllerTransform: {fileID: 1571746322}
+  rightControllerTransform: {fileID: 1667295166}
   ikSolver: {fileID: 1194146646}
   headIKTarget: {fileID: 2090612444}
   leftHandIKTarget: {fileID: 10655739}
@@ -15016,7 +15014,7 @@ MonoBehaviour:
   statusText: {fileID: 1793903475}
   scanInterval: 1
   requiredTrackerCount: 3
-  enableKneeTrackers: 1
+  enableKneeTrackers: 0
   assignmentMode: 1
   torsoTrackerIndex: 0
   leftFootTrackerIndex: 1
@@ -15049,7 +15047,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1203307845}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fa03552342810241a285a7b8262ac0c, type: 3}
   m_Name: 
@@ -15062,6 +15060,8 @@ MonoBehaviour:
   rightFootTarget: {fileID: 1657215722}
   leftKneeHintTarget: {fileID: 0}
   rightKneeHintTarget: {fileID: 0}
+  leftElbowHintTarget: {fileID: 0}
+  rightElbowHintTarget: {fileID: 0}
   trackingManager: {fileID: 1203307848}
   ikSolver: {fileID: 1194146646}
   runOnlyWhenTrackingIsMissing: 1
@@ -15076,6 +15076,8 @@ MonoBehaviour:
   footVerticalRange: 0.45
   handVerticalRange: 0.5
   kneeHintForwardOffset: 0.22
+  elbowHintForwardOffset: -0.15
+  elbowHintSideOffset: 0.18
 --- !u!1 &1204823539
 GameObject:
   m_ObjectHideFlags: 0
@@ -15518,8 +15520,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -18858,8 +18860,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -19090,8 +19092,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -22962,8 +22964,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -26648,8 +26650,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -27910,8 +27912,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
