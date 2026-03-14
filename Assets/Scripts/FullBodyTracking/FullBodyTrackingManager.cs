@@ -17,6 +17,18 @@ using TMPro;
 [DisallowMultipleComponent]
 public class FullBodyTrackingManager : MonoBehaviour
 {
+    private enum TrackerAssignmentMode
+    {
+        AutoBySpatialAnalysis,
+        ExplicitIndices
+    }
+
+    private enum TorsoTrackerMount
+    {
+        Waist,
+        Chest
+    }
+
     [Header("=== Tracker Transform'ları ===")]
     [Tooltip("Sahnedeki tüm olası tracker Transform'ları (sıralı: 0, 1, 2, ...)")]
     [SerializeField] private Transform[] allTrackerTransforms;
@@ -54,6 +66,26 @@ public class FullBodyTrackingManager : MonoBehaviour
     [SerializeField] private int requiredTrackerCount = 3;
     [Tooltip("5 tracker varsa 2'si diz olarak atansın mı?")]
     [SerializeField] private bool enableKneeTrackers = false;
+
+    [Header("=== Tracker Atama Modu ===")]
+    [Tooltip("Auto: aktif tracker'ları uzaysal analizle otomatik atar. Explicit: index'leri elle sabitlersiniz.")]
+    [SerializeField] private TrackerAssignmentMode assignmentMode = TrackerAssignmentMode.ExplicitIndices;
+
+    [Header("=== Explicit Tracker Index Atamaları ===")]
+    [Tooltip("Torso tracker index'i (bel veya gogus).")]
+    [SerializeField] private int torsoTrackerIndex = 0;
+    [SerializeField] private int leftFootTrackerIndex = 1;
+    [SerializeField] private int rightFootTrackerIndex = 2;
+    [SerializeField] private int leftKneeTrackerIndex = 3;
+    [SerializeField] private int rightKneeTrackerIndex = 4;
+
+    [Header("=== Torso Tracker Donusumu ===")]
+    [Tooltip("Torso tracker beldeyse Waist, gogusteyse Chest secin.")]
+    [SerializeField] private TorsoTrackerMount torsoTrackerMount = TorsoTrackerMount.Waist;
+    [Tooltip("Chest modunda tracker'dan pelvise lokal ofset (metre).")]
+    [SerializeField] private Vector3 chestToPelvisOffset = new(0f, -0.27f, 0.03f);
+    [Tooltip("Pelvis rotasyonunda sadece yaw (Y ekseni) kullanilsin.")]
+    [SerializeField] private bool pelvisYawOnly = true;
 
     // Internal state
     private readonly List<InputDevice> _devices = new();
@@ -98,6 +130,14 @@ public class FullBodyTrackingManager : MonoBehaviour
     /// </summary>
     public void ScanAndAssign()
     {
+        if (allTrackerTransforms == null || allTrackerTransforms.Length == 0)
+        {
+            _assigned = false;
+            _pelvisIdx = _leftFootIdx = _rightFootIdx = _leftKneeIdx = _rightKneeIdx = -1;
+            UpdateStatusUI();
+            return;
+        }
+
         _devices.Clear();
         InputDevices.GetDevicesAtXRNode(XRNode.HardwareTracker, _devices);
 
@@ -114,8 +154,20 @@ public class FullBodyTrackingManager : MonoBehaviour
 
         if (_activeTrackerIndices.Count >= requiredTrackerCount)
         {
-            AssignTrackersBySpatialAnalysis();
-            _assigned = true;
+            if (assignmentMode == TrackerAssignmentMode.ExplicitIndices)
+            {
+                _assigned = AssignTrackersByExplicitIndices();
+            }
+            else
+            {
+                AssignTrackersBySpatialAnalysis();
+                _assigned = _pelvisIdx >= 0 && _leftFootIdx >= 0 && _rightFootIdx >= 0;
+            }
+
+            if (!_assigned)
+            {
+                _pelvisIdx = _leftFootIdx = _rightFootIdx = _leftKneeIdx = _rightKneeIdx = -1;
+            }
         }
         else
         {
@@ -127,6 +179,36 @@ public class FullBodyTrackingManager : MonoBehaviour
     }
 
     // ───────────────────────── Spatial Assignment ─────────────────────────
+
+    private bool AssignTrackersByExplicitIndices()
+    {
+        if (!IsTrackerIndexActiveAndValid(torsoTrackerIndex) ||
+            !IsTrackerIndexActiveAndValid(leftFootTrackerIndex) ||
+            !IsTrackerIndexActiveAndValid(rightFootTrackerIndex))
+        {
+            return false;
+        }
+
+        _pelvisIdx = torsoTrackerIndex;
+        _leftFootIdx = leftFootTrackerIndex;
+        _rightFootIdx = rightFootTrackerIndex;
+
+        if (enableKneeTrackers)
+        {
+            bool hasLeftKnee = IsTrackerIndexActiveAndValid(leftKneeTrackerIndex);
+            bool hasRightKnee = IsTrackerIndexActiveAndValid(rightKneeTrackerIndex);
+
+            _leftKneeIdx = hasLeftKnee ? leftKneeTrackerIndex : -1;
+            _rightKneeIdx = hasRightKnee ? rightKneeTrackerIndex : -1;
+        }
+        else
+        {
+            _leftKneeIdx = -1;
+            _rightKneeIdx = -1;
+        }
+
+        return true;
+    }
 
     private void AssignTrackersBySpatialAnalysis()
     {
@@ -177,7 +259,6 @@ public class FullBodyTrackingManager : MonoBehaviour
     {
         // Use HMD as reference for left/right determination
         Vector3 reference = hmdTransform != null ? hmdTransform.position : Vector3.zero;
-        Vector3 forwardRef = hmdTransform != null ? hmdTransform.forward : Vector3.forward;
         Vector3 rightRef = hmdTransform != null ? hmdTransform.right : Vector3.right;
 
         // Project both trackers onto the left-right axis
@@ -195,6 +276,13 @@ public class FullBodyTrackingManager : MonoBehaviour
             leftIdx = b.index;
             rightIdx = a.index;
         }
+    }
+
+    private bool IsTrackerIndexActiveAndValid(int index)
+    {
+        if (index < 0 || index >= allTrackerTransforms.Length) return false;
+        if (allTrackerTransforms[index] == null) return false;
+        return _activeTrackerIndices.Contains(index);
     }
 
     // ───────────────────────── Drive IK Targets ─────────────────────────
@@ -223,7 +311,21 @@ public class FullBodyTrackingManager : MonoBehaviour
         if (_pelvisIdx >= 0 && pelvisIKTarget)
         {
             Transform t = allTrackerTransforms[_pelvisIdx];
-            pelvisIKTarget.SetPositionAndRotation(t.position, t.rotation);
+            Vector3 pelvisPos = t.position;
+            Quaternion pelvisRot = t.rotation;
+
+            if (torsoTrackerMount == TorsoTrackerMount.Chest)
+            {
+                pelvisPos = t.position + t.rotation * chestToPelvisOffset;
+            }
+
+            if (pelvisYawOnly)
+            {
+                Vector3 euler = pelvisRot.eulerAngles;
+                pelvisRot = Quaternion.Euler(0f, euler.y, 0f);
+            }
+
+            pelvisIKTarget.SetPositionAndRotation(pelvisPos, pelvisRot);
         }
 
         if (_leftFootIdx >= 0 && leftFootIKTarget)
@@ -267,11 +369,14 @@ public class FullBodyTrackingManager : MonoBehaviour
         {
             assignment = $"Pelvis: Tracker {_pelvisIdx}\n" +
                          $"Sol Ayak: Tracker {_leftFootIdx}\n" +
-                         $"Sağ Ayak: Tracker {_rightFootIdx}";
+                         $"Sağ Ayak: Tracker {_rightFootIdx}\n" +
+                         $"Mod: {(assignmentMode == TrackerAssignmentMode.ExplicitIndices ? "Explicit" : "Auto")}";
             if (_leftKneeIdx >= 0)
                 assignment += $"\nSol Diz: Tracker {_leftKneeIdx}";
             if (_rightKneeIdx >= 0)
                 assignment += $"\nSağ Diz: Tracker {_rightKneeIdx}";
+
+            assignment += $"\nTorso Mount: {(torsoTrackerMount == TorsoTrackerMount.Chest ? "Chest" : "Waist")}";
         }
         else
         {

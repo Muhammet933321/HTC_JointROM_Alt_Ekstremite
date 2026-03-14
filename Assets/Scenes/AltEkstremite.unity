@@ -14812,6 +14812,8 @@ MonoBehaviour:
   pelvisTarget: {fileID: 1783244807}
   leftFootTarget: {fileID: 442287047}
   rightFootTarget: {fileID: 1657215722}
+  leftElbowHintTarget: {fileID: 0}
+  rightElbowHintTarget: {fileID: 0}
   leftKneeTracker: {fileID: 1843112251}
   rightKneeTracker: {fileID: 1104557590}
   armIKWeight: 1
@@ -14922,6 +14924,7 @@ GameObject:
   - component: {fileID: 1203307848}
   - component: {fileID: 1203307847}
   - component: {fileID: 1203307846}
+  - component: {fileID: 1203307850}
   m_Layer: 0
   m_Name: '[FullBodyTracking]'
   m_TagString: Untagged
@@ -14992,7 +14995,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b80bd51b37800b948ab7a4e88d24c2d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allTrackerTransforms: []
+  allTrackerTransforms:
+  - {fileID: 1445146447}
+  - {fileID: 1362971966}
+  - {fileID: 1030522860}
+  - {fileID: 2003644520}
+  - {fileID: 1396036843}
   hmdTransform: {fileID: 308494379}
   leftControllerTransform: {fileID: 224568548}
   rightControllerTransform: {fileID: 209816298}
@@ -15008,7 +15016,16 @@ MonoBehaviour:
   statusText: {fileID: 1793903475}
   scanInterval: 1
   requiredTrackerCount: 3
-  enableKneeTrackers: 0
+  enableKneeTrackers: 1
+  assignmentMode: 1
+  torsoTrackerIndex: 0
+  leftFootTrackerIndex: 1
+  rightFootTrackerIndex: 2
+  leftKneeTrackerIndex: 3
+  rightKneeTrackerIndex: 4
+  torsoTrackerMount: 1
+  chestToPelvisOffset: {x: 0, y: -0.27, z: 0.03}
+  pelvisYawOnly: 1
 --- !u!4 &1203307849
 Transform:
   m_ObjectHideFlags: 0
@@ -15025,6 +15042,40 @@ Transform:
   - {fileID: 1972481618}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1203307850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1203307845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fa03552342810241a285a7b8262ac0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headTarget: {fileID: 2090612444}
+  pelvisTarget: {fileID: 1783244807}
+  leftHandTarget: {fileID: 10655739}
+  rightHandTarget: {fileID: 1516822029}
+  leftFootTarget: {fileID: 442287047}
+  rightFootTarget: {fileID: 1657215722}
+  leftKneeHintTarget: {fileID: 0}
+  rightKneeHintTarget: {fileID: 0}
+  trackingManager: {fileID: 1203307848}
+  ikSolver: {fileID: 1194146646}
+  runOnlyWhenTrackingIsMissing: 1
+  autoCalibrateOnStart: 1
+  snapTargetsToAvatarOnStart: 1
+  recoverKey: 30
+  hardResetKey: 29
+  enableSimulation: 1
+  pelvisMoveSpeed: 0.6
+  pelvisYawSpeed: 90
+  limbMoveSpeed: 0.4
+  footVerticalRange: 0.45
+  handVerticalRange: 0.5
+  kneeHintForwardOffset: 0.22
 --- !u!1 &1204823539
 GameObject:
   m_ObjectHideFlags: 0

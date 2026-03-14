@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Full-body IK solver that drives a Mixamo humanoid avatar using:
@@ -70,11 +71,19 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Sağ ayak bileği tracker")]
     [SerializeField] private Transform rightFootTarget;
 
-    [Header("Opsiyonel Diz Tracker'ları (İleride Eklenebilir)")]
-    [Tooltip("Sol diz tracker — atanırsa diz hint pozisyonu olarak kullanılır")]
-    [SerializeField] private Transform leftKneeTracker;
-    [Tooltip("Sağ diz tracker — atanırsa diz hint pozisyonu olarak kullanılır")]
-    [SerializeField] private Transform rightKneeTracker;
+    [Header("Opsiyonel Dirsek Hint Objeleri")]
+    [Tooltip("Sol dirsek bend düzlemi için referans.")]
+    [SerializeField] private Transform leftElbowHintTarget;
+    [Tooltip("Sağ dirsek bend düzlemi için referans.")]
+    [SerializeField] private Transform rightElbowHintTarget;
+
+    [Header("Opsiyonel Diz Hint Objeleri")]
+    [Tooltip("Sol dizin bukunme duzlemi icin hint hedefi.")]
+    [FormerlySerializedAs("leftKneeTracker")]
+    [SerializeField] private Transform leftKneeHintTarget;
+    [Tooltip("Sag dizin bukunme duzlemi icin hint hedefi.")]
+    [FormerlySerializedAs("rightKneeTracker")]
+    [SerializeField] private Transform rightKneeHintTarget;
 
     // ───────────────────────── Settings ─────────────────────────
     [Header("=== Ayarlar ===")]
@@ -154,15 +163,15 @@ public class FullBodyIKSolver : MonoBehaviour
 
         // 4. Kollar — Two-Bone IK
         SolveArm(leftUpperArmBone, leftForeArmBone, leftHandBone,
-                 leftHandTarget, isLeft: true);
+                 leftHandTarget, leftElbowHintTarget, isLeft: true);
         SolveArm(rightUpperArmBone, rightForeArmBone, rightHandBone,
-                 rightHandTarget, isLeft: false);
+                 rightHandTarget, rightElbowHintTarget, isLeft: false);
 
         // 5. Bacaklar — Two-Bone IK
         SolveLeg(leftUpLegBone, leftLegBone, leftFootBone,
-                 leftFootTarget, leftKneeTracker, _leftFootOffset, isLeft: true);
+                 leftFootTarget, leftKneeHintTarget, _leftFootOffset, isLeft: true);
         SolveLeg(rightUpLegBone, rightLegBone, rightFootBone,
-                 rightFootTarget, rightKneeTracker, _rightFootOffset, isLeft: false);
+                 rightFootTarget, rightKneeHintTarget, _rightFootOffset, isLeft: false);
     }
 
     // ───────────────────────── Calibration ─────────────────────────
@@ -239,6 +248,30 @@ public class FullBodyIKSolver : MonoBehaviour
     }
 
     public bool IsCalibrated => _calibrated;
+
+    /// <summary>
+    /// Aligns IK target transforms to the avatar's current bone transforms.
+    /// Useful in editor simulation when scene targets were left in an old location.
+    /// </summary>
+    public void SnapTargetsToCurrentBones()
+    {
+        SnapTarget(pelvisTarget, hipsBone);
+        SnapTarget(headTarget, headBone);
+        SnapTarget(leftHandTarget, leftHandBone);
+        SnapTarget(rightHandTarget, rightHandBone);
+        SnapTarget(leftFootTarget, leftFootBone);
+        SnapTarget(rightFootTarget, rightFootBone);
+
+        if (leftKneeHintTarget != null && leftLegBone != null)
+        {
+            leftKneeHintTarget.position = leftLegBone.position;
+        }
+
+        if (rightKneeHintTarget != null && rightLegBone != null)
+        {
+            rightKneeHintTarget.position = rightLegBone.position;
+        }
+    }
 
     // ───────────────────────── Solver Methods ─────────────────────────
 
@@ -319,21 +352,30 @@ public class FullBodyIKSolver : MonoBehaviour
     }
 
     private void SolveArm(Transform upperArm, Transform foreArm, Transform hand,
-                          Transform target, bool isLeft)
+                          Transform target, Transform elbowHint, bool isLeft)
     {
         if (!upperArm || !foreArm || !hand || !target) return;
         if (armIKWeight <= 0f) return;
 
         // Calculate elbow hint position
-        // Elbows bend backwards (negative forward direction relative to body facing)
-        Vector3 bodyForward = hipsBone.forward;
-        Vector3 bodySide = isLeft ? -hipsBone.right : hipsBone.right;
-        Vector3 elbowBendDir = -bodyForward + (isLeft ? -bodySide : bodySide) * 0.3f - Vector3.up * 0.5f;
-        elbowBendDir = elbowBendDir.normalized;
+        Vector3 hintPos;
+        if (elbowHint != null)
+        {
+            hintPos = elbowHint.position;
+        }
+        else
+        {
+            Vector3 bodyForward = hipsBone.forward;
+            Vector3 bodySide = isLeft ? -hipsBone.right : hipsBone.right;
+            Vector3 elbowBendDir = (-bodyForward * 0.55f) + (bodySide * 0.45f) + (Vector3.down * 0.15f);
 
-        Vector3 hintPos = TwoBoneIKSolver.CalculateHintPosition(
-            upperArm.position, foreArm.position, hand.position,
-            elbowBendDir, elbowHintDistance);
+            float upperLen = (foreArm.position - upperArm.position).magnitude;
+            float lowerLen = (hand.position - foreArm.position).magnitude;
+            float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
+            float hintDistance = Mathf.Max(elbowHintDistance, limbLen * 0.35f);
+
+            hintPos = upperArm.position + elbowBendDir.normalized * hintDistance;
+        }
 
         // Target rotation
         Quaternion handOffset = isLeft ? _leftHandOffset : _rightHandOffset;
@@ -347,7 +389,7 @@ public class FullBodyIKSolver : MonoBehaviour
     }
 
     private void SolveLeg(Transform upLeg, Transform leg, Transform foot,
-                          Transform footTarget, Transform kneeTracker,
+                          Transform footTarget, Transform kneeHint,
                           Quaternion footOffset, bool isLeft)
     {
         if (!upLeg || !leg || !foot || !footTarget) return;
@@ -355,18 +397,23 @@ public class FullBodyIKSolver : MonoBehaviour
 
         // Knee hint position
         Vector3 hintPos;
-        if (kneeTracker != null)
+        if (kneeHint != null)
         {
             // If knee tracker is available, use it directly as the hint
-            hintPos = kneeTracker.position;
+            hintPos = kneeHint.position;
         }
         else
         {
-            // Default: knees bend forward
-            Vector3 kneeBendDir = hipsBone.forward + Vector3.up * 0.1f;
-            hintPos = TwoBoneIKSolver.CalculateHintPosition(
-                upLeg.position, leg.position, foot.position,
-                kneeBendDir, kneeHintDistance);
+            // Stable default: bend mostly forward and slightly outward
+            Vector3 side = isLeft ? -hipsBone.right : hipsBone.right;
+            Vector3 kneeBendDir = (hipsBone.forward * 0.85f) + (side * 0.2f) + (Vector3.up * 0.05f);
+
+            float upperLen = (leg.position - upLeg.position).magnitude;
+            float lowerLen = (foot.position - leg.position).magnitude;
+            float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
+            float hintDistance = Mathf.Max(kneeHintDistance, limbLen * 0.35f);
+
+            hintPos = upLeg.position + kneeBendDir.normalized * hintDistance;
         }
 
         // Target rotation
@@ -389,6 +436,12 @@ public class FullBodyIKSolver : MonoBehaviour
         if (spine2Bone) _spine2InitLocal = spine2Bone.localRotation;
         if (neckBone) _neckInitLocal = neckBone.localRotation;
         if (headBone) _headInitLocal = headBone.localRotation;
+    }
+
+    private static void SnapTarget(Transform target, Transform source)
+    {
+        if (target == null || source == null) return;
+        target.SetPositionAndRotation(source.position, source.rotation);
     }
 
     private Transform[] GetSpineChain()
@@ -426,8 +479,8 @@ public class FullBodyIKSolver : MonoBehaviour
         if (rightFootTarget) Gizmos.DrawWireSphere(rightFootTarget.position, 0.03f);
 
         Gizmos.color = Color.yellow;
-        if (leftKneeTracker) Gizmos.DrawWireSphere(leftKneeTracker.position, 0.03f);
-        if (rightKneeTracker) Gizmos.DrawWireSphere(rightKneeTracker.position, 0.03f);
+        if (leftKneeHintTarget) Gizmos.DrawWireSphere(leftKneeHintTarget.position, 0.03f);
+        if (rightKneeHintTarget) Gizmos.DrawWireSphere(rightKneeHintTarget.position, 0.03f);
 
         // Draw bone chain
         if (hipsBone && headBone)
