@@ -15024,6 +15024,8 @@ MonoBehaviour:
   torsoTrackerMount: 1
   chestToPelvisOffset: {x: 0, y: -0.27, z: 0.03}
   pelvisYawOnly: 1
+  fallbackToAutoWhenExplicitInvalid: 1
+  verboseRuntimeLogs: 0
 --- !u!4 &1203307849
 Transform:
   m_ObjectHideFlags: 0

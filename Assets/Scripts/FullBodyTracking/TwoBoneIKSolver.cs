@@ -42,18 +42,24 @@ public class TwoBoneIKSolver
         // Distance from root to blended target
         float targetDist = (blendedTarget - aPos).magnitude;
 
-        // Clamp target distance to reachable range
+        // Clamp target distance to reachable range.
+        // Use proportional epsilon for maxReach to guarantee a minimum bend angle
+        // (~5-7°) regardless of limb length. This prevents the near-extension
+        // singularity where the bend plane becomes undefined and small movements
+        // near full extension produce no visible bending.
         float maxReach = upperLen + lowerLen;
         float minReach = Mathf.Abs(upperLen - lowerLen);
-        targetDist = Mathf.Clamp(targetDist, minReach + 0.001f, maxReach - 0.001f);
+        float softMaxReach = maxReach * 0.998f;
+        float clampedDist = Mathf.Clamp(targetDist, minReach + 0.001f, softMaxReach);
 
-        // Recalculate blended target at clamped distance
-        if (targetDist < maxReach - 0.001f || targetDist > minReach + 0.001f)
+        // Recalculate blended target if clamping changed the distance
+        if (!Mathf.Approximately(clampedDist, targetDist))
         {
             Vector3 dir = (blendedTarget - aPos).normalized;
             if (dir.sqrMagnitude < 0.001f) dir = Vector3.forward;
-            blendedTarget = aPos + dir * targetDist;
+            blendedTarget = aPos + dir * clampedDist;
         }
+        targetDist = clampedDist;
 
         // --- Law of Cosines to find the angle at the mid joint ---
         // Triangle sides: a = lowerLen, b = upperLen, c = targetDist
@@ -79,32 +85,41 @@ public class TwoBoneIKSolver
         Vector3 rootToTarget = (blendedTarget - aPos).normalized;
         if (rootToTarget.sqrMagnitude < 0.001f) rootToTarget = Vector3.forward;
 
-        // The plane normal for bending — defined by hint
-        // First, compute the "no-hint" plane (root → target)
-        Vector3 rootToMidDir = (bPos - aPos).normalized;
+        // --- Determine the bend plane from the hint position ---
+        // Instead of using Cross(rootToTarget, hintDir) which degenerates when
+        // the hint is nearly collinear with the limb axis (common near full
+        // extension), we project the hint direction onto the plane perpendicular
+        // to rootToTarget. This always yields a stable bend direction as long as
+        // the hint isn't exactly on the limb axis.
 
-        // Build the bend plane from hint
-        Vector3 hintDir = (hintPos - aPos).normalized;
-        Vector3 acNorm = Vector3.Cross(rootToTarget, hintDir);
-        if (acNorm.sqrMagnitude < 0.0001f)
+        Vector3 rootToHint = hintPos - aPos;
+        Vector3 hintPerp = Vector3.ProjectOnPlane(rootToHint, rootToTarget);
+
+        if (hintPerp.sqrMagnitude < 0.0001f)
         {
-            // Hint is collinear with root→target, fallback to existing mid position
-            acNorm = Vector3.Cross(rootToTarget, rootToMidDir);
-            if (acNorm.sqrMagnitude < 0.0001f)
-            {
-                acNorm = Vector3.Cross(rootToTarget, Vector3.up);
-                if (acNorm.sqrMagnitude < 0.0001f)
-                    acNorm = Vector3.Cross(rootToTarget, Vector3.right);
-            }
+            // Hint lies on the limb axis — fallback to current mid-joint offset
+            hintPerp = Vector3.ProjectOnPlane(bPos - aPos, rootToTarget);
         }
-        acNorm = acNorm.normalized;
+        if (hintPerp.sqrMagnitude < 0.0001f)
+        {
+            hintPerp = Vector3.ProjectOnPlane(Vector3.up, rootToTarget);
+        }
+        if (hintPerp.sqrMagnitude < 0.0001f)
+        {
+            hintPerp = Vector3.ProjectOnPlane(Vector3.right, rootToTarget);
+        }
+        hintPerp = hintPerp.normalized;
 
-        // Bend axis perpendicular to root→target in the hint plane
-        Vector3 bendAxis = acNorm;
+        // Bend axis: perpendicular to both rootToTarget and the projected hint.
+        // With this axis definition, AngleAxis(+angleRoot, bendAxis) rotates
+        // rootToTarget TOWARD hintPerp (mid joint goes toward the hint).
+        // The negative sign was a bug: it was rotating AWAY from the hint,
+        // causing knees/elbows to bend in the opposite direction from the hint.
+        Vector3 bendAxis = Vector3.Cross(rootToTarget, hintPerp).normalized;
 
-        // Root rotation: rotate rootToTarget by -angleRoot around bendAxis
-        Quaternion rootTargetRot = Quaternion.LookRotation(rootToTarget, Vector3.Cross(bendAxis, rootToTarget));
-        Vector3 upperDir = Quaternion.AngleAxis(-angleRoot * Mathf.Rad2Deg, bendAxis) * rootToTarget;
+        // Rotate rootToTarget by +angleRoot around bendAxis so the mid joint
+        // moves in the hint direction.
+        Vector3 upperDir = Quaternion.AngleAxis(angleRoot * Mathf.Rad2Deg, bendAxis) * rootToTarget;
 
         // New mid position
         Vector3 newBPos = aPos + upperDir * upperLen;

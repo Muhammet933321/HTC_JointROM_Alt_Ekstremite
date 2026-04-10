@@ -359,10 +359,7 @@ public class FullBodyTrackingManager : MonoBehaviour
                 Quaternion rotDelta = deviceRot * Quaternion.Inverse(_calibPelvis.deviceRot);
 
                 if (pelvisYawOnly)
-                {
-                    Vector3 euler = rotDelta.eulerAngles;
-                    rotDelta = Quaternion.Euler(0f, euler.y, 0f);
-                }
+                    rotDelta = ExtractYawOnly(rotDelta);
 
                 pelvisIKTarget.SetPositionAndRotation(
                     _calibPelvis.targetPos + posDelta,
@@ -371,10 +368,7 @@ public class FullBodyTrackingManager : MonoBehaviour
             else
             {
                 if (pelvisYawOnly)
-                {
-                    Vector3 euler = deviceRot.eulerAngles;
-                    deviceRot = Quaternion.Euler(0f, euler.y, 0f);
-                }
+                    deviceRot = ExtractYawOnly(deviceRot);
                 pelvisIKTarget.SetPositionAndRotation(devicePos, deviceRot);
             }
         }
@@ -559,5 +553,27 @@ public class FullBodyTrackingManager : MonoBehaviour
         leftKnee = _leftKneeIdx;
         rightKnee = _rightKneeIdx;
         return _assigned;
+    }
+
+    /// <summary>
+    /// Extracts only the yaw (Y-axis) component of a quaternion without using
+    /// eulerAngles, which is prone to gimbal lock and ±180° flips when the
+    /// tracker rotates past 90° on pitch or roll.
+    /// Projects the quaternion's forward vector onto the XZ plane and rebuilds
+    /// a clean yaw-only rotation from that, which is stable at all angles.
+    /// </summary>
+    private static Quaternion ExtractYawOnly(Quaternion q)
+    {
+        // Get the forward direction the rotation points to
+        Vector3 forward = q * Vector3.forward;
+
+        // Flatten to XZ plane (remove vertical component)
+        Vector3 flatForward = new Vector3(forward.x, 0f, forward.z);
+
+        // If the tracker is pointing nearly straight up or down, keep identity yaw
+        if (flatForward.sqrMagnitude < 0.0001f)
+            return Quaternion.identity;
+
+        return Quaternion.LookRotation(flatForward, Vector3.up);
     }
 }

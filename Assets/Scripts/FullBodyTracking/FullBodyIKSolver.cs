@@ -12,6 +12,7 @@ using UnityEngine.Serialization;
 /// Uses custom TwoBoneIKSolver for arms and legs.
 /// Drives Hips (NOT Spine) as the pelvis bone to fix the known hierarchy bug.
 /// </summary>
+[ExecuteAlways]
 [DisallowMultipleComponent]
 public class FullBodyIKSolver : MonoBehaviour
 {
@@ -123,6 +124,16 @@ public class FullBodyIKSolver : MonoBehaviour
     private Quaternion _leftHandOffset = Quaternion.identity;
     private Quaternion _rightHandOffset = Quaternion.identity;
 
+    // Per-limb hint directions stored in pelvis-local space at calibration time.
+    // At calibration (T-pose), we record exactly which direction each mid-joint
+    // (elbow / knee) points relative to the pelvis. At runtime we rotate these
+    // directions by the pelvis rotation to get a stable, body-relative hint that
+    // is never collinear with the limb axis regardless of body orientation.
+    private Vector3 _leftElbowHintDirLocal  = Vector3.back;
+    private Vector3 _rightElbowHintDirLocal = Vector3.back;
+    private Vector3 _leftKneeHintDirLocal   = Vector3.forward;
+    private Vector3 _rightKneeHintDirLocal  = Vector3.forward;
+
     // Initial bone local rotations (model bind pose)
     private Quaternion _hipsInitLocal;
     private Quaternion _spineInitLocal;
@@ -141,8 +152,27 @@ public class FullBodyIKSolver : MonoBehaviour
         CacheInitialBoneRotations();
     }
 
+    /// <summary>
+    /// Edit Mode'da IK'yı test etmek için: Inspector'da sağ tık → "Editor Kalibrasyon ve Test".
+    /// Kemikleri mevcut halinden kalibre eder, ardından LateUpdate Edit Mode'da da çalışır.
+    /// IK target objelerini Scene view'da sürükleyerek sonucu anlık görebilirsiniz.
+    /// </summary>
+    [ContextMenu("Editor Kalibrasyon ve Test")]
+    public void EditorCalibrateAndTest()
+    {
+        CacheInitialBoneRotations();
+        SnapTargetsToCurrentBones();
+        Calibrate();
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        Debug.Log("[FullBodyIKSolver] Editor kalibrasyon tamam — IK target'ları Scene view'da sürükleyebilirsiniz.");
+    }
+
     private void LateUpdate()
     {
+        // Edit mode'da her LateUpdate çağrısında solve çalışır.
+        // IK target objelerini Scene view'da sürüklediğinizde avatar anlık güncellenir.
         if (!_calibrated) return;
         if (!hipsBone) return;
 
@@ -212,6 +242,22 @@ public class FullBodyIKSolver : MonoBehaviour
         {
             _rightHandOffset = Quaternion.Inverse(rightHandTarget.rotation) * rightHandBone.rotation;
         }
+
+        // --- Compute foot-to-shin offsets ---
+        // Record foot rotation relative to shin direction so at runtime the foot
+        // always follows the shin naturally regardless of tracker orientation.
+        CalibrateFootShinOffset(leftLegBone, leftFootBone, ref _leftFootShinOffset);
+        CalibrateFootShinOffset(rightLegBone, rightFootBone, ref _rightFootShinOffset);
+
+        // --- Compute per-limb hint directions in pelvis-local space ---
+        // At T-pose the mid-joint (elbow/knee) position relative to the root
+        // joint projected off the limb axis gives us the exact bend direction.
+        // Storing it in pelvis-local space means at runtime we just rotate it
+        // by the pelvis rotation — always correct, never flips.
+        CalibrateHintDirection(leftUpperArmBone,  leftForeArmBone,  leftHandBone,  ref _leftElbowHintDirLocal);
+        CalibrateHintDirection(rightUpperArmBone, rightForeArmBone, rightHandBone, ref _rightElbowHintDirLocal);
+        CalibrateHintDirection(leftUpLegBone,     leftLegBone,      leftFootBone,  ref _leftKneeHintDirLocal);
+        CalibrateHintDirection(rightUpLegBone,    rightLegBone,     rightFootBone, ref _rightKneeHintDirLocal);
 
         _calibrated = true;
         CalibrationVersion++;
@@ -337,7 +383,6 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!upperArm || !foreArm || !hand || !target) return;
         if (armIKWeight <= 0f) return;
 
-        // Calculate elbow hint position
         Vector3 hintPos;
         if (elbowHint != null)
         {
@@ -345,16 +390,36 @@ public class FullBodyIKSolver : MonoBehaviour
         }
         else
         {
-            Vector3 bodyForward = hipsBone.forward;
-            Vector3 bodySide = isLeft ? -hipsBone.right : hipsBone.right;
-            Vector3 elbowBendDir = (-bodyForward * 0.55f) + (bodySide * 0.45f) + (Vector3.down * 0.15f);
-
             float upperLen = (foreArm.position - upperArm.position).magnitude;
             float lowerLen = (hand.position - foreArm.position).magnitude;
             float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
-            float hintDistance = Mathf.Max(elbowHintDistance, limbLen * 0.35f);
 
-            hintPos = upperArm.position + elbowBendDir.normalized * hintDistance;
+            // Project the calibrated bend direction off the UPPER ARM axis (not the full
+            // shoulder→hand axis). The upper arm direction is always well-defined and
+            // never collinear with the bend direction regardless of hand position.
+            Vector3 upperArmDir = (foreArm.position - upperArm.position).normalized;
+            if (upperArmDir.sqrMagnitude < 0.001f)
+                upperArmDir = isLeft ? -hipsBone.right : hipsBone.right;
+
+            Vector3 calibDirLocal = isLeft ? _leftElbowHintDirLocal : _rightElbowHintDirLocal;
+            Vector3 preferredBend = hipsBone.TransformDirection(calibDirLocal);
+
+            Vector3 hintDir = Vector3.ProjectOnPlane(preferredBend, upperArmDir);
+            if (hintDir.sqrMagnitude < 0.001f)
+                hintDir = Vector3.ProjectOnPlane(-hipsBone.forward, upperArmDir);
+            if (hintDir.sqrMagnitude < 0.001f)
+                hintDir = Vector3.ProjectOnPlane(Vector3.down, upperArmDir);
+            hintDir = hintDir.normalized;
+
+            // Place the hint at the midpoint of the shoulder→hand line, then push it
+            // perpendicularly by hintDistance. This guarantees the vector from root
+            // to hint always has a large perpendicular component, avoiding the
+            // near-collinear singularity inside TwoBoneIKSolver regardless of arm pose.
+            Vector3 rootToHandDir = (target.position - upperArm.position).normalized;
+            if (rootToHandDir.sqrMagnitude < 0.001f) rootToHandDir = isLeft ? -hipsBone.right : hipsBone.right;
+            Vector3 midPoint = upperArm.position + rootToHandDir * (limbLen * 0.5f);
+            float hintDistance = Mathf.Max(elbowHintDistance, limbLen * 0.6f);
+            hintPos = midPoint + hintDir * hintDistance;
         }
 
         // Target rotation
@@ -375,38 +440,118 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!upLeg || !leg || !foot || !footTarget) return;
         if (legIKWeight <= 0f) return;
 
-        // Knee hint position
+        float upperLen = (leg.position - upLeg.position).magnitude;
+        float lowerLen = (foot.position - leg.position).magnitude;
+        float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
+
         Vector3 hintPos;
         if (kneeHint != null)
         {
-            // If knee tracker is available, use it directly as the hint
             hintPos = kneeHint.position;
         }
         else
         {
-            // Stable default: bend mostly forward and slightly outward
-            Vector3 side = isLeft ? -hipsBone.right : hipsBone.right;
-            Vector3 kneeBendDir = (hipsBone.forward * 0.85f) + (side * 0.2f) + (Vector3.up * 0.05f);
+            // Project the calibrated bend direction off the THIGH axis (upLeg→leg),
+            // not the full hip→foot axis. The thigh is a stable proximal reference:
+            // it is always well-defined and only collinear with the bend direction in
+            // truly degenerate cases (straight vertical stand), where the fallback kicks in.
+            Vector3 thighDir = (leg.position - upLeg.position).normalized;
+            if (thighDir.sqrMagnitude < 0.001f) thighDir = -Vector3.up;
 
-            float upperLen = (leg.position - upLeg.position).magnitude;
-            float lowerLen = (foot.position - leg.position).magnitude;
-            float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
-            float hintDistance = Mathf.Max(kneeHintDistance, limbLen * 0.35f);
+            Vector3 calibDirLocal = isLeft ? _leftKneeHintDirLocal : _rightKneeHintDirLocal;
+            Vector3 preferredBend = hipsBone.TransformDirection(calibDirLocal);
 
-            hintPos = upLeg.position + kneeBendDir.normalized * hintDistance;
+            Vector3 hintDir = Vector3.ProjectOnPlane(preferredBend, thighDir);
+            if (hintDir.sqrMagnitude < 0.001f)
+                hintDir = Vector3.ProjectOnPlane(hipsBone.forward, thighDir);
+            if (hintDir.sqrMagnitude < 0.001f)
+                hintDir = Vector3.ProjectOnPlane(Vector3.forward, thighDir);
+            hintDir = hintDir.normalized;
+
+            // Place hint at the midpoint of the hip→footTarget line, then push it
+            // perpendicularly. This ensures the vector from the root (hip) to the hint
+            // always has a large perpendicular component, solving the near-collinear
+            // problem that caused knees to flip when the foot was raised forward.
+            Vector3 rootToFootDir = (footTarget.position - upLeg.position).normalized;
+            if (rootToFootDir.sqrMagnitude < 0.001f) rootToFootDir = -Vector3.up;
+            Vector3 midPoint = upLeg.position + rootToFootDir * (limbLen * 0.5f);
+            float hintDistance = Mathf.Max(kneeHintDistance, limbLen * 0.6f);
+            hintPos = midPoint + hintDir * hintDistance;
         }
 
-        // Target rotation
-        Quaternion targetRot = applyTargetRotation ? footTarget.rotation * footOffset : foot.rotation;
-
+        // Solve IK position only — rotation is handled by AlignFootToShin below.
         TwoBoneIKSolver.Solve(
             upLeg, leg, foot,
-            footTarget.position, targetRot,
+            footTarget.position, foot.rotation,
             hintPos,
-            legIKWeight, applyTargetRotation ? legIKWeight : 0f, 1f);
+            legIKWeight, 0f, 1f);
+
+        // Align foot to shin direction using the offset recorded at calibration.
+        // The tracker is on the ankle bone, so its rotation tracks the shin, not
+        // the foot. After IK the shin direction is known — use it to orient the foot.
+        AlignFootToShin(leg, foot, isLeft ? _leftFootShinOffset : _rightFootShinOffset);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
+
+    /// <summary>
+    /// Orients the foot bone so it always follows the shin direction with the
+    /// rotation offset recorded at calibration. Ensures natural foot pose
+    /// regardless of tracker orientation or leg angle.
+    /// </summary>
+    private static void AlignFootToShin(Transform leg, Transform foot, Quaternion shinOffset)
+    {
+        Vector3 shinDir = (foot.position - leg.position).normalized;
+        if (shinDir.sqrMagnitude < 0.001f) return;
+
+        // Use a stable up reference: if shin points nearly straight up, fall back to forward
+        Vector3 upRef = Mathf.Abs(Vector3.Dot(shinDir, Vector3.up)) > 0.99f
+            ? Vector3.forward
+            : Vector3.up;
+
+        foot.rotation = Quaternion.LookRotation(shinDir, upRef) * shinOffset;
+    }
+
+    /// <summary>
+    /// At calibration: record foot rotation relative to the shin direction so
+    /// AlignFootToShin can reproduce the exact anatomical foot angle at runtime.
+    /// </summary>
+    private static void CalibrateFootShinOffset(Transform leg, Transform foot,
+                                                 ref Quaternion shinOffset)
+    {
+        if (leg == null || foot == null) return;
+        Vector3 shinDir = (foot.position - leg.position).normalized;
+        if (shinDir.sqrMagnitude < 0.001f) return;
+
+        Vector3 upRef = Mathf.Abs(Vector3.Dot(shinDir, Vector3.up)) > 0.99f
+            ? Vector3.forward
+            : Vector3.up;
+
+        Quaternion shinWorldRot = Quaternion.LookRotation(shinDir, upRef);
+        shinOffset = Quaternion.Inverse(shinWorldRot) * foot.rotation;
+    }
+
+    /// <summary>
+    /// At calibration time: project the mid-joint offset off the limb axis to
+    /// get the pure bend direction, then store it in pelvis-local space so it
+    /// rotates correctly with the body at runtime.
+    /// </summary>
+    private void CalibrateHintDirection(Transform root, Transform mid, Transform tip,
+                                         ref Vector3 hintDirLocal)
+    {
+        if (root == null || mid == null || tip == null) return;
+
+        Vector3 limbAxis = (tip.position - root.position);
+        if (limbAxis.sqrMagnitude < 0.0001f) return;
+        limbAxis = limbAxis.normalized;
+
+        // Project mid-joint position off the limb axis → pure bend direction
+        Vector3 midOffset = Vector3.ProjectOnPlane(mid.position - root.position, limbAxis);
+        if (midOffset.sqrMagnitude < 0.0001f) return;  // limb is perfectly straight, keep default
+
+        // Store in pelvis-local space so it follows body rotation at runtime
+        hintDirLocal = hipsBone.InverseTransformDirection(midOffset.normalized);
+    }
 
     private void CacheInitialBoneRotations()
     {
