@@ -21,10 +21,12 @@ namespace Wave.Generic.Sample
 	public class RaycastImpl : BaseRaycaster
 	{
 		const string LOG_TAG = "Wave.Generic.Sample.RaycastImpl";
-		void DEBUG(string msg) { Debug.Log(LOG_TAG + " " + msg); }
+		[System.Diagnostics.Conditional("VIVE_VERBOSE_LOG")]
+		void DEBUG(string msg) { }
 		private int logFrame = 0;
 		protected bool printIntervalLog = false;
-		void INTERVAL(string msg) { if (printIntervalLog) { DEBUG(msg); } }
+		[System.Diagnostics.Conditional("VIVE_VERBOSE_LOG")]
+		void INTERVAL(string msg) { }
 
 		#region Inspector
 		[SerializeField]

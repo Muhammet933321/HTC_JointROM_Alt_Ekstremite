@@ -149,6 +149,18 @@ public class FullBodyIKSolver : MonoBehaviour
     // Calibration-time head target Y (for scale reference)
     private Vector3 _calibHeadTrackerPos;
 
+    // Per-limb calibration positions for delta-based scaling.
+    // At runtime, only the CHANGE from calibration is scaled, so the result is
+    // exact at calibration and proportionally correct during movement.
+    private Vector3 _calibLeftHandTrackerPos, _calibLeftHandBonePos;
+    private Vector3 _calibRightHandTrackerPos, _calibRightHandBonePos;
+    private Vector3 _calibLeftFootTrackerPos, _calibLeftFootBonePos;
+    private Vector3 _calibRightFootTrackerPos, _calibRightFootBonePos;
+    // Shin-mounted mode: derived ankle/knee world positions at calibration
+    private Vector3 _calibLeftAnkleDerivedPos, _calibLeftKneeDerivedPos;
+    private Vector3 _calibRightAnkleDerivedPos, _calibRightKneeDerivedPos;
+    private Vector3 _calibLeftKneeBonePos, _calibRightKneeBonePos;
+
     // Tracker → Bone offset quaternions
     private Quaternion _pelvisOffset = Quaternion.identity;
     private Quaternion _leftFootOffset = Quaternion.identity;
@@ -289,15 +301,15 @@ public class FullBodyIKSolver : MonoBehaviour
         // Compute height ratio between avatar and player so tracker positions
         // can be scaled to match avatar bone lengths. This fixes issues where
         // small/large avatars produce wrong pelvis/foot heights.
+        // Use foot BONE Y as floor reference for both player and avatar height.
+        // In shin-mounted mode, foot targets are shin trackers (above ankles),
+        // so using tracker Y would underestimate player height and inflate _bodyScale.
         {
-            float playerHeight = headTarget.position.y
-                - Mathf.Min(
-                    leftFootTarget  ? leftFootTarget.position.y  : headTarget.position.y,
-                    rightFootTarget ? rightFootTarget.position.y : headTarget.position.y);
-            float avatarHeight = headBone.position.y
-                - Mathf.Min(
-                    leftFootBone  ? leftFootBone.position.y  : headBone.position.y,
-                    rightFootBone ? rightFootBone.position.y : headBone.position.y);
+            float floorY = Mathf.Min(
+                leftFootBone  ? leftFootBone.position.y  : headTarget.position.y,
+                rightFootBone ? rightFootBone.position.y : headTarget.position.y);
+            float playerHeight = headTarget.position.y - floorY;
+            float avatarHeight = headBone.position.y - floorY;
             _bodyScale = (playerHeight > 0.1f) ? (avatarHeight / playerHeight) : 1f;
             _calibPelvisTrackerPos = pelvisTarget.position;
             _calibPelvisBonePos    = hipsBone.position;
@@ -369,6 +381,48 @@ public class FullBodyIKSolver : MonoBehaviour
             _leftThighToUpLegRot = Quaternion.Inverse(leftThighTracker.rotation) * leftUpLegBone.rotation;
         if (rightThighTracker && rightUpLegBone)
             _rightThighToUpLegRot = Quaternion.Inverse(rightThighTracker.rotation) * rightUpLegBone.rotation;
+
+        // --- Per-limb delta-based scaling calibration ---
+        // Store tracker and bone world positions so ScaleTrackerPosition can compute
+        // changes from calibration rather than absolute pelvis-relative vectors.
+        // This ensures each limb target is exact at calibration and scales only movement.
+        if (leftHandTarget && leftHandBone)
+        {
+            _calibLeftHandTrackerPos = leftHandTarget.position;
+            _calibLeftHandBonePos = leftHandBone.position;
+        }
+        if (rightHandTarget && rightHandBone)
+        {
+            _calibRightHandTrackerPos = rightHandTarget.position;
+            _calibRightHandBonePos = rightHandBone.position;
+        }
+        if (leftFootTarget && leftFootBone)
+        {
+            _calibLeftFootTrackerPos = leftFootTarget.position;
+            _calibLeftFootBonePos = leftFootBone.position;
+        }
+        if (rightFootTarget && rightFootBone)
+        {
+            _calibRightFootTrackerPos = rightFootTarget.position;
+            _calibRightFootBonePos = rightFootBone.position;
+        }
+        if (leftLegBone) _calibLeftKneeBonePos = leftLegBone.position;
+        if (rightLegBone) _calibRightKneeBonePos = rightLegBone.position;
+
+        // Shin-mounted: store derived ankle/knee world positions at calibration
+        if (shinMountedTrackers)
+        {
+            if (leftFootTarget)
+            {
+                _calibLeftAnkleDerivedPos = leftFootTarget.TransformPoint(_leftShinToAnkleLocal);
+                _calibLeftKneeDerivedPos = leftFootTarget.TransformPoint(_leftShinToKneeLocal);
+            }
+            if (rightFootTarget)
+            {
+                _calibRightAnkleDerivedPos = rightFootTarget.TransformPoint(_rightShinToAnkleLocal);
+                _calibRightKneeDerivedPos = rightFootTarget.TransformPoint(_rightShinToKneeLocal);
+            }
+        }
 
         RebuildSpineChainCache();
 
@@ -576,8 +630,10 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!upperArm || !foreArm || !hand || !target) return;
         if (armIKWeight <= 0f) return;
 
-        // Scale hand target position for body proportion matching
-        Vector3 scaledHandPos = ScaleTrackerPosition(target.position);
+        // Scale hand target position for body proportion matching (delta-based)
+        Vector3 calibTrackerPos = isLeft ? _calibLeftHandTrackerPos : _calibRightHandTrackerPos;
+        Vector3 calibBonePos = isLeft ? _calibLeftHandBonePos : _calibRightHandBonePos;
+        Vector3 scaledHandPos = ScaleTrackerPosition(target.position, calibTrackerPos, calibBonePos);
 
         Vector3 hintPos;
         if (elbowHint != null)
@@ -658,11 +714,15 @@ public class FullBodyIKSolver : MonoBehaviour
             Vector3 kneeHintRaw = footTarget.TransformPoint(
                 isLeft ? _leftShinToKneeLocal : _rightShinToKneeLocal);
 
-            // Scale derived positions relative to pelvis for body proportion matching.
-            // The tracker gives real-world positions, but the avatar bones are a
-            // different length. We scale the vector from pelvis→ankle/knee.
-            Vector3 ankleTargetPos = ScaleTrackerPosition(ankleTargetRaw);
-            Vector3 kneeHintPos   = ScaleTrackerPosition(kneeHintRaw);
+            // Scale derived positions using delta-based approach for body proportion matching.
+            // Each limb target is anchored to its exact calibration bone position;
+            // only the movement from calibration is scaled by _bodyScale.
+            Vector3 ankleTargetPos = ScaleTrackerPosition(ankleTargetRaw,
+                isLeft ? _calibLeftAnkleDerivedPos : _calibRightAnkleDerivedPos,
+                isLeft ? _calibLeftFootBonePos : _calibRightFootBonePos);
+            Vector3 kneeHintPos = ScaleTrackerPosition(kneeHintRaw,
+                isLeft ? _calibLeftKneeDerivedPos : _calibRightKneeDerivedPos,
+                isLeft ? _calibLeftKneeBonePos : _calibRightKneeBonePos);
 
             // Collinearity safety: if leg is nearly straight, knee hint may be
             // on the hip→ankle axis. Fall back to calibrated bend direction.
@@ -705,8 +765,10 @@ public class FullBodyIKSolver : MonoBehaviour
         }
 
         // ── Legacy Ankle-Mounted Mode ──
-        // Scale foot target position relative to pelvis for body proportion matching.
-        Vector3 scaledFootPos = ScaleTrackerPosition(footTarget.position);
+        // Scale foot target position using delta-based approach for body proportion matching.
+        Vector3 calibFootTrackerPos = isLeft ? _calibLeftFootTrackerPos : _calibRightFootTrackerPos;
+        Vector3 calibFootBonePos = isLeft ? _calibLeftFootBonePos : _calibRightFootBonePos;
+        Vector3 scaledFootPos = ScaleTrackerPosition(footTarget.position, calibFootTrackerPos, calibFootBonePos);
 
         // Compute hip→foot direction (used for hint stability checks)
         Vector3 hipToFoot = scaledFootPos - upLeg.position;
@@ -802,17 +864,16 @@ public class FullBodyIKSolver : MonoBehaviour
     // ───────────────────────── Helpers ─────────────────────────
 
     /// <summary>
-    /// Scales a world-space tracker position relative to the pelvis using the
-    /// body proportion ratio computed at calibration. The direction from pelvis
-    /// tracker to the point is preserved, but the distance is scaled by _bodyScale.
+    /// Delta-based position scaling. Computes the CHANGE from calibration tracker
+    /// position, scales it by body proportion ratio, and adds to calibration bone
+    /// position. This ensures the result equals calibBonePos exactly at calibration
+    /// and correctly handles all tracker mount positions (shin, ankle, wrist, etc.).
     /// </summary>
-    private Vector3 ScaleTrackerPosition(Vector3 worldPos)
+    private Vector3 ScaleTrackerPosition(Vector3 currentTrackerPos,
+                                          Vector3 calibTrackerPos, Vector3 calibBonePos)
     {
-        if (!pelvisTarget) return worldPos;
-        // Vector from pelvis tracker to the target point in real world
-        Vector3 relToPelvis = worldPos - pelvisTarget.position;
-        // Apply to avatar pelvis with body scale
-        return hipsBone.position + relToPelvis * _bodyScale;
+        Vector3 delta = currentTrackerPos - calibTrackerPos;
+        return calibBonePos + delta * _bodyScale;
     }
 
     /// <summary>

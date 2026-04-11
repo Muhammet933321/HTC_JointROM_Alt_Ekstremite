@@ -22,8 +22,10 @@ namespace Wave.Generic.Sample
 	public class GazeRaycastRing : RaycastRing
 	{
 		const string LOG_TAG = "Wave.Generic.Sample.GazeRaycastRing";
-		void DEBUG(string msg) { Debug.Log(LOG_TAG + " " + msg); }
-		void INTERVAL(string msg) { if (printIntervalLog) { DEBUG(msg); } }
+		[System.Diagnostics.Conditional("VIVE_VERBOSE_LOG")]
+		void DEBUG(string msg) { }
+		[System.Diagnostics.Conditional("VIVE_VERBOSE_LOG")]
+		void INTERVAL(string msg) { }
 
 		[Serializable]
 		public class ButtonOption
