@@ -5,11 +5,19 @@ using UnityEngine.Serialization;
 /// Full-body IK solver that drives a Mixamo humanoid avatar using:
 /// - 1 HMD (head)
 /// - 2 Controllers (hands)
-/// - 1 Pelvis tracker (waist)
-/// - 2 Ankle trackers (feet)
-/// - (Optional) 2 Knee trackers (future)
+/// - 1 Pelvis tracker (waist/chest)
+/// - 2 Shin trackers (kaval kemiğine monte — diz ile ayak bileği arası)
+/// - (Opsiyonel) 2 Üst bacak tracker (femura monte — doğrudan FK modu)
 ///
-/// Uses custom TwoBoneIKSolver for arms and legs.
+/// Shin-mounted tracker modu (varsayılan):
+///   Ayak bileği pozisyonu ve diz hint'i shin tracker'dan hesaplanır.
+///   Tracker rotasyonu sayesinde diz bükülme düzlemi çok stabil olur.
+///
+/// 5-tracker modu (shin + thigh per bacak):
+///   Hem üst hem alt bacak rotasyonları doğrudan tracker'dan okunur (FK).
+///   IK kullanılmaz — en hassas mod.
+///
+/// Uses custom TwoBoneIKSolver for arms and legs (when not in FK mode).
 /// Drives Hips (NOT Spine) as the pelvis bone to fix the known hierarchy bug.
 /// </summary>
 [ExecuteAlways]
@@ -66,10 +74,12 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Pelvis/Bel tracker")]
     [SerializeField] private Transform pelvisTarget;
 
-    [Tooltip("Sol ayak bileği tracker")]
+    [Tooltip("Sol bacak tracker (shinMountedTrackers aktifken kaval kemiğine monte,\n" +
+             "kapalıyken ayak bileği tracker)")]
     [SerializeField] private Transform leftFootTarget;
 
-    [Tooltip("Sağ ayak bileği tracker")]
+    [Tooltip("Sağ bacak tracker (shinMountedTrackers aktifken kaval kemiğine monte,\n" +
+             "kapalıyken ayak bileği tracker)")]
     [SerializeField] private Transform rightFootTarget;
 
     [Header("Opsiyonel Dirsek Hint Objeleri")]
@@ -85,6 +95,17 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Sag dizin bukunme duzlemi icin hint hedefi.")]
     [FormerlySerializedAs("rightKneeTracker")]
     [SerializeField] private Transform rightKneeHintTarget;
+
+    [Header("=== Tracker Yerleşim Ayarları ===")]
+    [Tooltip("Tracker'lar ayak bileği yerine kaval kemiğine (tibia) monte edilmişse aktif edin.\n" +
+             "Aktifken: ayak bileği pozisyonu ve diz hint'i tracker'dan otomatik hesaplanır.")]
+    [SerializeField] private bool shinMountedTrackers = true;
+
+    [Header("Opsiyonel Üst Bacak Trackerları (5-tracker kurulum)")]
+    [Tooltip("Sol üst bacak (femur) tracker. Atandığında bacak doğrudan FK ile sürülür.")]
+    [SerializeField] private Transform leftThighTracker;
+    [Tooltip("Sağ üst bacak (femur) tracker. Atandığında bacak doğrudan FK ile sürülür.")]
+    [SerializeField] private Transform rightThighTracker;
 
     // ───────────────────────── Settings ─────────────────────────
     [Header("=== Ayarlar ===")]
@@ -120,6 +141,8 @@ public class FullBodyIKSolver : MonoBehaviour
     private Quaternion _pelvisOffset = Quaternion.identity;
     private Quaternion _leftFootOffset = Quaternion.identity;
     private Quaternion _rightFootOffset = Quaternion.identity;
+    private Quaternion _leftFootShinOffset = Quaternion.identity;
+    private Quaternion _rightFootShinOffset = Quaternion.identity;
     private Quaternion _headOffset = Quaternion.identity;
     private Quaternion _leftHandOffset = Quaternion.identity;
     private Quaternion _rightHandOffset = Quaternion.identity;
@@ -134,6 +157,20 @@ public class FullBodyIKSolver : MonoBehaviour
     private Vector3 _leftKneeHintDirLocal   = Vector3.forward;
     private Vector3 _rightKneeHintDirLocal  = Vector3.forward;
 
+    // Shin tracker calibration: ankle/knee positions in tracker-local space
+    private Vector3 _leftShinToAnkleLocal;
+    private Vector3 _rightShinToAnkleLocal;
+    private Vector3 _leftShinToKneeLocal;
+    private Vector3 _rightShinToKneeLocal;
+    // Shin tracker → bone rotation offsets
+    private Quaternion _leftShinToLegRot  = Quaternion.identity;
+    private Quaternion _rightShinToLegRot = Quaternion.identity;
+    private Quaternion _leftShinToFootRot  = Quaternion.identity;
+    private Quaternion _rightShinToFootRot = Quaternion.identity;
+    // Thigh tracker → bone rotation offsets (5-tracker mode)
+    private Quaternion _leftThighToUpLegRot  = Quaternion.identity;
+    private Quaternion _rightThighToUpLegRot = Quaternion.identity;
+
     // Initial bone local rotations (model bind pose)
     private Quaternion _hipsInitLocal;
     private Quaternion _spineInitLocal;
@@ -141,6 +178,22 @@ public class FullBodyIKSolver : MonoBehaviour
     private Quaternion _spine2InitLocal;
     private Quaternion _neckInitLocal;
     private Quaternion _headInitLocal;
+
+    // Initial bone local rotations for limb bones (bind-pose reset each frame)
+    private Quaternion _leftShoulderInitLocal;
+    private Quaternion _leftUpperArmInitLocal;
+    private Quaternion _leftForeArmInitLocal;
+    private Quaternion _leftHandInitLocal;
+    private Quaternion _rightShoulderInitLocal;
+    private Quaternion _rightUpperArmInitLocal;
+    private Quaternion _rightForeArmInitLocal;
+    private Quaternion _rightHandInitLocal;
+    private Quaternion _leftUpLegInitLocal;
+    private Quaternion _leftLegInitLocal;
+    private Quaternion _leftFootInitLocal;
+    private Quaternion _rightUpLegInitLocal;
+    private Quaternion _rightLegInitLocal;
+    private Quaternion _rightFootInitLocal;
 
     // Calibration version
     public int CalibrationVersion { get; private set; }
@@ -175,6 +228,10 @@ public class FullBodyIKSolver : MonoBehaviour
         // IK target objelerini Scene view'da sürüklediğinizde avatar anlık güncellenir.
         if (!_calibrated) return;
         if (!hipsBone) return;
+
+        // 0. Reset to bind pose — prevents accumulated IK errors from previous frames,
+        //    fixes undo corruption, and ensures a clean starting state for each solve.
+        RestoreBindPose();
 
         // 1. Pelvis (Hips) — DOĞRU kemik, Spine DEĞİL!
         SolvePelvis();
@@ -259,6 +316,23 @@ public class FullBodyIKSolver : MonoBehaviour
         CalibrateHintDirection(leftUpLegBone,     leftLegBone,      leftFootBone,  ref _leftKneeHintDirLocal);
         CalibrateHintDirection(rightUpLegBone,    rightLegBone,     rightFootBone, ref _rightKneeHintDirLocal);
 
+        // --- Shin tracker offsets (shin-mounted mode) ---
+        if (shinMountedTrackers)
+        {
+            CalibrateShinTracker(leftFootTarget, leftLegBone, leftFootBone,
+                ref _leftShinToAnkleLocal, ref _leftShinToKneeLocal,
+                ref _leftShinToLegRot, ref _leftShinToFootRot);
+            CalibrateShinTracker(rightFootTarget, rightLegBone, rightFootBone,
+                ref _rightShinToAnkleLocal, ref _rightShinToKneeLocal,
+                ref _rightShinToLegRot, ref _rightShinToFootRot);
+        }
+
+        // --- Thigh tracker offsets (5-tracker mode) ---
+        if (leftThighTracker && leftUpLegBone)
+            _leftThighToUpLegRot = Quaternion.Inverse(leftThighTracker.rotation) * leftUpLegBone.rotation;
+        if (rightThighTracker && rightUpLegBone)
+            _rightThighToUpLegRot = Quaternion.Inverse(rightThighTracker.rotation) * rightUpLegBone.rotation;
+
         _calibrated = true;
         CalibrationVersion++;
         Debug.Log("[FullBodyIKSolver] Kalibrasyon tamamlandı.");
@@ -285,17 +359,49 @@ public class FullBodyIKSolver : MonoBehaviour
         SnapTarget(headTarget, headBone);
         SnapTarget(leftHandTarget, leftHandBone);
         SnapTarget(rightHandTarget, rightHandBone);
-        SnapTarget(leftFootTarget, leftFootBone);
-        SnapTarget(rightFootTarget, rightFootBone);
+
+        // Shin-mounted mode: snap foot targets to shin midpoint; otherwise snap to foot bone
+        if (shinMountedTrackers)
+        {
+            if (leftFootTarget != null && leftLegBone != null && leftFootBone != null)
+            {
+                Vector3 shinMid = (leftLegBone.position + leftFootBone.position) * 0.5f;
+                leftFootTarget.SetPositionAndRotation(shinMid, leftLegBone.rotation);
+            }
+            if (rightFootTarget != null && rightLegBone != null && rightFootBone != null)
+            {
+                Vector3 shinMid = (rightLegBone.position + rightFootBone.position) * 0.5f;
+                rightFootTarget.SetPositionAndRotation(shinMid, rightLegBone.rotation);
+            }
+        }
+        else
+        {
+            SnapTarget(leftFootTarget, leftFootBone);
+            SnapTarget(rightFootTarget, rightFootBone);
+        }
+
+        // Thigh trackers (5-tracker mode): snap to thigh midpoint
+        if (leftThighTracker != null && leftUpLegBone != null && leftLegBone != null)
+        {
+            Vector3 thighMid = (leftUpLegBone.position + leftLegBone.position) * 0.5f;
+            leftThighTracker.SetPositionAndRotation(thighMid, leftUpLegBone.rotation);
+        }
+        if (rightThighTracker != null && rightUpLegBone != null && rightLegBone != null)
+        {
+            Vector3 thighMid = (rightUpLegBone.position + rightLegBone.position) * 0.5f;
+            rightThighTracker.SetPositionAndRotation(thighMid, rightUpLegBone.rotation);
+        }
 
         if (leftKneeHintTarget != null && leftLegBone != null)
         {
-            leftKneeHintTarget.position = leftLegBone.position;
+            Vector3 fwd = hipsBone != null ? hipsBone.forward : Vector3.forward;
+            leftKneeHintTarget.position = leftLegBone.position + fwd * kneeHintDistance;
         }
 
         if (rightKneeHintTarget != null && rightLegBone != null)
         {
-            rightKneeHintTarget.position = rightLegBone.position;
+            Vector3 fwd = hipsBone != null ? hipsBone.forward : Vector3.forward;
+            rightKneeHintTarget.position = rightLegBone.position + fwd * kneeHintDistance;
         }
     }
 
@@ -440,46 +546,117 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!upLeg || !leg || !foot || !footTarget) return;
         if (legIKWeight <= 0f) return;
 
+        // ── 5-tracker Direct FK Mode ──
+        Transform thighTracker = isLeft ? leftThighTracker : rightThighTracker;
+        if (shinMountedTrackers && thighTracker != null)
+        {
+            SolveLegDirectFK(upLeg, leg, foot, footTarget, thighTracker, isLeft);
+            return;
+        }
+
         float upperLen = (leg.position - upLeg.position).magnitude;
         float lowerLen = (foot.position - leg.position).magnitude;
         float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
 
+        // ── Shin-Mounted Tracker Mode (3-tracker) ──
+        // Derive ankle position and knee hint from the shin tracker.
+        if (shinMountedTrackers)
+        {
+            Vector3 ankleTargetPos = footTarget.TransformPoint(
+                isLeft ? _leftShinToAnkleLocal : _rightShinToAnkleLocal);
+            Vector3 kneeHintPos = footTarget.TransformPoint(
+                isLeft ? _leftShinToKneeLocal : _rightShinToKneeLocal);
+
+            // Collinearity safety: if leg is nearly straight, knee hint may be
+            // on the hip→ankle axis. Fall back to calibrated bend direction.
+            Vector3 hipToAnkle = ankleTargetPos - upLeg.position;
+            float hipToAnkleDist = hipToAnkle.magnitude;
+            Vector3 hipToAnkleDir = hipToAnkleDist > 0.001f
+                ? hipToAnkle / hipToAnkleDist : -Vector3.up;
+            Vector3 perpComp = Vector3.ProjectOnPlane(
+                kneeHintPos - upLeg.position, hipToAnkleDir);
+            if (perpComp.magnitude < limbLen * 0.05f)
+            {
+                Vector3 calibDir = isLeft ? _leftKneeHintDirLocal : _rightKneeHintDirLocal;
+                Vector3 fallbackDir = hipsBone.TransformDirection(calibDir);
+                Vector3 hintDir = Vector3.ProjectOnPlane(fallbackDir, hipToAnkleDir);
+                if (hintDir.sqrMagnitude < 0.001f)
+                    hintDir = Vector3.ProjectOnPlane(Vector3.forward, hipToAnkleDir);
+                kneeHintPos = upLeg.position + hipToAnkleDir * (hipToAnkleDist * 0.5f)
+                              + hintDir.normalized * kneeHintDistance;
+            }
+
+            TwoBoneIKSolver.Solve(
+                upLeg, leg, foot,
+                ankleTargetPos, foot.rotation,
+                kneeHintPos,
+                legIKWeight, 0f, 1f);
+
+            AlignFootToShin(leg, foot, isLeft ? _leftFootShinOffset : _rightFootShinOffset);
+            return;
+        }
+
+        // ── Legacy Ankle-Mounted Mode ──
+        // Compute hip→foot direction (used for hint stability checks)
+        Vector3 hipToFoot = footTarget.position - upLeg.position;
+        float hipToFootDist = hipToFoot.magnitude;
+        Vector3 hipToFootDir = hipToFootDist > 0.001f ? hipToFoot / hipToFootDist : -Vector3.up;
+
+        // Get calibrated bend direction in world space
+        Vector3 calibDirLocal = isLeft ? _leftKneeHintDirLocal : _rightKneeHintDirLocal;
+        Vector3 preferredBend = hipsBone.TransformDirection(calibDirLocal);
+
         Vector3 hintPos;
         if (kneeHint != null)
         {
-            hintPos = kneeHint.position;
+            // Use explicit hint position but ensure it has enough perpendicular
+            // offset from the hip→foot axis. A static hint can become collinear
+            // with the limb axis when the foot moves, causing the knee to flip.
+            Vector3 hipToHint = kneeHint.position - upLeg.position;
+            Vector3 perpComponent = Vector3.ProjectOnPlane(hipToHint, hipToFootDir);
+            float minPerp = limbLen * 0.1f;
+
+            if (perpComponent.magnitude < minPerp)
+            {
+                // Hint is nearly collinear — add perpendicular offset using
+                // the calibrated bend direction to maintain correct knee direction.
+                Vector3 bendPerp = Vector3.ProjectOnPlane(preferredBend, hipToFootDir);
+                if (bendPerp.sqrMagnitude < 0.001f)
+                    bendPerp = Vector3.ProjectOnPlane(Vector3.up, hipToFootDir);
+                if (bendPerp.sqrMagnitude < 0.001f)
+                    bendPerp = Vector3.ProjectOnPlane(Vector3.forward, hipToFootDir);
+                bendPerp = bendPerp.normalized;
+
+                Vector3 onAxis = Vector3.Project(hipToHint, hipToFootDir);
+                hintPos = upLeg.position + onAxis + bendPerp * Mathf.Max(minPerp, kneeHintDistance);
+            }
+            else
+            {
+                hintPos = kneeHint.position;
+            }
         }
         else
         {
-            // Project the calibrated bend direction off the THIGH axis (upLeg→leg),
-            // not the full hip→foot axis. The thigh is a stable proximal reference:
-            // it is always well-defined and only collinear with the bend direction in
-            // truly degenerate cases (straight vertical stand), where the fallback kicks in.
-            Vector3 thighDir = (leg.position - upLeg.position).normalized;
-            if (thighDir.sqrMagnitude < 0.001f) thighDir = -Vector3.up;
-
-            Vector3 calibDirLocal = isLeft ? _leftKneeHintDirLocal : _rightKneeHintDirLocal;
-            Vector3 preferredBend = hipsBone.TransformDirection(calibDirLocal);
-
-            Vector3 hintDir = Vector3.ProjectOnPlane(preferredBend, thighDir);
+            // Auto-compute hint: project the calibrated bend direction perpendicular
+            // to the hip→foot axis (not the thigh axis). This ensures the hint is
+            // never collinear with the limb regardless of foot target position,
+            // preventing knee direction flips when the foot moves in front or behind.
+            Vector3 hintDir = Vector3.ProjectOnPlane(preferredBend, hipToFootDir);
             if (hintDir.sqrMagnitude < 0.001f)
-                hintDir = Vector3.ProjectOnPlane(hipsBone.forward, thighDir);
+                hintDir = Vector3.ProjectOnPlane(Vector3.up, hipToFootDir);
             if (hintDir.sqrMagnitude < 0.001f)
-                hintDir = Vector3.ProjectOnPlane(Vector3.forward, thighDir);
+                hintDir = Vector3.ProjectOnPlane(hipsBone.forward, hipToFootDir);
+            if (hintDir.sqrMagnitude < 0.001f)
+                hintDir = Vector3.ProjectOnPlane(Vector3.forward, hipToFootDir);
             hintDir = hintDir.normalized;
 
-            // Place hint at the midpoint of the hip→footTarget line, then push it
-            // perpendicularly. This ensures the vector from the root (hip) to the hint
-            // always has a large perpendicular component, solving the near-collinear
-            // problem that caused knees to flip when the foot was raised forward.
-            Vector3 rootToFootDir = (footTarget.position - upLeg.position).normalized;
-            if (rootToFootDir.sqrMagnitude < 0.001f) rootToFootDir = -Vector3.up;
-            Vector3 midPoint = upLeg.position + rootToFootDir * (limbLen * 0.5f);
+            // Place hint at the midpoint of hip→foot, then push perpendicular
+            Vector3 midPoint = upLeg.position + hipToFootDir * (hipToFootDist * 0.5f);
             float hintDistance = Mathf.Max(kneeHintDistance, limbLen * 0.6f);
             hintPos = midPoint + hintDir * hintDistance;
         }
 
-        // Solve IK position only — rotation is handled by AlignFootToShin below.
+        // Solve IK position only — foot rotation is handled by AlignFootToShin below.
         TwoBoneIKSolver.Solve(
             upLeg, leg, foot,
             footTarget.position, foot.rotation,
@@ -487,48 +664,57 @@ public class FullBodyIKSolver : MonoBehaviour
             legIKWeight, 0f, 1f);
 
         // Align foot to shin direction using the offset recorded at calibration.
-        // The tracker is on the ankle bone, so its rotation tracks the shin, not
-        // the foot. After IK the shin direction is known — use it to orient the foot.
+        AlignFootToShin(leg, foot, isLeft ? _leftFootShinOffset : _rightFootShinOffset);
+    }
+
+    /// <summary>
+    /// Direct FK mode for 5-tracker setup (shin + thigh per leg).
+    /// Sets bone rotations directly from tracker measurements — no IK needed.
+    /// </summary>
+    private void SolveLegDirectFK(Transform upLeg, Transform leg, Transform foot,
+                                   Transform shinTracker, Transform thighTracker, bool isLeft)
+    {
+        // Upper leg rotation from thigh tracker
+        Quaternion thighOffset = isLeft ? _leftThighToUpLegRot : _rightThighToUpLegRot;
+        Quaternion targetUpLegRot = thighTracker.rotation * thighOffset;
+        upLeg.rotation = Quaternion.Slerp(upLeg.rotation, targetUpLegRot, legIKWeight);
+
+        // Lower leg (shin) rotation from shin tracker
+        Quaternion shinLegOffset = isLeft ? _leftShinToLegRot : _rightShinToLegRot;
+        Quaternion targetLegRot = shinTracker.rotation * shinLegOffset;
+        leg.rotation = Quaternion.Slerp(leg.rotation, targetLegRot, legIKWeight);
+
+        // Foot follows shin with calibrated offset
         AlignFootToShin(leg, foot, isLeft ? _leftFootShinOffset : _rightFootShinOffset);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
 
     /// <summary>
-    /// Orients the foot bone so it always follows the shin direction with the
-    /// rotation offset recorded at calibration. Ensures natural foot pose
-    /// regardless of tracker orientation or leg angle.
+    /// Orients the foot bone so it always follows the shin bone's rotation with
+    /// the relative offset recorded at calibration. Uses the leg bone's rotation
+    /// directly instead of LookRotation to avoid singularity-based flips.
     /// </summary>
     private static void AlignFootToShin(Transform leg, Transform foot, Quaternion shinOffset)
     {
-        Vector3 shinDir = (foot.position - leg.position).normalized;
-        if (shinDir.sqrMagnitude < 0.001f) return;
-
-        // Use a stable up reference: if shin points nearly straight up, fall back to forward
-        Vector3 upRef = Mathf.Abs(Vector3.Dot(shinDir, Vector3.up)) > 0.99f
-            ? Vector3.forward
-            : Vector3.up;
-
-        foot.rotation = Quaternion.LookRotation(shinDir, upRef) * shinOffset;
+        if (leg == null || foot == null) return;
+        // Apply the foot rotation as a fixed offset from the shin bone's rotation.
+        // This preserves the exact anatomical angle between shin and foot from
+        // calibration and is inherently stable — no LookRotation singularity.
+        foot.rotation = leg.rotation * shinOffset;
     }
 
     /// <summary>
-    /// At calibration: record foot rotation relative to the shin direction so
-    /// AlignFootToShin can reproduce the exact anatomical foot angle at runtime.
+    /// At calibration: record foot rotation relative to the leg bone's rotation
+    /// so AlignFootToShin can reproduce the exact anatomical foot angle at runtime.
     /// </summary>
     private static void CalibrateFootShinOffset(Transform leg, Transform foot,
                                                  ref Quaternion shinOffset)
     {
         if (leg == null || foot == null) return;
-        Vector3 shinDir = (foot.position - leg.position).normalized;
-        if (shinDir.sqrMagnitude < 0.001f) return;
-
-        Vector3 upRef = Mathf.Abs(Vector3.Dot(shinDir, Vector3.up)) > 0.99f
-            ? Vector3.forward
-            : Vector3.up;
-
-        Quaternion shinWorldRot = Quaternion.LookRotation(shinDir, upRef);
-        shinOffset = Quaternion.Inverse(shinWorldRot) * foot.rotation;
+        // Store foot rotation in leg-bone-local space.
+        // At runtime: foot.rotation = leg.rotation * shinOffset
+        shinOffset = Quaternion.Inverse(leg.rotation) * foot.rotation;
     }
 
     /// <summary>
@@ -553,6 +739,27 @@ public class FullBodyIKSolver : MonoBehaviour
         hintDirLocal = hipsBone.InverseTransformDirection(midOffset.normalized);
     }
 
+    /// <summary>
+    /// Calibrates shin tracker offsets: stores ankle and knee positions in tracker-local
+    /// space and rotation offsets from tracker to leg/foot bones.
+    /// </summary>
+    private static void CalibrateShinTracker(Transform tracker, Transform legBone, Transform footBone,
+                                              ref Vector3 toAnkleLocal, ref Vector3 toKneeLocal,
+                                              ref Quaternion toLegRot, ref Quaternion toFootRot)
+    {
+        if (tracker == null) return;
+        if (footBone != null)
+        {
+            toAnkleLocal = tracker.InverseTransformPoint(footBone.position);
+            toFootRot = Quaternion.Inverse(tracker.rotation) * footBone.rotation;
+        }
+        if (legBone != null)
+        {
+            toKneeLocal = tracker.InverseTransformPoint(legBone.position);
+            toLegRot = Quaternion.Inverse(tracker.rotation) * legBone.rotation;
+        }
+    }
+
     private void CacheInitialBoneRotations()
     {
         if (hipsBone) _hipsInitLocal = hipsBone.localRotation;
@@ -561,6 +768,49 @@ public class FullBodyIKSolver : MonoBehaviour
         if (spine2Bone) _spine2InitLocal = spine2Bone.localRotation;
         if (neckBone) _neckInitLocal = neckBone.localRotation;
         if (headBone) _headInitLocal = headBone.localRotation;
+        // Limb bones
+        if (leftShoulderBone) _leftShoulderInitLocal = leftShoulderBone.localRotation;
+        if (leftUpperArmBone) _leftUpperArmInitLocal = leftUpperArmBone.localRotation;
+        if (leftForeArmBone) _leftForeArmInitLocal = leftForeArmBone.localRotation;
+        if (leftHandBone) _leftHandInitLocal = leftHandBone.localRotation;
+        if (rightShoulderBone) _rightShoulderInitLocal = rightShoulderBone.localRotation;
+        if (rightUpperArmBone) _rightUpperArmInitLocal = rightUpperArmBone.localRotation;
+        if (rightForeArmBone) _rightForeArmInitLocal = rightForeArmBone.localRotation;
+        if (rightHandBone) _rightHandInitLocal = rightHandBone.localRotation;
+        if (leftUpLegBone) _leftUpLegInitLocal = leftUpLegBone.localRotation;
+        if (leftLegBone) _leftLegInitLocal = leftLegBone.localRotation;
+        if (leftFootBone) _leftFootInitLocal = leftFootBone.localRotation;
+        if (rightUpLegBone) _rightUpLegInitLocal = rightUpLegBone.localRotation;
+        if (rightLegBone) _rightLegInitLocal = rightLegBone.localRotation;
+        if (rightFootBone) _rightFootInitLocal = rightFootBone.localRotation;
+    }
+
+    /// <summary>
+    /// Restores all bones to their cached bind-pose local rotations.
+    /// Called at the start of each LateUpdate to prevent accumulated IK errors.
+    /// </summary>
+    private void RestoreBindPose()
+    {
+        if (hipsBone) hipsBone.localRotation = _hipsInitLocal;
+        if (spineBone) spineBone.localRotation = _spineInitLocal;
+        if (spine1Bone) spine1Bone.localRotation = _spine1InitLocal;
+        if (spine2Bone) spine2Bone.localRotation = _spine2InitLocal;
+        if (neckBone) neckBone.localRotation = _neckInitLocal;
+        if (headBone) headBone.localRotation = _headInitLocal;
+        if (leftShoulderBone) leftShoulderBone.localRotation = _leftShoulderInitLocal;
+        if (leftUpperArmBone) leftUpperArmBone.localRotation = _leftUpperArmInitLocal;
+        if (leftForeArmBone) leftForeArmBone.localRotation = _leftForeArmInitLocal;
+        if (leftHandBone) leftHandBone.localRotation = _leftHandInitLocal;
+        if (rightShoulderBone) rightShoulderBone.localRotation = _rightShoulderInitLocal;
+        if (rightUpperArmBone) rightUpperArmBone.localRotation = _rightUpperArmInitLocal;
+        if (rightForeArmBone) rightForeArmBone.localRotation = _rightForeArmInitLocal;
+        if (rightHandBone) rightHandBone.localRotation = _rightHandInitLocal;
+        if (leftUpLegBone) leftUpLegBone.localRotation = _leftUpLegInitLocal;
+        if (leftLegBone) leftLegBone.localRotation = _leftLegInitLocal;
+        if (leftFootBone) leftFootBone.localRotation = _leftFootInitLocal;
+        if (rightUpLegBone) rightUpLegBone.localRotation = _rightUpLegInitLocal;
+        if (rightLegBone) rightLegBone.localRotation = _rightLegInitLocal;
+        if (rightFootBone) rightFootBone.localRotation = _rightFootInitLocal;
     }
 
     private static void SnapTarget(Transform target, Transform source)
@@ -602,6 +852,28 @@ public class FullBodyIKSolver : MonoBehaviour
         Gizmos.color = Color.red;
         if (leftFootTarget) Gizmos.DrawWireSphere(leftFootTarget.position, 0.03f);
         if (rightFootTarget) Gizmos.DrawWireSphere(rightFootTarget.position, 0.03f);
+
+        // Shin-mounted: show derived ankle positions
+        if (shinMountedTrackers)
+        {
+            Gizmos.color = Color.magenta;
+            if (leftFootTarget)
+            {
+                Vector3 ankleL = leftFootTarget.TransformPoint(_leftShinToAnkleLocal);
+                Gizmos.DrawWireSphere(ankleL, 0.02f);
+                Gizmos.DrawLine(leftFootTarget.position, ankleL);
+            }
+            if (rightFootTarget)
+            {
+                Vector3 ankleR = rightFootTarget.TransformPoint(_rightShinToAnkleLocal);
+                Gizmos.DrawWireSphere(ankleR, 0.02f);
+                Gizmos.DrawLine(rightFootTarget.position, ankleR);
+            }
+        }
+
+        Gizmos.color = Color.cyan;
+        if (leftThighTracker) Gizmos.DrawWireSphere(leftThighTracker.position, 0.03f);
+        if (rightThighTracker) Gizmos.DrawWireSphere(rightThighTracker.position, 0.03f);
 
         Gizmos.color = Color.yellow;
         if (leftKneeHintTarget) Gizmos.DrawWireSphere(leftKneeHintTarget.position, 0.03f);
