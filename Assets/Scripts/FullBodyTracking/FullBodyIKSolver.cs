@@ -134,8 +134,20 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Hedef rotasyonu el/ayağa da uygula")]
     [SerializeField] private bool applyTargetRotation = true;
 
+    [Tooltip("Shin tracker rotasyonunun bacak kemiğine uygulanma ağırlığı (shin-mounted modda).\n" +
+             "1 = tracker açısı doğrudan uygulanır, 0 = sadece IK.")]
+    [SerializeField, Range(0f, 1f)] private float shinRotationBlend = 0.7f;
+
     // ───────────────────────── Calibration Data ─────────────────────────
     private bool _calibrated;
+
+    // Body proportion scaling: avatarHeight / playerHeight
+    private float _bodyScale = 1f;
+    // Calibration-time pelvis positions (for delta-based scaling)
+    private Vector3 _calibPelvisTrackerPos;
+    private Vector3 _calibPelvisBonePos;
+    // Calibration-time head target Y (for scale reference)
+    private Vector3 _calibHeadTrackerPos;
 
     // Tracker → Bone offset quaternions
     private Quaternion _pelvisOffset = Quaternion.identity;
@@ -171,6 +183,10 @@ public class FullBodyIKSolver : MonoBehaviour
     private Quaternion _leftThighToUpLegRot  = Quaternion.identity;
     private Quaternion _rightThighToUpLegRot = Quaternion.identity;
 
+    // Cached spine chain (avoids per-frame allocation)
+    private readonly Transform[] _spineChainCache = new Transform[3];
+    private int _spineChainLen;
+
     // Initial bone local rotations (model bind pose)
     private Quaternion _hipsInitLocal;
     private Quaternion _spineInitLocal;
@@ -203,10 +219,11 @@ public class FullBodyIKSolver : MonoBehaviour
     private void Start()
     {
         CacheInitialBoneRotations();
+        RebuildSpineChainCache();
     }
 
     /// <summary>
-    /// Edit Mode'da IK'yı test etmek için: Inspector'da sağ tık → "Editor Kalibrasyon ve Test".
+    /// Edit Mode'da IK'yı test etmek için
     /// Kemikleri mevcut halinden kalibre eder, ardından LateUpdate Edit Mode'da da çalışır.
     /// IK target objelerini Scene view'da sürükleyerek sonucu anlık görebilirsiniz.
     /// </summary>
@@ -266,6 +283,26 @@ public class FullBodyIKSolver : MonoBehaviour
         {
             Debug.LogWarning("[FullBodyIKSolver] Kalibrasyon başarısız: Gerekli referanslar atanmamış.");
             return;
+        }
+
+        // --- Body proportion scale ---
+        // Compute height ratio between avatar and player so tracker positions
+        // can be scaled to match avatar bone lengths. This fixes issues where
+        // small/large avatars produce wrong pelvis/foot heights.
+        {
+            float playerHeight = headTarget.position.y
+                - Mathf.Min(
+                    leftFootTarget  ? leftFootTarget.position.y  : headTarget.position.y,
+                    rightFootTarget ? rightFootTarget.position.y : headTarget.position.y);
+            float avatarHeight = headBone.position.y
+                - Mathf.Min(
+                    leftFootBone  ? leftFootBone.position.y  : headBone.position.y,
+                    rightFootBone ? rightFootBone.position.y : headBone.position.y);
+            _bodyScale = (playerHeight > 0.1f) ? (avatarHeight / playerHeight) : 1f;
+            _calibPelvisTrackerPos = pelvisTarget.position;
+            _calibPelvisBonePos    = hipsBone.position;
+            _calibHeadTrackerPos   = headTarget.position;
+            Debug.Log($"[FullBodyIKSolver] Body scale = {_bodyScale:F3}  (avatar={avatarHeight:F3}m, player={playerHeight:F3}m)");
         }
 
         // Pelvis offset
@@ -332,6 +369,8 @@ public class FullBodyIKSolver : MonoBehaviour
             _leftThighToUpLegRot = Quaternion.Inverse(leftThighTracker.rotation) * leftUpLegBone.rotation;
         if (rightThighTracker && rightUpLegBone)
             _rightThighToUpLegRot = Quaternion.Inverse(rightThighTracker.rotation) * rightUpLegBone.rotation;
+
+        RebuildSpineChainCache();
 
         _calibrated = true;
         CalibrationVersion++;
@@ -415,7 +454,13 @@ public class FullBodyIKSolver : MonoBehaviour
         // Hips is the parent of both Spine and legs, so rotating Hips
         // correctly rotates the entire body including legs.
         Quaternion targetRot = pelvisTarget.rotation * _pelvisOffset;
-        Vector3 targetPos = pelvisTarget.position;
+
+        // Delta-based position scaling: take the CHANGE from calibration tracker
+        // position, scale it by body proportion ratio, and add to calibration bone
+        // position. This ensures the avatar pelvis moves the correct amount
+        // regardless of avatar vs player size difference.
+        Vector3 pelvisDelta = pelvisTarget.position - _calibPelvisTrackerPos;
+        Vector3 targetPos = _calibPelvisBonePos + pelvisDelta * _bodyScale;
 
         if (pelvisWeight >= 1f)
         {
@@ -434,36 +479,78 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!headTarget || !spineBone) return;
         if (spineStiffness <= 0f) return;
 
-        // Goal: distribute the rotation between pelvis and head across the spine chain.
-        // We interpolate each spine bone partially towards the head direction.
+        // Scaled head target position (accounts for avatar/player size difference)
+        Vector3 headDelta = headTarget.position - _calibHeadTrackerPos;
+        Vector3 scaledHeadPos = (_calibPelvisBonePos + (_calibHeadTrackerPos - _calibPelvisTrackerPos) * _bodyScale)
+                                + headDelta * _bodyScale;
 
-        Vector3 headWorldPos = headTarget.position;
-        Vector3 hipsPos = hipsBone.position;
-        Vector3 hipsToHead = (headWorldPos - hipsPos).normalized;
+        // --- Iterative CCD-like spine solver ---
+        // Process each spine bone from bottom to top. After rotating each bone,
+        // re-read the current head bone position so subsequent bones correct
+        // the remaining error. This produces a natural distributed bend instead
+        // of a single-rotation "stiff" look.
+        int chainLen = _spineChainLen;
+        if (chainLen == 0) return;
 
-        if (hipsToHead.sqrMagnitude < 0.001f) return;
-
-        // Current spine direction (from hips towards head in the model)
-        Vector3 currentSpineUp = (headBone != null ? headBone.position : spineBone.position + spineBone.up) - hipsPos;
-        currentSpineUp = currentSpineUp.normalized;
-
-        if (currentSpineUp.sqrMagnitude < 0.001f) return;
-
-        // Calculate the delta rotation from current spine direction to desired (HMD) direction
-        Quaternion spineAdjust = Quaternion.FromToRotation(currentSpineUp, hipsToHead);
-
-        // Distribute across spine bones with decreasing weight
-        Transform[] spineChain = GetSpineChain();
-        float totalWeight = spineStiffness;
-
-        for (int i = 0; i < spineChain.Length; i++)
+        // Per-bone weight: upper spine bones contribute more than lower ones.
+        // Weights sum to spineStiffness.
+        for (int i = 0; i < chainLen; i++)
         {
-            if (spineChain[i] == null) continue;
+            if (_spineChainCache[i] == null) continue;
 
-            // Each spine bone gets a fraction of the total rotation
-            float boneWeight = totalWeight / spineChain.Length;
-            Quaternion partial = Quaternion.Slerp(Quaternion.identity, spineAdjust, boneWeight);
-            spineChain[i].rotation = partial * spineChain[i].rotation;
+            // Re-read current head position after each bone rotation
+            Vector3 currentHeadPos = headBone != null ? headBone.position : _spineChainCache[chainLen - 1].position + _spineChainCache[chainLen - 1].up * 0.2f;
+            Vector3 bonePos = _spineChainCache[i].position;
+
+            Vector3 boneToCurrentHead = (currentHeadPos - bonePos);
+            Vector3 boneToTarget      = (scaledHeadPos  - bonePos);
+            if (boneToCurrentHead.sqrMagnitude < 0.0001f || boneToTarget.sqrMagnitude < 0.0001f)
+                continue;
+
+            Quaternion correction = Quaternion.FromToRotation(
+                boneToCurrentHead.normalized, boneToTarget.normalized);
+
+            // Bottom bones get less weight, top bones get more — natural curve
+            float t = (float)(i + 1) / chainLen;  // 0.33, 0.66, 1.0 for 3 bones
+            float boneWeight = Mathf.Lerp(0.3f, 1.0f, t) * spineStiffness;
+            boneWeight = Mathf.Clamp01(boneWeight);
+
+            _spineChainCache[i].rotation = Quaternion.Slerp(Quaternion.identity, correction, boneWeight)
+                                     * _spineChainCache[i].rotation;
+        }
+
+        // --- Twist distribution ---
+        // The bend pass above handles forward/back/side tilt. Now distribute
+        // the axial twist (body turning left/right) from pelvis→head across
+        // the spine chain. Without this, turning the torso only moves the head.
+        if (headBone != null)
+        {
+            // Desired head forward from HMD
+            Vector3 desiredForward = headTarget.rotation * (_headOffset * Vector3.forward);
+            // Current head forward (after bend pass)
+            Vector3 currentForward = headBone.rotation * Vector3.forward;
+
+            // Compute spine axis (up direction along the spine)
+            Vector3 spineAxis = (headBone.position - hipsBone.position).normalized;
+            if (spineAxis.sqrMagnitude < 0.001f) spineAxis = hipsBone.up;
+
+            // Project both forwards onto the plane perpendicular to spine axis
+            Vector3 desiredFlat = Vector3.ProjectOnPlane(desiredForward, spineAxis);
+            Vector3 currentFlat = Vector3.ProjectOnPlane(currentForward, spineAxis);
+
+            if (desiredFlat.sqrMagnitude > 0.001f && currentFlat.sqrMagnitude > 0.001f)
+            {
+                float twistAngle = Vector3.SignedAngle(currentFlat, desiredFlat, spineAxis);
+
+                for (int i = 0; i < chainLen; i++)
+                {
+                    if (_spineChainCache[i] == null) continue;
+                    float t = (float)(i + 1) / chainLen;
+                    float boneTwist = (twistAngle / chainLen) * t * spineStiffness;
+                    _spineChainCache[i].rotation = Quaternion.AngleAxis(boneTwist, spineAxis)
+                                             * _spineChainCache[i].rotation;
+                }
+            }
         }
     }
 
@@ -488,6 +575,9 @@ public class FullBodyIKSolver : MonoBehaviour
     {
         if (!upperArm || !foreArm || !hand || !target) return;
         if (armIKWeight <= 0f) return;
+
+        // Scale hand target position for body proportion matching
+        Vector3 scaledHandPos = ScaleTrackerPosition(target.position);
 
         Vector3 hintPos;
         if (elbowHint != null)
@@ -521,7 +611,7 @@ public class FullBodyIKSolver : MonoBehaviour
             // perpendicularly by hintDistance. This guarantees the vector from root
             // to hint always has a large perpendicular component, avoiding the
             // near-collinear singularity inside TwoBoneIKSolver regardless of arm pose.
-            Vector3 rootToHandDir = (target.position - upperArm.position).normalized;
+            Vector3 rootToHandDir = (scaledHandPos - upperArm.position).normalized;
             if (rootToHandDir.sqrMagnitude < 0.001f) rootToHandDir = isLeft ? -hipsBone.right : hipsBone.right;
             Vector3 midPoint = upperArm.position + rootToHandDir * (limbLen * 0.5f);
             float hintDistance = Mathf.Max(elbowHintDistance, limbLen * 0.6f);
@@ -534,7 +624,7 @@ public class FullBodyIKSolver : MonoBehaviour
 
         TwoBoneIKSolver.Solve(
             upperArm, foreArm, hand,
-            target.position, targetRot,
+            scaledHandPos, targetRot,
             hintPos,
             armIKWeight, applyTargetRotation ? armIKWeight : 0f, 1f);
     }
@@ -562,10 +652,17 @@ public class FullBodyIKSolver : MonoBehaviour
         // Derive ankle position and knee hint from the shin tracker.
         if (shinMountedTrackers)
         {
-            Vector3 ankleTargetPos = footTarget.TransformPoint(
+            // Raw derived positions from tracker
+            Vector3 ankleTargetRaw = footTarget.TransformPoint(
                 isLeft ? _leftShinToAnkleLocal : _rightShinToAnkleLocal);
-            Vector3 kneeHintPos = footTarget.TransformPoint(
+            Vector3 kneeHintRaw = footTarget.TransformPoint(
                 isLeft ? _leftShinToKneeLocal : _rightShinToKneeLocal);
+
+            // Scale derived positions relative to pelvis for body proportion matching.
+            // The tracker gives real-world positions, but the avatar bones are a
+            // different length. We scale the vector from pelvis→ankle/knee.
+            Vector3 ankleTargetPos = ScaleTrackerPosition(ankleTargetRaw);
+            Vector3 kneeHintPos   = ScaleTrackerPosition(kneeHintRaw);
 
             // Collinearity safety: if leg is nearly straight, knee hint may be
             // on the hip→ankle axis. Fall back to calibrated bend direction.
@@ -592,13 +689,27 @@ public class FullBodyIKSolver : MonoBehaviour
                 kneeHintPos,
                 legIKWeight, 0f, 1f);
 
+            // Blend shin bone rotation toward tracker rotation so the knee
+            // angle directly follows the real shin tracker regardless of IK result.
+            // This fixes squatting looking like kneeling — the tracker knows the
+            // exact shin angle, so we trust it.
+            if (shinRotationBlend > 0f)
+            {
+                Quaternion shinLegOffset = isLeft ? _leftShinToLegRot : _rightShinToLegRot;
+                Quaternion trackerLegRot = footTarget.rotation * shinLegOffset;
+                leg.rotation = Quaternion.Slerp(leg.rotation, trackerLegRot, shinRotationBlend * legIKWeight);
+            }
+
             AlignFootToShin(leg, foot, isLeft ? _leftFootShinOffset : _rightFootShinOffset);
             return;
         }
 
         // ── Legacy Ankle-Mounted Mode ──
+        // Scale foot target position relative to pelvis for body proportion matching.
+        Vector3 scaledFootPos = ScaleTrackerPosition(footTarget.position);
+
         // Compute hip→foot direction (used for hint stability checks)
-        Vector3 hipToFoot = footTarget.position - upLeg.position;
+        Vector3 hipToFoot = scaledFootPos - upLeg.position;
         float hipToFootDist = hipToFoot.magnitude;
         Vector3 hipToFootDir = hipToFootDist > 0.001f ? hipToFoot / hipToFootDist : -Vector3.up;
 
@@ -659,7 +770,7 @@ public class FullBodyIKSolver : MonoBehaviour
         // Solve IK position only — foot rotation is handled by AlignFootToShin below.
         TwoBoneIKSolver.Solve(
             upLeg, leg, foot,
-            footTarget.position, foot.rotation,
+            scaledFootPos, foot.rotation,
             hintPos,
             legIKWeight, 0f, 1f);
 
@@ -689,6 +800,20 @@ public class FullBodyIKSolver : MonoBehaviour
     }
 
     // ───────────────────────── Helpers ─────────────────────────
+
+    /// <summary>
+    /// Scales a world-space tracker position relative to the pelvis using the
+    /// body proportion ratio computed at calibration. The direction from pelvis
+    /// tracker to the point is preserved, but the distance is scaled by _bodyScale.
+    /// </summary>
+    private Vector3 ScaleTrackerPosition(Vector3 worldPos)
+    {
+        if (!pelvisTarget) return worldPos;
+        // Vector from pelvis tracker to the target point in real world
+        Vector3 relToPelvis = worldPos - pelvisTarget.position;
+        // Apply to avatar pelvis with body scale
+        return hipsBone.position + relToPelvis * _bodyScale;
+    }
 
     /// <summary>
     /// Orients the foot bone so it always follows the shin bone's rotation with
@@ -819,20 +944,12 @@ public class FullBodyIKSolver : MonoBehaviour
         target.SetPositionAndRotation(source.position, source.rotation);
     }
 
-    private Transform[] GetSpineChain()
+    private void RebuildSpineChainCache()
     {
-        // Return available spine bones in order
-        int count = 0;
-        if (spineBone) count++;
-        if (spine1Bone) count++;
-        if (spine2Bone) count++;
-
-        Transform[] chain = new Transform[count];
-        int idx = 0;
-        if (spineBone) chain[idx++] = spineBone;
-        if (spine1Bone) chain[idx++] = spine1Bone;
-        if (spine2Bone) chain[idx++] = spine2Bone;
-        return chain;
+        _spineChainLen = 0;
+        if (spineBone)  _spineChainCache[_spineChainLen++] = spineBone;
+        if (spine1Bone) _spineChainCache[_spineChainLen++] = spine1Bone;
+        if (spine2Bone) _spineChainCache[_spineChainLen++] = spine2Bone;
     }
 
 #if UNITY_EDITOR

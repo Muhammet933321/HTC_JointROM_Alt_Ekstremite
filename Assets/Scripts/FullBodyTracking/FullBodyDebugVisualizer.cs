@@ -43,6 +43,7 @@ public class FullBodyDebugVisualizer : MonoBehaviour
     [SerializeField] private float updateInterval = 0.1f; // 10 Hz
 
     private float _updateTimer;
+    private readonly System.Text.StringBuilder _sb = new(256);
 
     private void Update()
     {
@@ -70,36 +71,36 @@ public class FullBodyDebugVisualizer : MonoBehaviour
 
     private void UpdateJointAngles()
     {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine("<b>Eklem Açıları</b>");
-        sb.AppendLine("─────────────────");
+        _sb.Clear();
+        _sb.AppendLine("<b>Eklem Açıları</b>");
+        _sb.AppendLine("─────────────────");
 
         // Left elbow flexion
         if (leftUpperArm && leftForeArm && leftHand)
         {
             float leftElbow = CalculateFlexionAngle(leftUpperArm, leftForeArm, leftHand);
-            sb.AppendLine($"Sol Dirsek: {leftElbow:F1}°");
+            _sb.Append("Sol Dirsek: ").Append(leftElbow.ToString("F1")).AppendLine("°");
         }
 
         // Right elbow flexion
         if (rightUpperArm && rightForeArm && rightHand)
         {
             float rightElbow = CalculateFlexionAngle(rightUpperArm, rightForeArm, rightHand);
-            sb.AppendLine($"Sağ Dirsek: {rightElbow:F1}°");
+            _sb.Append("Sağ Dirsek: ").Append(rightElbow.ToString("F1")).AppendLine("°");
         }
 
         // Left knee flexion
         if (leftUpLeg && leftLeg && leftFoot)
         {
             float leftKnee = CalculateFlexionAngle(leftUpLeg, leftLeg, leftFoot);
-            sb.AppendLine($"Sol Diz: {leftKnee:F1}°");
+            _sb.Append("Sol Diz: ").Append(leftKnee.ToString("F1")).AppendLine("°");
         }
 
         // Right knee flexion
         if (rightUpLeg && rightLeg && rightFoot)
         {
             float rightKnee = CalculateFlexionAngle(rightUpLeg, rightLeg, rightFoot);
-            sb.AppendLine($"Sağ Diz: {rightKnee:F1}°");
+            _sb.Append("Sağ Diz: ").Append(rightKnee.ToString("F1")).AppendLine("°");
         }
 
         // Hip flexion (spine angle)
@@ -108,32 +109,32 @@ public class FullBodyDebugVisualizer : MonoBehaviour
             Vector3 hipsUp = hipsBone.up;
             Vector3 spineDir = (spineBone.position - hipsBone.position).normalized;
             float hipFlexion = Vector3.Angle(hipsUp, spineDir);
-            sb.AppendLine($"Gövde Eğimi: {hipFlexion:F1}°");
+            _sb.Append("Gövde Eğimi: ").Append(hipFlexion.ToString("F1")).AppendLine("°");
         }
 
-        jointAnglesText.text = sb.ToString();
+        jointAnglesText.text = _sb.ToString();
     }
 
     private void UpdateSystemStatus()
     {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine("<b>Sistem Durumu</b>");
-        sb.AppendLine("─────────────────");
+        _sb.Clear();
+        _sb.AppendLine("<b>Sistem Durumu</b>");
+        _sb.AppendLine("─────────────────");
 
         bool isAssigned = trackingManager && trackingManager.IsAssigned;
         bool isCalibrated = ikSolver && ikSolver.IsCalibrated;
 
-        sb.AppendLine($"Tracker Atama: {(isAssigned ? "<color=green>Tamam</color>" : "<color=red>Bekleniyor</color>")}");
-        sb.AppendLine($"Kalibrasyon: {(isCalibrated ? "<color=green>Aktif</color>" : "<color=yellow>Gerekli</color>")}");
+        _sb.Append("Tracker Atama: ").AppendLine(isAssigned ? "<color=green>Tamam</color>" : "<color=red>Bekleniyor</color>");
+        _sb.Append("Kalibrasyon: ").AppendLine(isCalibrated ? "<color=green>Aktif</color>" : "<color=yellow>Gerekli</color>");
 
         if (isCalibrated)
         {
-            sb.AppendLine($"Kalibrasyon v{ikSolver.CalibrationVersion}");
+            _sb.Append("Kalibrasyon v").AppendLine(ikSolver.CalibrationVersion.ToString());
         }
 
-        sb.AppendLine($"FPS: {(1f / Time.smoothDeltaTime):F0}");
+        _sb.Append("FPS: ").AppendLine(Mathf.RoundToInt(1f / Time.smoothDeltaTime).ToString());
 
-        systemStatusText.text = sb.ToString();
+        systemStatusText.text = _sb.ToString();
     }
 
     /// <summary>

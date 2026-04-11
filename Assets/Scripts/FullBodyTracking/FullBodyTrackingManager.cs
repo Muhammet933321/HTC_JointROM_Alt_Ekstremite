@@ -97,6 +97,7 @@ public class FullBodyTrackingManager : MonoBehaviour
     // Internal state
     private readonly List<InputDevice> _devices = new();
     private readonly List<int> _activeTrackerIndices = new();
+    private readonly List<TrackerInfo> _trackerInfoCache = new(8);
     private float _scanTimer;
     private bool _assigned;
 
@@ -245,16 +246,17 @@ public class FullBodyTrackingManager : MonoBehaviour
 
     private void AssignTrackersBySpatialAnalysis()
     {
-        // Gather active tracker positions
-        List<TrackerInfo> trackers = new();
+        // Gather active tracker positions (reuse cached list to avoid GC)
+        _trackerInfoCache.Clear();
         foreach (int idx in _activeTrackerIndices)
         {
-            trackers.Add(new TrackerInfo
+            _trackerInfoCache.Add(new TrackerInfo
             {
                 index = idx,
                 position = allTrackerTransforms[idx].position
             });
         }
+        var trackers = _trackerInfoCache;
 
         // Sort by height (Y) descending
         trackers.Sort((a, b) => b.position.y.CompareTo(a.position.y));
