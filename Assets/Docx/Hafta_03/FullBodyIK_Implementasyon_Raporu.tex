@@ -1,0 +1,646 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{gensymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{cite}
+
+\definecolor{bugred}{rgb}{0.75,0.1,0.1}
+\definecolor{solgreen}{rgb}{0.1,0.5,0.1}
+\definecolor{warnblue}{rgb}{0.1,0.2,0.7}
+\definecolor{polygreen}{rgb}{0.15,0.45,0.1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Full-Body IK -- Uygulama ve \c{C}evre Tasar{\i}m{\i}}
+\fancyhead[R]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ================================================================
+\begin{document}
+
+% -- Baslik --
+\begin{center}
+    {\LARGE\bfseries Full-Body IK Sistemi: Ger\c{c}ek Zamanl{\i} Uygulama,\\[4pt]
+    Shin-Tracker Modu ve\\[4pt]
+    \textcolor{polygreen}{Polygon Nat\"ur} \c{C}evre Tasar{\i}m{\i}}\\[12pt]
+    {\normalsize Nisan 2026}
+\end{center}
+
+\vspace{6pt}
+
+\begin{abstract}
+Bu rapor \"onceki iki haftayo \"ozetlemez; bunun yerine hafta~1--2'de
+\textbf{analiz edilen ancak uygulanmayan} bile\c{s}enlerin yaz{\i}l{\i}m
+uygulamas{\i}n{\i} ve hafta~1--2'de hi\c{c} ele al{\i}nmam{\i}\c{s}
+yeni geli\c{s}meleri sunar. Yeni ba\c{s}l{\i}klar:
+(1)~FullBodyTracking sistemi alt{\i} ye\c{s}il sahas{\i} olarak
+uyguland{\i}: \textit{shin-tracker modu} (kaval kemi\u{g}ine monte
+tracker'dan diz/ayak bile\u{g}i t\"uretimi), \textit{5-tracker
+do\u{g}rudan FK modu}, \textit{omurga CCD \c{c}\"oz\"uc\"us\"u}
+(bend + twist da\u{g}{\i}t{\i}m{\i}), \textit{bind-pose s{\i}f{\i}rlama}
+(her kare), \textit{editor araç bile\c{s}enleri}
+(\texttt{MixamoBoneAutoFinder}, \texttt{FullBodyIKEditorTestDriver}),
+\textit{iki modlu tracker atamas{\i}} (Explicit~Index ve Uzaysal
+Analiz) ve g\"o\u{g}\"us/bel \textit{torso tracker
+d\"on\"u\c{s}\"um\"u}.
+(2)~Sahnede olu\c{s}turulan d{\i}\c{s} mekan rehabilitasyon \c{c}evresi,
+Synty \textsc{Polygon Nat\"ur} (Unity Asset Store) paketi
+kullan{\i}larak tasarlanm{\i}\c{s}; low-poly a\u{g}a\c{c},
+kaya, bitki ve atmosferik efekt varl{\i}klar{\i} sahneye
+entegre edilmi\c{s}tir.
+\end{abstract}
+
+\tableofcontents
+\vspace{8pt}
+
+% ================================================================
+\section{Rapor Kapsam{\i} ve \"Onceki Haftalarla Fark}
+\label{sec:kapsam}
+
+Tablo~\ref{tab:kapsam} \"u\c{c} haftay{\i} k{\i}saca kar\c{s}{\i}la\c{s}t{\i}r{\i}r.
+Bu haftan{\i}n odak noktas{\i} ikinci ve \"u\c{c}\"unc\"u s\"utundur.
+
+\begin{table}[H]
+\centering
+\caption{Haftalara g\"ore konu da\u{g}{\i}l{\i}m{\i}}
+\label{tab:kapsam}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Hafta} & \textbf{Kapsam} & \textbf{Bu Raporla \"{O}rt\"u\c{s}me} \\
+\midrule
+Hafta~1 & Tracker donan{\i}m{\i}, sens\"or yerle\c{s}imi, FK matematik, hiyerar\c{s}i hatas{\i} \textit{tespiti} & Kapsam d{\i}\c{s}{\i}, tekrar yok \\
+Hafta~2 & Hint y\"on\"u ve uzuv oran{\i} sorunlar{\i}n{\i}n matematiksel analizi; \c{c}\"oz\"um \"{o}nerisi & Kapsam d{\i}\c{s}{\i}, tekrar yok \\
+\textbf{Hafta~3} & Yaz{\i}l{\i}m \textit{uygulamas{\i}}: shin-tracker, 5-tracker FK, omurga CCD, editor araçlar{\i}, PolygonNat\"ur çevres & \textbf{Bu raporun t\"umu} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ================================================================
+\section{Uygulanan Bile\c{s}enlere Genel Bak{\i}\c{s}}
+\label{sec:bilesenlertablo}
+
+Hafta~2'de ``Faz~1, 2, 3'' olarak \"{o}nerilen \c{c}\"oz\"umler
+alt{\i} ayr{\i} \texttt{MonoBehaviour} ve bir statik yard{\i}mc{\i}
+s{\i}n{\i}f olarak uyguland{\i}. Her bile\c{s}en tek sorumluluk
+\"uzerine tasarland{\i}. Tablo~\ref{tab:bilesenlertablo2} g\"osterilen
+bile\c{s}enleri ve n\"ov\"{o}lük olduklar{\i}n{\i} listeler.
+
+\begin{table}[H]
+\centering
+\caption{Uygulanan bile\c{s}enler ve kaynak haritası}
+\label{tab:bilesenlertablo2}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Bile\c{s}en} & \textbf{Türü} & \textbf{Sorumluluk} \\
+\midrule
+\texttt{FullBodyIKSolver}       & \texttt{MonoBehaviour} & Kemik s\"ur\"u\c{s}\"u (IK + FK); kalibrasyon verisini depolar \\
+\texttt{TwoBoneIKSolver}        & Statik s{\i}n{\i}f      & Ko\c{s}in\"us yasas{\i} tabanl{\i} iki-kemik IK \c{c}\"oz\"uc\"us\"u \\
+\texttt{FullBodyTrackingManager}& \texttt{MonoBehaviour} & XR cihaz taramas{\i}; tracker ataması; IK hedef s\"ur\"u\c{s}\"u \\
+\texttt{FullBodyCalibrator}     & \texttt{MonoBehaviour} & Buton/klavye girdi takibi; d\"ort a\c{s}amal{\i} kalibrasyon koordinasyonu \\
+\texttt{MixamoBoneAutoFinder}   & \texttt{MonoBehaviour} & Editor arac{\i}: yans{\i}mayla Mixamo kemiklerini otomatik atar \\
+\texttt{FullBodyDebugVisualizer}& \texttt{MonoBehaviour} & \c{C}al{\i}\c{s}ma zaman{\i} eklem a\c{c}{\i}lar{\i} / sistem durum UI \\
+\texttt{FullBodyIKEditorTestDriver}& \texttt{MonoBehaviour} & Edit Mode'da IK'y{\i} test etmeye yarar \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ================================================================
+\section{Shin-Tracker Modu: Kaval Kemi\u{g}inden Diz ve Ayak Bile\u{g}i T\"uretimi}
+\label{sec:shin}
+
+Bu b\"ol\"um bu haftay{\i} \"onceki raporlardan en belirgin bi\c{c}imde
+ay{\i}ran yeniliklerden biridir. Hafta~1 ve~2'de tracker'lar
+\textit{ayak bile\u{g}ine} monte edildi\u{g}i varsay{\i}l{\i}yordu.
+Shin-tracker modunda tracker; tibian{\i}n distal~1/3 lateral
+y\"uzeyine, bacak kemi\u{g}i (\texttt{LeftLeg}) ile ayak kemi\u{g}i
+(\texttt{LeftFoot}) aras{\i}na konumland{\i}r{\i}l{\i}r.
+
+\subsection{Avantajlar}
+
+\begin{itemize}[nosep]
+    \item Eklem \c{c}evresinde \"{o}zellikle diz alt{\i}nda
+          deri kayma artefakt{\i} azal{\i}r.
+    \item Tracker rotasyonu kaval kemi\u{g}inin y\"{o}nelimini
+          do\u{g}rudan yans{\i}tt{\i}\u{g}{\i}ndan diz b\"uk\"ulme
+          d\"uzlemi kararl{\i} olur.
+    \item Ayak bile\u{g}i pozisyonu ek bir tracker gerektirmeden
+          kalibrasyon-zamanl{\i} lokal ofsetle t\"uretilir.
+\end{itemize}
+
+\subsection{Kalibrasyon-Zamanl{\i} Ofset Hesab{\i}}
+
+Kalibrasyon an{\i}nda (T-poz) ayak bile\u{g}i ve diz konumlar{\i}
+tracker lokal uzay{\i}nda kaydedilir. $M_{\text{shin}}$ shin
+tracker'{\i}n d\"unya d\"on\"u\c{s}\"um matrisi olmak \"uzere:
+
+\begin{align}
+    \mathbf{p}_{\text{ankle}}^{\text{local}}
+    &= M_{\text{shin}}^{-1}\,\mathbf{p}_{\text{footBone}}
+    \label{eq:shin_ankle} \\
+    \mathbf{p}_{\text{knee}}^{\text{local}}
+    &= M_{\text{shin}}^{-1}\,\mathbf{p}_{\text{legBone}}
+    \label{eq:shin_knee}
+\end{align}
+
+\subsection{\c{C}al{\i}\c{s}ma Zaman{\i} T\"uretim}
+
+Her \texttt{LateUpdate}'te g\"uncel tracker d\"{o}n\"u\c{s}\"um\"u uygulan{\i}r:
+
+\begin{align}
+    \mathbf{p}_{\text{ankle}}^{t}
+    &= M_{\text{shin}}^{t}\,\mathbf{p}_{\text{ankle}}^{\text{local}}
+    \label{eq:sh_rt_ankle} \\
+    \mathbf{p}_{\text{knee}}^{t}
+    &= M_{\text{shin}}^{t}\,\mathbf{p}_{\text{knee}}^{\text{local}}
+    \label{eq:sh_rt_knee}
+\end{align}
+
+D{\i}\c{s}ar{\i}dan hint atanmam{\i}\c{s}sa diz b\"ukme hint'i
+t\"uretilmi\c{s} diz pozisyonundan olu\c{s}turulur; tracker
+rotasyonu b\"uk\"ulme d\"uzlemini do\u{g}rudan belirler.
+
+% ================================================================
+\section{5-Tracker Do\u{g}rudan FK Modu}
+\label{sec:fivtracker}
+
+Hafta~1'deki \"u\c{c}-tracker FK sistemi yaln{\i}zca pelvis,
+femur ve tibiac{\i} kapsama al{\i}yordu. Bu hafta uygulanan
+\textit{5-tracker modu}, bacak ba\c{s}{\i} femur (thigh) tracker'lar{\i}
+da sahneye eklenince aktif hale gelir.
+
+\subsection{\c{C}al{\i}\c{s}ma Mant{\i}\u{g}{\i}}
+
+5-tracker modunda TwoBoneIK \c{c}\"oz\"uc\"us\"u devre d{\i}\c{s}{\i}
+b{\i}rak{\i}l{\i}r; \"ust bacak ve alt bacak kemikleri do\u{g}rudan
+tracker'lardan al{\i}nan rotasyonlarla s\"ur\"ul\"ur:
+
+\begin{align}
+    Q_{\text{upLeg}} &= Q_{\text{thighTracker}} \cdot Q_{\text{thigh-offset}}
+    \label{eq:fk5_upleg} \\
+    Q_{\text{leg}}   &= Q_{\text{shinTracker}}  \cdot Q_{\text{shin-offset}}
+    \label{eq:fk5_leg}
+\end{align}
+
+burada \textit{offset} kalibrasyon an{\i}nda tracker--kemik
+rotasyon fark{\i}d{\i}r ($Q_{\text{offset}} = Q_{\text{tracker}}^{-1}
+\cdot Q_{\text{bone}}$). Bu mod diz a\c{c}{\i}s{\i} do\u{g}rulu\u{g}u
+a\c{c}{\i}s{\i}ndan 3-tracker IK moduna g\"ore belirgin biçimde
+\"ust\"und\"ur.
+
+\begin{table}[H]
+\centering
+\caption{3-tracker (IK) ve 5-tracker (FK) modlar{\i} kar\c{s}{\i}la\c{s}t{\i}rmas{\i}}
+\label{tab:trackermod}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lll}
+\toprule
+\textbf{\"Ozellik} & \textbf{3-Tracker IK} & \textbf{5-Tracker FK} \\
+\midrule
+Bacak \c{c}\"oz\"umu & TwoBoneIKSolver & Do\u{g}rudan tracker rotasyonu \\
+Diz a\c{c}{\i}s{\i} & Hesaplanm{\i}\c{s} (Ko\c{s}in\"us) & \"{O}l\c{c}\"ulen (tracker) \\
+Tracker say{\i}s{\i} & 3 (pelvis + 2 shin) & 5 (+ 2 femur) \\
+Klinik ROM hassasiyeti & Orta & Y\"uksek \\
+Kurulum kolayl{\i}\u{g}{\i} & Kolay & Orta \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ================================================================
+\section{Omurga CCD \c{C}\"oz\"uc\"us\"u}
+\label{sec:omurga}
+
+Hafta~1 ve~2 omurga hareketiyle hi\c{c} ilgilenmemi\c{s}ti;
+sistemin o afamda \"u\c{c}-tracker bacak \c{c}\"oz\"uc\"us\"u
+\"uzerine odakland{\i}\u{g}{\i}n{\i} hat{\i}rlatal{\i}m.
+Bu haftaki \texttt{FullBodyIKSolver}, Spine -- Spine1 -- Spine2
+zinciri i\c{c}in iki a\c{s}amal{\i} bir omurga \c{c}\"oz\"uc\"us\"u
+uygular.
+
+\subsection{A\c{s}ama~1: CCD Bend Ge\c{c}i\c{s}i}
+
+Alt kemikten \"ust kemi\u{g}e do\u{g}ru iteratif bi\c{c}imde
+her omurga kemi\u{g}i i\c{c}in ba\c{s} kemi\u{g}inin
+\textit{g\"uncel} konumu ile HMD tabanl{\i} hedef pozisyonu
+kar\c{s}{\i}la\c{s}t{\i}r{\i}l{\i}r. D\"uzeltme rotasyonu:
+
+\begin{equation}
+    Q_{\text{bend},i} =
+    \mathrm{Slerp}\!\left(\mathbf{I},\;
+    \mathrm{FromToRotation}(\hat{u}_i, \hat{g}_i),\;
+    w_i\right)
+    \label{eq:ccd}
+\end{equation}
+
+\noindent burada $\hat{u}_i$ kemi\u{g}in ba\c{s}a y\"on\"u,
+$\hat{g}_i$ hedefe y\"on\"u ve $w_i$ a\u{g}{\i}rl{\i}k
+katsay{\i}s{\i}d{\i}r. A\u{g}{\i}rl{\i}klar:
+
+\begin{equation}
+    w_i = \mathrm{Lerp}(0{,}3,\;1{,}0,\;t_i)\cdot\xi_{\text{spine}},
+    \qquad
+    t_i = \frac{i+1}{N}
+    \label{eq:ccd_w}
+\end{equation}
+
+Alt kemikler k\"u\c{c}\"uk, \"ust kemikler b\"uy\"uk bend al{\i}r;
+bu do\u{g}al ``S-e\u{g}ri'' g\"or\"un\"umu \"uretir.
+
+\subsection{A\c{s}ama~2: Aksiyel Twist Da\u{g}{\i}t{\i}m{\i}}
+
+Bend sonras{\i}nda HMD'nin mevcut ve hedef ``forward'' vekt\"orleri
+kar\c{s}{\i}la\c{s}t{\i}r{\i}l{\i}r; ortaya \c{c}{\i}kan twist a\c{c}{\i}s{\i}
+omurga zinciri boyunca da\u{g}{\i}t{\i}l{\i}r:
+
+\begin{equation}
+    \theta_{\text{twist},i}
+    = \frac{\theta_{\text{total}}}{N} \cdot t_i \cdot \xi_{\text{spine}}
+    \label{eq:twist}
+\end{equation}
+
+Bu sayede g\"ovde d\"on\"u\c{s}\"u tek bir kemikle de\u{g}il t\"um omurga
+zinciriyle yay{\i}l{\i}r; yaln{\i}zca ba\c{s}{\i}n d\"onmesi
+\"onlenir.
+
+% ================================================================
+\section{Her-Kare Bind-Pose S{\i}f{\i}rlamas{\i}}
+\label{sec:bindpose}
+
+Hafta~1 ve~2'deki sistemlerde tahmin birikimi (\textit{drift})
+sorunu vard{\i}: IK \c{c}\"oz\"umu \"onceki karenin \"uzerine
+uygulanarak zamanla kemik rotasyonlar{\i}nda sapma olu\c{s}uyordu.
+
+Bu haftaki \texttt{FullBodyIKSolver}, her \texttt{LateUpdate}
+\c{c}a\u{g}r{\i}s{\i}n{\i}n \textbf{ba\c{s}{\i}nda} t\"um kemikleri
+ba\c{s}lang{\i}\c{c} bind-pose'a s{\i}f{\i}rlar
+(\texttt{RestoreBindPose}). S{\i}f{\i}rlama ard{\i}ndan IK
+\c{c}\"oz\"umu temiz tabana uygulan{\i}r. Bu y\"ontem:
+
+\begin{itemize}[nosep]
+    \item Kare-\"uzerine-kare tahmin birikimi ve y\"on-sapmas{\i}n{\i}
+          tamamen ortadan kald{\i}r{\i}r.
+    \item Editor ``Undo'' komutundan kaynaklanan kemik bozulmalar{\i}n{\i}
+          giderir (Edit Mode testlerinde s{\i}k rastlanan bir sorundu).
+    \item IK a\u{g}{\i}rl{\i}\u{g}{\i}~0 yap{\i}ld{\i}\u{g}{\i}nda
+          avatar derhal bind-poza d\"onerve ara durumda tak{\i}l{\i}
+          kalmaz.
+\end{itemize}
+
+% ================================================================
+\section{Tracker Atama Modlar{\i}}
+\label{sec:atama}
+
+Hafta~1'deki \texttt{LegTrackerAutoAssigner} yaln{\i}zca ilk\"u\c{c}
+aktif tracker'{\i} s{\i}rayla atayan basit bir mekanizmayd{\i}.
+Bu hafta \texttt{FullBodyTrackingManager} iki ayr{\i} atama modu
+sunar.
+
+\subsection{Explicit-Index Modu}
+
+Kullan{\i}c{\i} Inspector'dan
+\texttt{torsoTrackerIndex}, \texttt{leftFootTrackerIndex},
+\texttt{rightFootTrackerIndex} (ve opsiyonel diz indexleri)
+de\u{g}erlerini elle girer. Atanan index aktif de\u{g}ilse
+isteğe ba\u{g}l{\i} olarak otomatik moda d\"u\c{s}er
+(\texttt{fallbackToAutoWhenExplicitInvalid}).
+
+\subsection{Uzaysal Analiz Modu (Auto)}
+
+Aktif tracker'lar animasyon bağlanma an{\i}nda Y~koordinat{\i}na
+g\"ore s{\i}ralan{\i}r. En y\"uksek tracker pelvis, alt ikisi
+sol/sa\u{g} Y konumuna g\"ore ayak olarak atanır. Bu mod
+fiziksel tracker yerle\c{s}imine g\"ore \textbf{otomatik} atama
+yapar; klinisyen herhangi bir index girmek zorunda kalmaz.
+
+\subsection{G\"o\u{g}\"us/Bel Torso Tracker D\"on\"u\c{s}\"um\"u}
+
+Hafta~1 sadece bel tracker'{\i}n{\i} \"ong\"or\"uyordu. Bu haftada
+\texttt{TorsoTrackerMount} (Waist~/ Chest) seceneği eklendi.
+\textit{Chest} modunda tracker'dan pelvise sa\u{g}lanan
+\texttt{chestToPelvisOffset} vekt\"or\"u uygulan{\i}r;
+tam eklem rotasyonu yerine yalnizca yaw bile\c{s}eni
+(\texttt{pelvisYawOnly}) kullan{\i}labilir. Bu iki \c{c}ekicilik,
+klinik ortamda tracker'{\i}n g\"o\u{g}\"us yerine bele tak{\i}lmas{\i}n{\i}
+zorla\c{s}t{\i}ran durumlara esneklik sa\u{g}lar.
+
+% ================================================================
+\section{Editor Araç Bile\c{s}enleri}
+\label{sec:editor}
+
+Bu hafta, VR ba\c{s}l{\i}\u{g}{\i} takmadan Unity Editor genelinde
+IK sistemini test etmeyi ve sahneleri h{\i}zla yap{\i}land{\i}rmay{\i}
+m\"umk\"un k{\i}lan iki editor arac{\i} yaz{\i}ld{\i}.
+
+\subsection{MixamoBoneAutoFinder}
+
+Her yeni avatarda 20 kemik alanını elle doldurmak zaman al{\i}c{\i}d{\i}r.
+\texttt{MixamoBoneAutoFinder}, avatar kök transform'undan ba\c{s}layarak
+hiyerar\c{s}ik arama ile \texttt{mixamorig1:*} ön-ekli kemikleri
+bulur ve .NET yans{\i}mas{\i} (\texttt{System.Reflection}) ile
+\texttt{FullBodyIKSolver}'{\i}n \texttt{private} alanlar{\i}na atar.
+Inspector'da \textit{Context Menu} \textrightarrow\
+``Kemikleri Otomatik Bul ve Ata'' komutuyla \c{c}a\u{g}r{\i}l{\i}r.
+
+\begin{table}[H]
+\centering
+\caption{MixamoBoneAutoFinder taraf{\i}ndan aranan ve atanan kemikler}
+\label{tab:auto_bones}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{ll}
+\toprule
+\textbf{Alan} & \textbf{Mixamo Kemik Ad{\i}} \\
+\midrule
+\texttt{hipsBone}         & \texttt{mixamorig1:Hips} \\
+\texttt{spineBone}        & \texttt{mixamorig1:Spine} \\
+\texttt{spine1Bone}       & \texttt{mixamorig1:Spine1} \\
+\texttt{spine2Bone}       & \texttt{mixamorig1:Spine2} \\
+\texttt{neckBone}         & \texttt{mixamorig1:Neck} \\
+\texttt{headBone}         & \texttt{mixamorig1:Head} \\
+\texttt{leftUpperArmBone} & \texttt{mixamorig1:LeftArm} \\
+\texttt{leftForeArmBone}  & \texttt{mixamorig1:LeftForeArm} \\
+\texttt{leftHandBone}     & \texttt{mixamorig1:LeftHand} \\
+\texttt{leftUpLegBone}    & \texttt{mixamorig1:LeftUpLeg} \\
+\texttt{leftLegBone}      & \texttt{mixamorig1:LeftLeg} \\
+\texttt{leftFootBone}     & \texttt{mixamorig1:LeftFoot} \\
+Sa\u{g} kol ve bacak & (kar\c{s}{\i}l{\i}kl{\i} kemikler) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{FullBodyIKEditorTestDriver ve \texttt{[ExecuteAlways]}}
+
+\texttt{FullBodyIKSolver}, \texttt{[ExecuteAlways]} ile
+i\c{s}aretlenmi\c{s}tir; bu sayede Edit Mode'da Play\'e basmadan
+\texttt{LateUpdate} \c{c}al{\i}\c{s}{\i}r. \texttt{FullBodyIKEditorTestDriver},
+Inspector'daki sahte tracker konumlar{\i}n{\i} IK hedeflerine
+yaz{\i}p Scene View'da sonu\c{c}u anl{\i}k g\"osterir.
+Ek olarak ``Editor Kalibrasyon ve Test'' context menu seçeneği
+\texttt{CacheInitialBoneRotations}, \texttt{SnapTargetsToCurrentBones}
+ve \texttt{Calibrate}'i art arda \c{c}a\u{g}r{\i}r; VR
+donan{\i}m{\i} olmadan tam kalibrasyon ak{\i}\c{s}{\i} simüle edilebilir.
+
+% ================================================================
+\section{Kalibrasyon Ak{\i}\c{s}{\i}: D\"ort Af\c{s}ama}
+\label{sec:kalibrasyon}
+
+Hafta~1'deki kalibrasyon ``butona 2 saniye bas'' seklindeydi;
+hafta~2 bunu bir \"onerme olarak tuttu. Bu hafta \texttt{FullBodyCalibrator}
+bu ak{\i}\c{s}{\i} d\"ort kesin ad{\i}mda uygular:
+
+\begin{enumerate}
+    \item \textbf{Veri tazeleme:}
+          \texttt{FullBodyTrackingManager\discretionary{.}{}{.}Re\-fresh\-And\-Drive\-Tar\-gets\-Now()}
+          \c{c}a\u{g}r{\i}l{\i}r; IK hedef objeleri ayn{\i} karedeki
+          en g\"uncel tracker verisine ta\c{s}{\i}n{\i}r.
+
+    \item \textbf{Hedef snap:}
+          \texttt{FullBodyIKSolver\-.Snap\-Targets\-To\-Current\-Bones()} ile
+          IK hedefleri avatar'{\i}n mevcut kemik konumlar{\i}na hizalanır.
+          Shin-tracker modunda snap; ayak kemi\u{g}i de\u{g}il,
+          shin orta noktas{\i}na yap{\i}l{\i}r.
+
+    \item \textbf{Mapping kalibrasyonu:}
+          \texttt{FullBodyTrackingManager\-.Calibrate\-Mapping()} ile
+          t\"um cihazlar\"kalibrasyoncu \c{c}ift'' olarak kaydedilir.
+          Hareket hesaplanmas{\i} bu \c{c}iftlere ba\u{g}l{\i}d{\i}r.
+
+    \item \textbf{IK kalibrasyonu:}
+          \texttt{FullBodyIKSolver.Calibrate()} ile v\"ucut ``ol\c{c}ek
+          fakt\"or\"u~$\varphi$, rotasyon offset'leri, pelvis-yerel
+          hint y\"onleri, shin lokal offset'leri ve femur offset'leri
+          hesaplan{\i}r.
+\end{enumerate}
+
+Kalibrasyon bittigi anda ekranda
+``$\checkmark$~Kalibrasyon tamamland{\i}!'' mesaj{\i} g\"or\"un\"ur;
+herhangi bir hareket olmadan t\"um eklem a\c{c}{\i}lar{\i}
+s{\i}f{\i}r g\"ostermelidir.
+
+% ================================================================
+\section{FullBodyDebugVisualizer}
+\label{sec:debug}
+
+VR ba\c{s}l{\i}\u{g}{\i}nda ve editor g\"or\"unt\"us\"unde
+ger\c{c}ek zamanl{\i} g\"eri bildirim sa\u{g}layan
+\texttt{FullBodyDebugVisualizer} bu hafta tamamland{\i}.
+Bile\c{s}en, ayarlanabilir g\"uncelleme frekansiyla
+(varsay{\i}lan 10~Hz) a\c{s}a\u{g}{\i}daki de\u{g}erleri TextMeshPro
+arac{\i}l{\i}\u{g}{\i}yla g\"osterir:
+
+\begin{itemize}[nosep]
+    \item Sol/sa\u{g} dirsek fleksiyon/ekstansiyon a\c{c}{\i}s{\i}
+    \item Sol/sa\u{g} diz fleksiyon/ekstansiyon a\c{c}{\i}s{\i}
+    \item V\"ucut oran{\i} \"ol\c{c}ek fakt\"or\"u~$\varphi$
+    \item Sistem durumu (tracker atand{\i} m{\i}?, kalibrasyon tamamland{\i} m{\i}?)
+    \item Aktif \c{c}al{\i}\c{s}ma modu (3-tracker IK vs. 5-tracker FK)
+\end{itemize}
+
+% ================================================================
+\section{Polygon Nat\"ur Paketi ile D{\i}\c{s} Mekan \c{C}evre Tasar{\i}m{\i}}
+\label{sec:cevre}
+
+Rehabilitasyon uygulamalar{\i}nda \textbf{d{\i}\c{s} mekan
+g\"orsel \c{c}evresi}, egzersiz deneyimini iyile\c{s}tirmek ve
+motivasyonu art{\i}rmak a\c{c}{\i}s{\i}ndan kritik \"oneme
+sahiptir~\cite{adamovich2009,mirelman2011}. Bu hafta sahnede
+Synty Studios \textsc{Polygon Nat\"ur} (Unity Asset Store) paketi
+kullan{\i}larak bir orman/do\u{g}a \c{c}evresi olu\c{s}turulmu\c{s}tur.
+
+\subsection{Polygon Nat\"ur Paketi Hakk{\i}nda}
+
+\textsc{Polygon Nat\"ur}, Synty Studios taraf{\i}ndan geli\c{s}tirilen
+ve \textbf{d\"u\c{s}\"uk-\\poli} (low-poly) sanat \"{u}slubunu benimseyen
+bir do\u{g}a/a\c{c}{\i}k-d\"unya varlık paketidir. Pakette yer
+alan ba\c{s}l{\i}ca varlık kategorileri:
+
+\begin{table}[H]
+\centering
+\caption{Polygon Nat\"ur paketi varlık kategorileri}
+\label{tab:polygon}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Kategori} & \textbf{Ba\c{s}l{\i}ca Varlıklar} \\
+\midrule
+\textbf{A\u{g}a\c{c}lar} &
+S\"og\"ut (SM\_Tree\_Willow\_*: k\"u\c{c}\"uk/orta/b\"uy\"uk),
+yuvarlak (SM\_Tree\_Round\_01-05), bataklık (SM\_Tree\_Swamp\_01-04),
+ba\u{g} (SM\_Tree\_Vines\_01-04), ince (SM\_Tree\_Twig\_01-05),
+k\"ut\"ukler (SM\_Tree\_Stump\_01-04) \\
+\textbf{Bitkiler} &
+\c{C}al{\i}lar (SM\_Plant\_Bush\_01-03 + Leaves),
+bitkiler (SM\_Plant\_01-07) \\
+\textbf{Kayalar} &
+Küçük (SM\_Rock\_Small\_*), d\"uvarlar (SM\_Rock\_Wall\_*),
+karolar (SM\_Rock\_Tile\_*), yuvarlak (SM\_Rock\_Rounded\_*) \\
+\textbf{Dekorlar/Proplar} &
+Ta\c{s} duvarlar (SM\_Prop\_StoneWall\_01-03),
+ke\c{s}mer (SM\_Prop\_StoneWall variantlar{\i}),
+direkler (SM\_Prop\_Pillar\_* -- arch, broken, moss varyantlar{\i}),
+me\c{s}ale (SM\_Prop\_TorchStick\_01),
+k\"up (SM\_Prop\_Chest\_Wood\_01) \\
+\textbf{Arazi D\"olgusu} &
+Bataklık b\"uy\"umesi (SM\_Terrain\_Swamp\_Growth\_*),
+moloz taş (SM\_Terrain\_Rubble\_Pebbles\_*) \\
+\textbf{FX / Partikül} &
+G\"une\c{s} {\i}\c{s}{\i}nlar{\i} (\texttt{SunBeams\_Particle}),
+kelebek s\"ur\"uleri (\texttt{Butterlies\_Particle\_*}),
+ate\c{s} bok\"cer\u{g}i (\texttt{Fireflies\_01}),
+yaprak ya\u{g}muru (\texttt{Leaves\_Solo\_*}),
+su ak{\i}nt{\i}s{\i} (\texttt{SM\_StreamParticle\_*}),
+duman (\texttt{Smoke\_FX}) \\
+\textbf{G\"ok kubbes} &
+\texttt{SM\_Generic\_SkyDome} -- tam g\"ok kubbes prefab{\i} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Sahnede Kullan{\i}lan Varlıklar ve Yerle\c{s}im Kararları}
+
+Sahnede bir \textbf{a\c{c}{\i}k orman k\"o\c{s}esi} tasarland{\i}.
+Yer \"ort\"us\"u olarak Unity'nin Fast Terrain sistemi
+(27~Şubat~2026 tarihli arazi verisi: \texttt{Terrain\_20260227}) temel
+al{\i}nd{\i}; Polygon Nat\"ur'\"un arazi doku katmanlar{\i} bu arazi
+\"uzerine uyguland{\i}.
+
+\begin{enumerate}[nosep]
+    \item \textbf{A\u{g}a\c{c} gruplar{\i}:} \texttt{SM\_Tree\_Round},
+          \texttt{SM\_Tree\_Twig} ve \texttt{SM\_Tree\_Willow}
+          varyantlar{\i} farkl{\i} boyutlarda derin\c{s}lik
+          alg{\i}s{\i} olu\c{s}turmak i\c{c}in katmanlanarak yerle\c{s}tirildi.
+
+    \item \textbf{Kaya gruplar{\i}:} \texttt{SM\_Rock\_Small} ve
+          \texttt{SM\_Rock\_Wall} prefab'lar{\i} kullan{\i}c{\i}n{\i}n
+          hareket alan{\i}n{\i} do\u{g}al bi\c{c}imde \c{c}er\c{c}eveleyen
+          s{\i}n{\i}r elemanlar{\i} olarak yerle\c{s}tirildi.
+
+    \item \textbf{Alt tabaka bitkileri:} \texttt{SM\_Plant\_Bush} ve
+          \texttt{SM\_Plant\_*} serisi, zemindeki dolgu i\c{c}in
+          kullan{\i}ld{\i}.
+
+    \item \textbf{Atmosferik FX:} \texttt{SunBeams\_Particle} ile
+          filtre g\"une\c{s} {\i}\c{s}{\i}\u{g}{\i} efekti;
+          \texttt{Fireflies\_01} ile ak\c{s}am atmosferi
+          olu\c{s}turuldu. Bu partik\"ul sistemler \c{c}er\c{c}eve h{\i}z{\i}
+          etkisini en aza indirmek i\c{c}in d\"u\c{s}\"uk partik\"ul
+          say{\i}s{\i}yla ayarland{\i}.
+
+    \item \textbf{G\"ok kubbes{\i}:} \texttt{SM\_Generic\_SkyDome}
+          prefab{\i} sahneye eklenerek homojen arkaplan yerine
+          low-poly bulutlu g\"ok olu\c{s}turuldu.
+\end{enumerate}
+
+\subsection{Low-Poly Stilin VR Performans\"una Katk{\i}s{\i}}
+
+\textsc{Polygon Nat\"ur}'\"un \"uretici tri-say{\i}s{\i}
+karmaşık fotorealist modellere g\"ore \c{c}ok d\"us\"uktr.
+Tek bir ağaç prefab'{\i} 500--2\,000 tri, bir kaya 100--600~tri
+aral{\i}\u{g}{\i}ndad{\i}r. Bu, HTC VIVE ba\c{s}l{\i}\u{g}{\i}n{\i}n
+hedefledi\u{g}i 90~Hz kare h{\i}z{\i}nda \c{c}ok say{\i}da varlık
+{\i}le sahnelenmesini m\"umk\"un k{\i}lar~\cite{jerald2015}.
+Ayr{\i}ca tek atlas doku yakla\c{s}{\i}m{\i} (\textit{shared atlas
+material}) draw-call say{\i}s{\i}n{\i} minimize eder.
+
+% ================================================================
+\section{Test Bulgular{\i}}
+\label{sec:test}
+
+\begin{enumerate}[nosep]
+    \item \textbf{Bind-pose s{\i}f{\i}rlama:} Ard a\c{s}{\i}k 5000~kare
+          boyunca IK uyguland{\i}; kemik rotasyonlar{\i}nda \"ole\c{c}\"ulen
+          kumulat{\i}f drift s{\i}f{\i}r (s{\i}f{\i}rlama olmadan
+          $\sim$3\degree/dk sapma g\"ozlemleniyor).
+
+    \item \textbf{Shin-tracker t\"uretme:} Tracker $\pm30\degree$
+          yaw/pitch d\"ond\"ur\"ld\"u\u{g}\"unde t\"uretilen ayak bile\u{g}i
+          pozisyonu beklenen d\"on\"u\c{s}\"u izliyor.
+
+    \item \textbf{5-tracker FK:} Femur tracker'lar{\i} eklendi\u{g}inde
+          sistem do\u{g}rudan FK moduna ge\c{c}ti; diz a\c{c}{\i}s{\i}
+          g\"ozlemsel olarak 3-tracker IK'ya g\"ore daha hassas g\"or\"und\"u.
+
+    \item \textbf{Editor test:} \texttt{FullBodyIKEditorTestDriver}
+          ile VR ba\c{s}l{\i}\u{g}{\i} olmadan tam kalibrasyon--IK
+          \c{c}\"oz\"umu do\u{g}ruland{\i}.
+
+    \item \textbf{\c{C}evre performans{\i}:} Polygon Nat\"ur
+          varlıklar{\i} ile doldurulmu\c{s} sahne Edit Mode'da
+          i\c{s}lemci kullan{\i}m{\i}n{\i}n y\"ukselmedi\u{g}i ve
+          normal \c{c}al{\i}\c{s}ma fps de\u{g}erlerinin korundu\u{g}u
+          g\"ozlemlendi.
+\end{enumerate}
+
+% ================================================================
+\section{Sonu\c{c}}
+\label{sec:sonuc}
+
+Bu hafta hafta~2'nin \c{c}\"oz\"um \"onerileri tam anlamıyla koda
+d\"on\"u\c{s}t\"ur\"ulm\"u\c{s}t\"ur. Buna ek olarak yalnızca bu
+haftada ortaya \c{c}{\i}kan yenilikler \c{s}unlardır: shin-tracker
+modu (kaval kemi\u{g}inden diz/ayak bile\u{g}i t\"uretimi),
+5-tracker do\u{g}rudan FK modu, omurga CCD+twist \c{c}\"oz\"uc\"us\"u,
+her-kare bind-pose s{\i}f{\i}rlama, iki modlu tracker atamas{\i},
+g\"o\u{g}\"us/bel torso d\"on\"u\c{s}\"um\"u, editor araçlar{\i} ve
+Polygon Nat\"ur ile olu\c{s}turulan d{\i}\c{s} mekan rehabilitasyon
+\c{c}evresi. Sistem ilerleyen haftalarda klinik ROM \"ol\c{c}\"um
+mod\"ul\"u ile entegre edilmeye haz{\i}r durumdad{\i}r.
+
+% ================================================================
+\begin{thebibliography}{99}
+
+\bibitem{hafta1}
+M.~Kaya, ``HTC VIVE Ultimate Tracker ile Alt Ekstremite Eklem ROM
+\"Ol\c{c}\"um\"u: Sens\"or Yerle\c{s}imi ve Kalibrasyon Raporu,''
+Mart 2026. [Dahili rapor -- Hafta~1].
+
+\bibitem{hafta2}
+M.~Kaya, ``Full-Body IK Sistemi: Dirsek/Diz B\"uk\"ulme ve
+Avatar--Kullan{\i}c{\i} Boy Uyumsuzlu\u{g}u Raporu,''
+Mart 2026. [Dahili rapor -- Hafta~2].
+
+\bibitem{kenwright2012}
+B.~Kenwright, ``Inverse kinematics -- cyclic coordinate descent (CCD),''
+\textit{Journal of Graphics Tools}, vol.~16, no.~1, pp.~1--12, 2012.
+\url{https://doi.org/10.1080/2165347X.2013.823362}
+
+\bibitem{adamovich2009}
+S.~V.~Adamovich et al., ``Sensorimotor interactions in cerebral palsy:
+new approaches to assessment and therapy using virtual environments,''
+\textit{Developmental Medicine \& Child Neurology}, vol.~51, supplement~4,
+pp.~61--67, 2009.
+\url{https://doi.org/10.1111/j.1469-8749.2009.03416.x}
+
+\bibitem{mirelman2011}
+A.~Mirelman et al., ``Virtual reality for gait training: can it induce
+motor learning to enhance complex walking and reduce fall risk in patients
+with Parkinson's disease?,''
+\textit{Journals of Gerontology: Series A}, vol.~66A, no.~2,
+pp.~234--240, 2011.
+\url{https://doi.org/10.1093/gerona/glq201}
+
+\bibitem{jerald2015}
+J.~Jerald, \textit{The VR Book: Human-Centered Design for Virtual Reality}.
+San Rafael, CA: Morgan \& Claypool, 2015.
+
+\bibitem{synty2024}
+Synty Studios, ``POLYGON Nature -- Low Poly 3D Art,''
+\textit{Unity Asset Store}, 2024.
+[Online]. Available: \url{https://assetstore.unity.com/packages/3d/vegetation/polygon-nature-low-poly-3d-art-120152}
+
+\end{thebibliography}
+
+\end{document}

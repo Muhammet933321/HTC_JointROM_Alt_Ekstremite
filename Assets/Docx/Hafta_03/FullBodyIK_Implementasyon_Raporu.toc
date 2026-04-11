@@ -1,0 +1,28 @@
+\babel@toc {turkish}{}\relax 
+\contentsline {section}{\numberline {1}Rapor Kapsam{\i } ve \"Onceki Haftalarla Fark}{2}{section.1}%
+\contentsline {section}{\numberline {2}Uygulanan Bile\c {s}enlere Genel Bak{\i }\c {s}}{2}{section.2}%
+\contentsline {section}{\numberline {3}Shin-Tracker Modu: Kaval Kemi\u {g}inden Diz ve Ayak Bile\u {g}i T\"uretimi}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Avantajlar}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Kalibrasyon-Zamanl{\i } Ofset Hesab{\i }}{3}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}\c {C}al{\i }\c {s}ma Zaman{\i } T\"uretim}{3}{subsection.3.3}%
+\contentsline {section}{\numberline {4}5-Tracker Do\u {g}rudan FK Modu}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}\c {C}al{\i }\c {s}ma Mant{\i }\u {g}{\i }}{3}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Omurga CCD \c {C}\"oz\"uc\"us\"u}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}A\c {s}ama~1: CCD Bend Ge\c {c}i\c {s}i}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}A\c {s}ama~2: Aksiyel Twist Da\u {g}{\i }t{\i }m{\i }}{4}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Her-Kare Bind-Pose S{\i }f{\i }rlamas{\i }}{4}{section.6}%
+\contentsline {section}{\numberline {7}Tracker Atama Modlar{\i }}{5}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Explicit-Index Modu}{5}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Uzaysal Analiz Modu (Auto)}{5}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}G\"o\u {g}\"us/Bel Torso Tracker D\"on\"u\c {s}\"um\"u}{5}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Editor Araç Bile\c {s}enleri}{5}{section.8}%
+\contentsline {subsection}{\numberline {8.1}MixamoBoneAutoFinder}{5}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}FullBodyIKEditorTestDriver ve \texttt {[ExecuteAlways]}}{6}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Kalibrasyon Ak{\i }\c {s}{\i }: D\"ort Af\c {s}ama}{6}{section.9}%
+\contentsline {section}{\numberline {10}FullBodyDebugVisualizer}{6}{section.10}%
+\contentsline {section}{\numberline {11}Polygon Nat\"ur Paketi ile D{\i }\c {s} Mekan \c {C}evre Tasar{\i }m{\i }}{7}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Polygon Nat\"ur Paketi Hakk{\i }nda}{7}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Sahnede Kullan{\i }lan Varlıklar ve Yerle\c {s}im Kararları}{7}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}Low-Poly Stilin VR Performans\"una Katk{\i }s{\i }}{8}{subsection.11.3}%
+\contentsline {section}{\numberline {12}Test Bulgular{\i }}{8}{section.12}%
+\contentsline {section}{\numberline {13}Sonu\c {c}}{8}{section.13}%
