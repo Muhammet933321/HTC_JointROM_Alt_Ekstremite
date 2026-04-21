@@ -107,6 +107,12 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Sağ üst bacak (femur) tracker. Atandığında bacak doğrudan FK ile sürülür.")]
     [SerializeField] private Transform rightThighTracker;
 
+    [Header("Opsiyonel Üst Kol Trackerları (5-tracker kol kurulumu)")]
+    [Tooltip("Sol üst kol (humerus) tracker. Atandığında kol doğrudan FK ile sürülür.")]
+    [SerializeField] private Transform leftUpperArmTracker;
+    [Tooltip("Sağ üst kol (humerus) tracker. Atandığında kol doğrudan FK ile sürülür.")]
+    [SerializeField] private Transform rightUpperArmTracker;
+
     // ───────────────────────── Settings ─────────────────────────
     [Header("=== Ayarlar ===")]
 
@@ -137,6 +143,19 @@ public class FullBodyIKSolver : MonoBehaviour
     [Tooltip("Shin tracker rotasyonunun bacak kemiğine uygulanma ağırlığı (shin-mounted modda).\n" +
              "1 = tracker açısı doğrudan uygulanır, 0 = sadece IK.")]
     [SerializeField, Range(0f, 1f)] private float shinRotationBlend = 0.7f;
+
+    [Tooltip("Tracker'lar el bileği yerine ön kola monte edilmişse aktif edin.\n" +
+             "Aktifken: el bileği pozisyonu ve dirsek hint'i tracker'dan otomatik hesaplanır.")]
+    [SerializeField] private bool forearmMountedTrackers = false;
+
+    [Tooltip("Ön kol tracker rotasyonunun kol kemiğine uygulanma ağırlığı (forearm-mounted modda).\n" +
+             "1 = tracker açısı doğrudan uygulanır, 0 = sadece IK.")]
+    [SerializeField, Range(0f, 1f)] private float forearmRotationBlend = 0.7f;
+
+    [Tooltip("Kontrolcünün rotasyonunu dirsek yönünü hesaplamak için kullan.\n" +
+             "Aktifken: kontrolcünün açısı dirsek hint pozisyonunu belirler — dirsek artık doğru tarafa bükülen.\n" +
+             "Forearm Mounted Trackers kapalıyken (klasik kontrolcü modu) geçerlidir.")]
+    [SerializeField] private bool useControllerRotationForElbow = true;
 
     // ───────────────────────── Calibration Data ─────────────────────────
     private bool _calibrated;
@@ -178,6 +197,12 @@ public class FullBodyIKSolver : MonoBehaviour
     // is never collinear with the limb axis regardless of body orientation.
     private Vector3 _leftElbowHintDirLocal  = Vector3.back;
     private Vector3 _rightElbowHintDirLocal = Vector3.back;
+
+    // Controller rotation → elbow direction (controller-local space at calibration).
+    // Captures which axis of the controller points toward the elbow so that at runtime
+    // we can reconstruct elbow world position purely from controller rotation + hand pos.
+    private Vector3 _leftControllerToElbowDir  = Vector3.up;
+    private Vector3 _rightControllerToElbowDir = Vector3.up;
     private Vector3 _leftKneeHintDirLocal   = Vector3.forward;
     private Vector3 _rightKneeHintDirLocal  = Vector3.forward;
 
@@ -194,6 +219,25 @@ public class FullBodyIKSolver : MonoBehaviour
     // Thigh tracker → bone rotation offsets (5-tracker mode)
     private Quaternion _leftThighToUpLegRot  = Quaternion.identity;
     private Quaternion _rightThighToUpLegRot = Quaternion.identity;
+
+    // Upper arm tracker → bone rotation offsets (5-tracker arm mode)
+    private Quaternion _leftUpperArmToArmRot  = Quaternion.identity;
+    private Quaternion _rightUpperArmToArmRot = Quaternion.identity;
+    // Forearm-mounted tracker: wrist/elbow positions in tracker-local space
+    private Vector3 _leftForeArmToWristLocal;
+    private Vector3 _rightForeArmToWristLocal;
+    private Vector3 _leftForeArmToElbowLocal;
+    private Vector3 _rightForeArmToElbowLocal;
+    // Forearm tracker → forearm bone rotation offset
+    private Quaternion _leftForeArmToForeArmRot  = Quaternion.identity;
+    private Quaternion _rightForeArmToForeArmRot = Quaternion.identity;
+    // Hand rotation relative to forearm bone at calibration (like foot-shin offset)
+    private Quaternion _leftHandForeArmOffset  = Quaternion.identity;
+    private Quaternion _rightHandForeArmOffset = Quaternion.identity;
+    // Derived wrist/elbow world positions at calibration (forearm-mounted mode)
+    private Vector3 _calibLeftWristDerivedPos,  _calibLeftElbowDerivedPos;
+    private Vector3 _calibRightWristDerivedPos, _calibRightElbowDerivedPos;
+    private Vector3 _calibLeftElbowBonePos,     _calibRightElbowBonePos;
 
     // Cached spine chain (avoids per-frame allocation)
     private readonly Transform[] _spineChainCache = new Transform[3];
@@ -365,6 +409,13 @@ public class FullBodyIKSolver : MonoBehaviour
         CalibrateHintDirection(leftUpLegBone,     leftLegBone,      leftFootBone,  ref _leftKneeHintDirLocal);
         CalibrateHintDirection(rightUpLegBone,    rightLegBone,     rightFootBone, ref _rightKneeHintDirLocal);
 
+        // --- Controller → elbow direction (controller-rotation-based elbow hint) ---
+        // At calibration (T-pose), record which direction in controller-local space
+        // points from the hand toward the elbow. At runtime, rotating this direction
+        // by the controller rotation gives the world-space elbow direction.
+        CalibrateControllerElbowDir(leftHandTarget,  leftForeArmBone,  leftHandBone,  ref _leftControllerToElbowDir);
+        CalibrateControllerElbowDir(rightHandTarget, rightForeArmBone, rightHandBone, ref _rightControllerToElbowDir);
+
         // --- Shin tracker offsets (shin-mounted mode) ---
         if (shinMountedTrackers)
         {
@@ -381,6 +432,42 @@ public class FullBodyIKSolver : MonoBehaviour
             _leftThighToUpLegRot = Quaternion.Inverse(leftThighTracker.rotation) * leftUpLegBone.rotation;
         if (rightThighTracker && rightUpLegBone)
             _rightThighToUpLegRot = Quaternion.Inverse(rightThighTracker.rotation) * rightUpLegBone.rotation;
+
+        // --- Upper arm tracker offsets (5-tracker arm FK mode) ---
+        if (leftUpperArmTracker && leftUpperArmBone)
+            _leftUpperArmToArmRot = Quaternion.Inverse(leftUpperArmTracker.rotation) * leftUpperArmBone.rotation;
+        if (rightUpperArmTracker && rightUpperArmBone)
+            _rightUpperArmToArmRot = Quaternion.Inverse(rightUpperArmTracker.rotation) * rightUpperArmBone.rotation;
+
+        // --- Forearm tracker offsets (forearm-mounted mode) ---
+        if (forearmMountedTrackers)
+        {
+            CalibrateForeArmTracker(leftHandTarget, leftForeArmBone, leftHandBone,
+                ref _leftForeArmToWristLocal, ref _leftForeArmToElbowLocal, ref _leftForeArmToForeArmRot);
+            CalibrateForeArmTracker(rightHandTarget, rightForeArmBone, rightHandBone,
+                ref _rightForeArmToWristLocal, ref _rightForeArmToElbowLocal, ref _rightForeArmToForeArmRot);
+        }
+        // Hand-forearm offset: stored even in non-forearm-mounted mode so
+        // SolveArmDirectFK (5-tracker) can orient the hand correctly.
+        CalibrateHandForeArmOffset(leftForeArmBone, leftHandBone, ref _leftHandForeArmOffset);
+        CalibrateHandForeArmOffset(rightForeArmBone, rightHandBone, ref _rightHandForeArmOffset);
+
+        if (leftForeArmBone)  _calibLeftElbowBonePos  = leftForeArmBone.position;
+        if (rightForeArmBone) _calibRightElbowBonePos = rightForeArmBone.position;
+
+        if (forearmMountedTrackers)
+        {
+            if (leftHandTarget)
+            {
+                _calibLeftWristDerivedPos = leftHandTarget.TransformPoint(_leftForeArmToWristLocal);
+                _calibLeftElbowDerivedPos = leftHandTarget.TransformPoint(_leftForeArmToElbowLocal);
+            }
+            if (rightHandTarget)
+            {
+                _calibRightWristDerivedPos = rightHandTarget.TransformPoint(_rightForeArmToWristLocal);
+                _calibRightElbowDerivedPos = rightHandTarget.TransformPoint(_rightForeArmToElbowLocal);
+            }
+        }
 
         // --- Per-limb delta-based scaling calibration ---
         // Store tracker and bone world positions so ScaleTrackerPosition can compute
@@ -450,8 +537,38 @@ public class FullBodyIKSolver : MonoBehaviour
     {
         SnapTarget(pelvisTarget, hipsBone);
         SnapTarget(headTarget, headBone);
-        SnapTarget(leftHandTarget, leftHandBone);
-        SnapTarget(rightHandTarget, rightHandBone);
+
+        // Forearm-mounted mode: snap hand targets to forearm midpoint; otherwise snap to hand bone
+        if (forearmMountedTrackers)
+        {
+            if (leftHandTarget != null && leftForeArmBone != null && leftHandBone != null)
+            {
+                Vector3 foreArmMid = (leftForeArmBone.position + leftHandBone.position) * 0.5f;
+                leftHandTarget.SetPositionAndRotation(foreArmMid, leftForeArmBone.rotation);
+            }
+            if (rightHandTarget != null && rightForeArmBone != null && rightHandBone != null)
+            {
+                Vector3 foreArmMid = (rightForeArmBone.position + rightHandBone.position) * 0.5f;
+                rightHandTarget.SetPositionAndRotation(foreArmMid, rightForeArmBone.rotation);
+            }
+        }
+        else
+        {
+            SnapTarget(leftHandTarget, leftHandBone);
+            SnapTarget(rightHandTarget, rightHandBone);
+        }
+
+        // Upper arm trackers (5-tracker arm mode): snap to upper arm midpoint
+        if (leftUpperArmTracker != null && leftUpperArmBone != null && leftForeArmBone != null)
+        {
+            Vector3 upperArmMid = (leftUpperArmBone.position + leftForeArmBone.position) * 0.5f;
+            leftUpperArmTracker.SetPositionAndRotation(upperArmMid, leftUpperArmBone.rotation);
+        }
+        if (rightUpperArmTracker != null && rightUpperArmBone != null && rightForeArmBone != null)
+        {
+            Vector3 upperArmMid = (rightUpperArmBone.position + rightForeArmBone.position) * 0.5f;
+            rightUpperArmTracker.SetPositionAndRotation(upperArmMid, rightUpperArmBone.rotation);
+        }
 
         // Shin-mounted mode: snap foot targets to shin midpoint; otherwise snap to foot bone
         if (shinMountedTrackers)
@@ -630,6 +747,69 @@ public class FullBodyIKSolver : MonoBehaviour
         if (!upperArm || !foreArm || !hand || !target) return;
         if (armIKWeight <= 0f) return;
 
+        // ── 5-tracker Direct FK Mode (upper arm tracker + forearm tracker) ──
+        Transform upperArmTracker = isLeft ? leftUpperArmTracker : rightUpperArmTracker;
+        if (forearmMountedTrackers && upperArmTracker != null)
+        {
+            SolveArmDirectFK(upperArm, foreArm, hand, target, upperArmTracker, isLeft);
+            return;
+        }
+
+        // ── Forearm-Mounted Tracker Mode (tracker on forearm, no upper arm tracker) ──
+        if (forearmMountedTrackers)
+        {
+            float upperLen = (foreArm.position - upperArm.position).magnitude;
+            float lowerLen = (hand.position - foreArm.position).magnitude;
+            float limbLen = Mathf.Max(upperLen + lowerLen, 0.1f);
+
+            // Derive wrist and elbow hint positions from the forearm tracker
+            Vector3 wristRaw   = target.TransformPoint(isLeft ? _leftForeArmToWristLocal  : _rightForeArmToWristLocal);
+            Vector3 elbowRaw   = target.TransformPoint(isLeft ? _leftForeArmToElbowLocal  : _rightForeArmToElbowLocal);
+
+            Vector3 wristPos = ScaleTrackerPosition(wristRaw,
+                isLeft ? _calibLeftWristDerivedPos  : _calibRightWristDerivedPos,
+                isLeft ? _calibLeftHandBonePos      : _calibRightHandBonePos);
+            Vector3 elbowHintPos = ScaleTrackerPosition(elbowRaw,
+                isLeft ? _calibLeftElbowDerivedPos  : _calibRightElbowDerivedPos,
+                isLeft ? _calibLeftElbowBonePos     : _calibRightElbowBonePos);
+
+            // Collinearity safety: if arm is nearly straight, the derived elbow hint
+            // may lie on the shoulder→wrist axis. Fall back to calibrated bend direction.
+            Vector3 shoulderToWrist = wristPos - upperArm.position;
+            float swDist = shoulderToWrist.magnitude;
+            Vector3 swDir = swDist > 0.001f ? shoulderToWrist / swDist : (isLeft ? -hipsBone.right : hipsBone.right);
+            Vector3 perpComp = Vector3.ProjectOnPlane(elbowHintPos - upperArm.position, swDir);
+            if (perpComp.magnitude < limbLen * 0.05f)
+            {
+                Vector3 calibDir = isLeft ? _leftElbowHintDirLocal : _rightElbowHintDirLocal;
+                Vector3 hintDir = Vector3.ProjectOnPlane(hipsBone.TransformDirection(calibDir), swDir);
+                if (hintDir.sqrMagnitude < 0.001f)
+                    hintDir = Vector3.ProjectOnPlane(Vector3.back, swDir);
+                elbowHintPos = upperArm.position + swDir * (swDist * 0.5f)
+                               + hintDir.normalized * elbowHintDistance;
+            }
+
+            TwoBoneIKSolver.Solve(
+                upperArm, foreArm, hand,
+                wristPos, hand.rotation,
+                elbowHintPos,
+                armIKWeight, 0f, 1f);
+
+            // Blend forearm bone rotation toward tracker rotation (same as shinRotationBlend for legs)
+            if (forearmRotationBlend > 0f)
+            {
+                Quaternion foreArmOffset = isLeft ? _leftForeArmToForeArmRot : _rightForeArmToForeArmRot;
+                Quaternion trackerForeArmRot = target.rotation * foreArmOffset;
+                foreArm.rotation = Quaternion.Slerp(foreArm.rotation, trackerForeArmRot,
+                    forearmRotationBlend * armIKWeight);
+            }
+
+            // Orient hand relative to forearm using calibration offset
+            AlignHandToForeArm(foreArm, hand, isLeft ? _leftHandForeArmOffset : _rightHandForeArmOffset);
+            return;
+        }
+
+        // ── Legacy IK Mode (controller as hand target) ──
         // Scale hand target position for body proportion matching (delta-based)
         Vector3 calibTrackerPos = isLeft ? _calibLeftHandTrackerPos : _calibRightHandTrackerPos;
         Vector3 calibBonePos = isLeft ? _calibLeftHandBonePos : _calibRightHandBonePos;
@@ -639,6 +819,39 @@ public class FullBodyIKSolver : MonoBehaviour
         if (elbowHint != null)
         {
             hintPos = elbowHint.position;
+        }
+        else if (useControllerRotationForElbow)
+        {
+            // ── Controller-rotation-based elbow hint ──
+            // Derive elbow world position from controller rotation + calibrated
+            // controller→elbow direction. This mirrors how the shin tracker derives
+            // the knee hint for legs: the tracker knows its own orientation, so we
+            // can trust it to tell us where the next joint is.
+            float foreArmLen = (hand.position - foreArm.position).magnitude;
+            if (foreArmLen < 0.01f) foreArmLen = 0.25f; // fallback if bones are at origin
+
+            Vector3 ctrlElbowDirLocal = isLeft ? _leftControllerToElbowDir : _rightControllerToElbowDir;
+            // Rotate calibrated direction by current controller rotation → world-space elbow direction
+            Vector3 elbowWorldDir = target.rotation * ctrlElbowDirLocal;
+
+            // Elbow hint = hand position + elbow direction * forearm length
+            // (elbow is behind and above the hand, exactly as the controller orientation indicates)
+            hintPos = scaledHandPos + elbowWorldDir * foreArmLen;
+
+            // Collinearity safety: if hint ends up nearly on the shoulder→hand axis,
+            // fall back to calibrated pelvis-relative direction so IK doesn't flip.
+            Vector3 shoulderToHand = (scaledHandPos - upperArm.position);
+            float swLen = shoulderToHand.magnitude;
+            Vector3 swDir = swLen > 0.001f ? shoulderToHand / swLen : (isLeft ? -hipsBone.right : hipsBone.right);
+            Vector3 hintPerp = Vector3.ProjectOnPlane(hintPos - upperArm.position, swDir);
+            float totalLimbLen = (foreArm.position - upperArm.position).magnitude + foreArmLen;
+            if (hintPerp.magnitude < totalLimbLen * 0.05f)
+            {
+                Vector3 fallbackDir = hipsBone.TransformDirection(isLeft ? _leftElbowHintDirLocal : _rightElbowHintDirLocal);
+                Vector3 fd = Vector3.ProjectOnPlane(fallbackDir, swDir);
+                if (fd.sqrMagnitude < 0.001f) fd = Vector3.ProjectOnPlane(Vector3.back, swDir);
+                hintPos = upperArm.position + swDir * (swLen * 0.5f) + fd.normalized * elbowHintDistance;
+            }
         }
         else
         {
@@ -663,10 +876,6 @@ public class FullBodyIKSolver : MonoBehaviour
                 hintDir = Vector3.ProjectOnPlane(Vector3.down, upperArmDir);
             hintDir = hintDir.normalized;
 
-            // Place the hint at the midpoint of the shoulder→hand line, then push it
-            // perpendicularly by hintDistance. This guarantees the vector from root
-            // to hint always has a large perpendicular component, avoiding the
-            // near-collinear singularity inside TwoBoneIKSolver regardless of arm pose.
             Vector3 rootToHandDir = (scaledHandPos - upperArm.position).normalized;
             if (rootToHandDir.sqrMagnitude < 0.001f) rootToHandDir = isLeft ? -hipsBone.right : hipsBone.right;
             Vector3 midPoint = upperArm.position + rootToHandDir * (limbLen * 0.5f);
@@ -674,15 +883,40 @@ public class FullBodyIKSolver : MonoBehaviour
             hintPos = midPoint + hintDir * hintDistance;
         }
 
-        // Target rotation
-        Quaternion handOffset = isLeft ? _leftHandOffset : _rightHandOffset;
-        Quaternion targetRot = applyTargetRotation ? target.rotation * handOffset : hand.rotation;
-
+        // Target rotation: IK only — hand orientation is derived from forearm direction
+        // via AlignHandToForeArm (same as AlignFootToShin for legs). This prevents the
+        // controller rotation from fighting the IK result and keeps the wrist naturally
+        // aligned with wherever the forearm is pointing.
         TwoBoneIKSolver.Solve(
             upperArm, foreArm, hand,
-            scaledHandPos, targetRot,
+            scaledHandPos, hand.rotation,
             hintPos,
-            armIKWeight, applyTargetRotation ? armIKWeight : 0f, 1f);
+            armIKWeight, 0f, 1f);
+
+        // Orient hand relative to forearm using calibration offset — same as foot/shin.
+        AlignHandToForeArm(foreArm, hand, isLeft ? _leftHandForeArmOffset : _rightHandForeArmOffset);
+    }
+
+    /// <summary>
+    /// Direct FK mode for 5-tracker arm setup (upper arm tracker + forearm tracker).
+    /// Sets bone rotations directly from tracker measurements — no IK needed.
+    /// This is the arm equivalent of SolveLegDirectFK.
+    /// </summary>
+    private void SolveArmDirectFK(Transform upperArm, Transform foreArm, Transform hand,
+                                   Transform foreArmTracker, Transform upperArmTrackerTf, bool isLeft)
+    {
+        // Upper arm rotation directly from upper arm tracker
+        Quaternion upperArmOffset = isLeft ? _leftUpperArmToArmRot : _rightUpperArmToArmRot;
+        Quaternion targetUpperArmRot = upperArmTrackerTf.rotation * upperArmOffset;
+        upperArm.rotation = Quaternion.Slerp(upperArm.rotation, targetUpperArmRot, armIKWeight);
+
+        // Forearm rotation directly from forearm tracker
+        Quaternion foreArmOffset = isLeft ? _leftForeArmToForeArmRot : _rightForeArmToForeArmRot;
+        Quaternion targetForeArmRot = foreArmTracker.rotation * foreArmOffset;
+        foreArm.rotation = Quaternion.Slerp(foreArm.rotation, targetForeArmRot, armIKWeight);
+
+        // Hand follows forearm with calibrated offset
+        AlignHandToForeArm(foreArm, hand, isLeft ? _leftHandForeArmOffset : _rightHandForeArmOffset);
     }
 
     private void SolveLeg(Transform upLeg, Transform leg, Transform foot,
@@ -946,6 +1180,74 @@ public class FullBodyIKSolver : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Calibrates forearm-mounted tracker offsets: stores wrist and elbow positions
+    /// in tracker-local space and the tracker→forearm-bone rotation offset.
+    /// Mirrors CalibrateShinTracker for the arm chain.
+    /// </summary>
+    private static void CalibrateForeArmTracker(Transform tracker, Transform foreArmBone, Transform handBone,
+                                                 ref Vector3 toWristLocal, ref Vector3 toElbowLocal,
+                                                 ref Quaternion toForeArmRot)
+    {
+        if (tracker == null) return;
+        if (handBone != null)
+            toWristLocal = tracker.InverseTransformPoint(handBone.position);
+        if (foreArmBone != null)
+        {
+            toElbowLocal  = tracker.InverseTransformPoint(foreArmBone.position);
+            toForeArmRot  = Quaternion.Inverse(tracker.rotation) * foreArmBone.rotation;
+        }
+    }
+
+    /// <summary>
+    /// Records hand rotation relative to forearm bone at calibration.
+    /// At runtime, AlignHandToForeArm reproduces the exact anatomical wrist angle.
+    /// Mirrors CalibrateFootShinOffset for the arm chain.
+    /// </summary>
+    private static void CalibrateHandForeArmOffset(Transform foreArm, Transform hand,
+                                                    ref Quaternion offset)
+    {
+        if (foreArm == null || hand == null) return;
+        offset = Quaternion.Inverse(foreArm.rotation) * hand.rotation;
+    }
+
+    /// <summary>
+    /// Records which direction in controller-local space points from the hand toward
+    /// the elbow at calibration time (T-pose). At runtime, rotating this direction by
+    /// the controller's current rotation gives the world-space elbow direction.
+    ///
+    /// This is the arm equivalent of how CalibrateShinTracker records the knee direction
+    /// in shin-tracker-local space. The controller "knows" where the forearm is pointing,
+    /// so it implicitly tells us where the elbow must be.
+    /// </summary>
+    private static void CalibrateControllerElbowDir(Transform controller, Transform foreArmBone,
+                                                     Transform handBone, ref Vector3 controllerLocalDir)
+    {
+        if (controller == null || foreArmBone == null || handBone == null) return;
+
+        // Elbow-to-wrist world direction at calibration
+        Vector3 elbowToWristWorld = (handBone.position - foreArmBone.position);
+        if (elbowToWristWorld.sqrMagnitude < 0.0001f) return;
+
+        // We want: hand → elbow direction = opposite of elbow → wrist
+        Vector3 handToElbowWorld = -elbowToWristWorld.normalized;
+
+        // Store in controller-local space so at runtime:
+        // elbow_world_dir = controller.rotation * controllerLocalDir
+        controllerLocalDir = Quaternion.Inverse(controller.rotation) * handToElbowWorld;
+    }
+
+    /// <summary>
+    /// Orients the hand bone so it always follows the forearm bone's rotation with
+    /// the relative offset recorded at calibration.
+    /// Mirrors AlignFootToShin for the arm chain.
+    /// </summary>
+    private static void AlignHandToForeArm(Transform foreArm, Transform hand, Quaternion foreArmOffset)
+    {
+        if (foreArm == null || hand == null) return;
+        hand.rotation = foreArm.rotation * foreArmOffset;
+    }
+
     private void CacheInitialBoneRotations()
     {
         if (hipsBone) _hipsInitLocal = hipsBone.localRotation;
@@ -1052,6 +1354,28 @@ public class FullBodyIKSolver : MonoBehaviour
         Gizmos.color = Color.cyan;
         if (leftThighTracker) Gizmos.DrawWireSphere(leftThighTracker.position, 0.03f);
         if (rightThighTracker) Gizmos.DrawWireSphere(rightThighTracker.position, 0.03f);
+
+        // Arm trackers (forearm-mounted / 5-tracker arm mode)
+        Gizmos.color = new Color(0f, 1f, 1f, 0.5f); // translucent cyan for arm trackers
+        if (leftUpperArmTracker) Gizmos.DrawWireSphere(leftUpperArmTracker.position, 0.03f);
+        if (rightUpperArmTracker) Gizmos.DrawWireSphere(rightUpperArmTracker.position, 0.03f);
+
+        if (forearmMountedTrackers)
+        {
+            Gizmos.color = Color.magenta;
+            if (leftHandTarget)
+            {
+                Vector3 wristL = leftHandTarget.TransformPoint(_leftForeArmToWristLocal);
+                Gizmos.DrawWireSphere(wristL, 0.02f);
+                Gizmos.DrawLine(leftHandTarget.position, wristL);
+            }
+            if (rightHandTarget)
+            {
+                Vector3 wristR = rightHandTarget.TransformPoint(_rightForeArmToWristLocal);
+                Gizmos.DrawWireSphere(wristR, 0.02f);
+                Gizmos.DrawLine(rightHandTarget.position, wristR);
+            }
+        }
 
         Gizmos.color = Color.yellow;
         if (leftKneeHintTarget) Gizmos.DrawWireSphere(leftKneeHintTarget.position, 0.03f);
