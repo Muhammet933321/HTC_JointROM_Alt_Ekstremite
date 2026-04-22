@@ -23,6 +23,16 @@ public class FullBodyCalibrator : MonoBehaviour
     [Tooltip("Kalibrasyon için klavye tuşu (Editor/Test)")]
     [SerializeField] private Key calibrationKey = Key.C;
 
+    // ─── Public API ───
+    /// <summary>Fired once when a successful calibration completes.</summary>
+    public event System.Action OnCalibrationComplete;
+
+    /// <summary>Hold progress towards calibration trigger [0, 1].</summary>
+    public float HoldProgress => Mathf.Clamp01(_holdTimer / holdDuration);
+
+    /// <summary>True after the first successful calibration this session.</summary>
+    public bool IsCalibrated { get; private set; }
+
     private float _holdTimer;
     private readonly System.Collections.Generic.List<UnityEngine.XR.InputDevice> _rightHandDevices = new();
 
@@ -106,7 +116,9 @@ public class FullBodyCalibrator : MonoBehaviour
         if (calibrationStatusText)
             calibrationStatusText.text = "✓ Kalibrasyon tamamlandı! Hareket edebilirsiniz.";
 
+        IsCalibrated = true;
         Debug.Log("[FullBodyCalibrator] Full-body kalibrasyon tamamlandı.");
+        OnCalibrationComplete?.Invoke();
     }
 
     private bool IsRightControllerButtonPressed()

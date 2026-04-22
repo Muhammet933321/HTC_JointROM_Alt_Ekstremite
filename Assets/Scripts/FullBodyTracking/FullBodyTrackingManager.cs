@@ -464,6 +464,31 @@ public class FullBodyTrackingManager : MonoBehaviour
     public bool IsMappingCalibrated => _mappingCalibrated;
 
     /// <summary>
+    /// Returns the tracker Transform at the given index, or null if out of range / unassigned.
+    /// Used by GameFlowController to wire LowerLimbBiometrics after calibration.
+    /// </summary>
+    public Transform GetTrackerTransform(int index)
+    {
+        if (allTrackerTransforms == null || index < 0 || index >= allTrackerTransforms.Length)
+            return null;
+        return allTrackerTransforms[index];
+    }
+
+    /// <summary>
+    /// Returns the assigned tracker indices for each role. Returns false if not fully assigned.
+    /// </summary>
+    public bool GetAssignment(out int pelvis, out int leftFoot, out int rightFoot,
+                              out int leftKnee, out int rightKnee)
+    {
+        pelvis    = _pelvisIdx;
+        leftFoot  = _leftFootIdx;
+        rightFoot = _rightFootIdx;
+        leftKnee  = _leftKneeIdx;
+        rightKnee = _rightKneeIdx;
+        return _assigned;
+    }
+
+    /// <summary>
     /// Forces an immediate scan and target update in the same frame.
     /// Useful before calibration so offsets are computed from up-to-date targets.
     /// </summary>
@@ -544,17 +569,6 @@ public class FullBodyTrackingManager : MonoBehaviour
             targetPos = target.position,
             targetRot = target.rotation
         };
-    }
-
-    public bool GetAssignment(out int pelvis, out int leftFoot, out int rightFoot,
-                               out int leftKnee, out int rightKnee)
-    {
-        pelvis = _pelvisIdx;
-        leftFoot = _leftFootIdx;
-        rightFoot = _rightFootIdx;
-        leftKnee = _leftKneeIdx;
-        rightKnee = _rightKneeIdx;
-        return _assigned;
     }
 
     /// <summary>

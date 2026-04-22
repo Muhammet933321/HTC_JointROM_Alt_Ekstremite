@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b5faa2968bc0644da7df72ec038d618, type: 3}
+  m_Name: Task_LeanForward
+  m_EditorClassIdentifier: 
+  taskType: 3
+  taskNameTR: "\xD6ne E\u011Filme"
+  instructionsTR: "Belkemi\u011Finizi d\xFCz tutarak \xF6ne do\u011Fru yava\u015F\xE7a
+    e\u011Filin.\nDizlerinizi hafif\xE7e b\xFCkebilirsiniz."
+  durationSeconds: 8
+  countdownSeconds: 3
+  restAfterSeconds: 3
+  valgusThresholdDeg: 8
+  asymmetryThresholdPct: 10
+  minFlexionDeg: 45
+  swayRmsThreshold: 0.015
+  demoHipEuler: {x: 20, y: 0, z: 0}
+  demoKneeEuler: {x: 10, y: 0, z: 0}
+  demoPauseDuration: 1.5
+  demoTransitionSpeed: 2
+  loopDemo: 1
