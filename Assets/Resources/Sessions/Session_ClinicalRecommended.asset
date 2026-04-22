@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84c23825ea85d024a9fc3bef60e05b92, type: 3}
+  m_Name: Session_ClinicalRecommended
+  m_EditorClassIdentifier: 
+  sessionName: Klinik Tarama - Onerilen Sira
+  descriptionTR: 'Standing -> LandingScreen -> MiniSquat -> SingleLegSquat R/L ->
+    Modified Y-Balance R/L -> Lean tasks -> SingleLegBalance R/L -> WalkSimulation.
+
+    Yuksek
+    talepli ve valgus/fleksiyon acisindan kritik testler once, destekleyici denge
+    ve yurume gorevleri daha sonra uygulanir.'
+  tasks:
+  - {fileID: 11400000, guid: bf6d802ad64d2ba47a1c35f88f5483d3, type: 2}
+  - {fileID: 11400000, guid: 64d8d534237fef14bb712c1d46afaf57, type: 2}
+  - {fileID: 11400000, guid: ab0b2ddac1a82614db045a0f335bfa2b, type: 2}
+  - {fileID: 11400000, guid: e5436e7b728833f478c9aa6f7f221c72, type: 2}
+  - {fileID: 11400000, guid: 8366fa18332e0934d91c52e5e57fce2e, type: 2}
+  - {fileID: 11400000, guid: 2d9cb3c8b8aa17444bc7d8c6efaebbe9, type: 2}
+  - {fileID: 11400000, guid: a55a76f866ffeb6408166ed6cf094ddc, type: 2}
+  - {fileID: 11400000, guid: dd367a2f7c491c34c8d3b112816e342b, type: 2}
+  - {fileID: 11400000, guid: d51a1631968b29e478b003a01e3fe87f, type: 2}
+  - {fileID: 11400000, guid: 9935ff24319534e4786ab65ca9258b92, type: 2}
+  - {fileID: 11400000, guid: 5478af09aa5187a4fbb69fcf1cbd092c, type: 2}
+  - {fileID: 11400000, guid: 97dbfcc5de163394980ce799f8134227, type: 2}
+  - {fileID: 11400000, guid: d07b32069b54fca42b1649d4b578122e, type: 2}
+  repetitionsPerTask: 1
+  globalRestOverrideSeconds: -1
+  randomizeOrder: 0
+  autoSortByClinicalRecommendation: 1
+  forceRecalibrationOnStart: 0

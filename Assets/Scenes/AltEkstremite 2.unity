@@ -8622,8 +8622,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b961e627c2e3a28429e76e57f6c3f819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  calibrator: {fileID: 0}
-  trackingManager: {fileID: 0}
+  calibrator: {fileID: 1203307847}
+  trackingManager: {fileID: 1203307848}
   sequencer: {fileID: 467674250}
   biometrics: {fileID: 467674246}
   gameUI: {fileID: 467674243}
@@ -8762,6 +8762,8 @@ MonoBehaviour:
   simRightKneeFlexion: 0
   simSwayRMS: 5
   simSwayVelocity: 2
+  simLeftStanceAnteriorReachPct: 65
+  simRightStanceAnteriorReachPct: 65
   swayWindowSize: 90
   worldUp: {x: 0, y: 1, z: 0}
 --- !u!114 &467674247
@@ -8825,7 +8827,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1734cb949959fd349870fee0d460f584, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sessionConfig: {fileID: 0}
+  sessionConfig: {fileID: 11400000, guid: 26c8684854b21ef44a1f8e37687a4669, type: 2}
   taskSequence:
   - {fileID: 11400000, guid: bf6d802ad64d2ba47a1c35f88f5483d3, type: 2}
   - {fileID: 11400000, guid: dd367a2f7c491c34c8d3b112816e342b, type: 2}

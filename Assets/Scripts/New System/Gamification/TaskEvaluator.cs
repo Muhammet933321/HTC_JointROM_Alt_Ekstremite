@@ -37,6 +37,8 @@ public class TaskEvaluator : MonoBehaviour
     private readonly List<float> _sway    = new();
     private readonly List<float> _swayVel = new();
     private readonly List<float> _si      = new();
+    private readonly List<float> _reachLeftStance  = new();
+    private readonly List<float> _reachRightStance = new();
 
     // ───────────────────────── Unity ─────────────────────────
 
@@ -65,6 +67,8 @@ public class TaskEvaluator : MonoBehaviour
         _sway.Add(biometrics.PelvisSwayRMS);
         _swayVel.Add(biometrics.SwayVelocity);
         _si.Add(biometrics.SymmetryIndex);
+        _reachLeftStance.Add(biometrics.LeftStanceAnteriorReachPct);
+        _reachRightStance.Add(biometrics.RightStanceAnteriorReachPct);
     }
 
     // ───────────────────────── Task Lifecycle Handlers ─────────────────────────
@@ -96,11 +100,25 @@ public class TaskEvaluator : MonoBehaviour
         {
             // No data collected (e.g. task stopped immediately)
             return TaskResult.Compute(
-                task.taskType, task.taskNameTR,
-                0f, 0f, 0f, 0f, 0f,
-                0f, 0f, 0f, 0f,
-                0f, 0f, 0f,
-                task.swayRmsThreshold);
+                taskType: task.taskType,
+                taskNameTR: task.taskNameTR,
+                measuredDurationSec: 0f,
+                meanValgusLeft: 0f,
+                meanValgusRight: 0f,
+                maxValgusLeft: 0f,
+                maxValgusRight: 0f,
+                meanFlexLeft: 0f,
+                meanFlexRight: 0f,
+                maxFlexLeft: 0f,
+                maxFlexRight: 0f,
+                meanSwayRMS: 0f,
+                meanSwayVelocity: 0f,
+                symmetryIndex: 0f,
+                maxLeftStanceAnteriorReachPct: 0f,
+                maxRightStanceAnteriorReachPct: 0f,
+                swayThreshold: task.swayRmsThreshold,
+                targetReachPct: task.targetReachPct,
+                landingFlexionTargetDeg: task.landingFlexionTargetDeg);
         }
 
         float measuredDuration = _valgusL.Count * Time.deltaTime;
@@ -124,7 +142,11 @@ public class TaskEvaluator : MonoBehaviour
             meanSwayVelocity: Mean(_swayVel),
             symmetryIndex:   Mean(_si),
 
-            swayThreshold:   task.swayRmsThreshold);
+                maxLeftStanceAnteriorReachPct: Max(_reachLeftStance),
+                maxRightStanceAnteriorReachPct: Max(_reachRightStance),
+                swayThreshold:   task.swayRmsThreshold,
+                targetReachPct:  task.targetReachPct,
+                landingFlexionTargetDeg: task.landingFlexionTargetDeg);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
@@ -135,6 +157,8 @@ public class TaskEvaluator : MonoBehaviour
         _flexL.Clear();   _flexR.Clear();
         _sway.Clear();    _swayVel.Clear();
         _si.Clear();
+        _reachLeftStance.Clear();
+        _reachRightStance.Clear();
     }
 
     private static float Mean(List<float> list)

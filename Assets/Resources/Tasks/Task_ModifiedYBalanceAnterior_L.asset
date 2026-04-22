@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b5faa2968bc0644da7df72ec038d618, type: 3}
+  m_Name: Task_ModifiedYBalanceAnterior_L
+  m_EditorClassIdentifier: 
+  taskType: 10
+  taskNameTR: "mY-Balance \xD6n Uzanma (Sol)"
+  instructionsTR: "Sol aya\u011F\u0131n\u0131z yerde sabit kals\u0131n.\nSa\u011F
+    aya\u011F\u0131n\u0131z\u0131 \xF6ne do\u011Fru m\xFCmk\xFCn oldu\u011Funca uzat\u0131n,
+    hafif\xE7e dokundurup geri al\u0131n. 3 kontroll\xFC tekrar yap\u0131n."
+  durationSeconds: 12
+  countdownSeconds: 3
+  restAfterSeconds: 4
+  valgusThresholdDeg: 8
+  asymmetryThresholdPct: 10
+  minFlexionDeg: 20
+  swayRmsThreshold: 0.02
+  targetReachPct: 65
+  landingFlexionTargetDeg: 45
+  demoSequence: {fileID: 0}
+  demoTransitionSpeedOverride: 2

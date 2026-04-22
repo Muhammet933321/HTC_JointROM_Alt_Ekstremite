@@ -213,11 +213,23 @@ public class GameUIController : MonoBehaviour
         float lv = Mathf.Abs(biometrics.LeftValgusAngle);
         float rv = Mathf.Abs(biometrics.RightValgusAngle);
         float sw = biometrics.PelvisSwayRMS;
+        bool showReach = sequencer != null && sequencer.CurrentTask != null
+            && TaskResult.HasReachMetric(sequencer.CurrentTask.taskType);
 
         SetText(leftValgusText,  $"Sol Valgus:  {lv:F1}°");
         SetText(rightValgusText, $"Sağ Valgus: {rv:F1}°");
         SetText(swayText,        $"Sway: {sw * 1000f:F1} mm");
-        SetText(symmetryText,    $"Simetri: {biometrics.SymmetryIndex:F1}%");
+        if (showReach)
+        {
+            float reach = sequencer.CurrentTask.taskType == TaskType.ModifiedYBalanceAnterior_R
+                ? biometrics.RightStanceAnteriorReachPct
+                : biometrics.LeftStanceAnteriorReachPct;
+            SetText(symmetryText, $"Anterior Reach: {reach:F1}%");
+        }
+        else
+        {
+            SetText(symmetryText, $"Simetri: {biometrics.SymmetryIndex:F1}%");
+        }
 
         UpdateBar(leftValgusBar,  lv / ValgusBarMax,  ValgusBarColor(lv));
         UpdateBar(rightValgusBar, rv / ValgusBarMax,  ValgusBarColor(rv));
@@ -253,10 +265,17 @@ public class GameUIController : MonoBehaviour
         var sb = new System.Text.StringBuilder();
         foreach (var r in results)
         {
+            string reachText = TaskResult.HasReachMetric(r.TaskType)
+                ? $"  Erişim: {TaskResult.RiskLabel(r.ReachRiskScore)}"
+                : "";
+
             sb.AppendLine($"<b>{r.TaskNameTR}</b>  →  {r.GameScore:F0} puan");
             sb.AppendLine($"  Valgus: {TaskResult.RiskLabel(r.ValgusRiskScore)}  " +
                           $"Denge: {TaskResult.RiskLabel(r.BalanceRiskScore)}  " +
-                          $"Asimetri: {TaskResult.RiskLabel(r.AsymmetryRiskScore)}");
+                          $"Asimetri: {TaskResult.RiskLabel(r.AsymmetryRiskScore)}  " +
+                          $"Fleksiyon: {TaskResult.RiskLabel(r.FlexionRiskScore)}{reachText}");
+            if (!string.IsNullOrEmpty(r.TaskSummaryTR))
+                sb.AppendLine($"  Not: {r.TaskSummaryTR}");
             sb.AppendLine();
         }
         taskResultsListText.text = sb.ToString();

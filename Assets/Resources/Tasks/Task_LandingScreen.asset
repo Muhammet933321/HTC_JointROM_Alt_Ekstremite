@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b5faa2968bc0644da7df72ec038d618, type: 3}
+  m_Name: Task_LandingScreen
+  m_EditorClassIdentifier: 
+  taskType: 8
+  taskNameTR: "\u0130ni\u015F Tarama"
+  instructionsTR: "Ayaklar omuz geni\u015Fli\u011Finde a\xE7\u0131k olsun.\nYerinde
+    iki ayakla 3 kontroll\xFC k\xFC\xE7\xFCk s\u0131\xE7rama yap\u0131n ve her ini\u015Fte
+    dizlerinizi b\xFCkerek yumu\u015Fak inin."
+  durationSeconds: 12
+  countdownSeconds: 3
+  restAfterSeconds: 4
+  valgusThresholdDeg: 8
+  asymmetryThresholdPct: 10
+  minFlexionDeg: 45
+  swayRmsThreshold: 0.02
+  targetReachPct: 65
+  landingFlexionTargetDeg: 45
+  demoSequence: {fileID: 0}
+  demoTransitionSpeedOverride: 2

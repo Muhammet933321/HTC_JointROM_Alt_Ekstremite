@@ -121,8 +121,11 @@ public class PoseDemoController : MonoBehaviour
     [System.Serializable]
     public struct DemoPose
     {
+        public Vector3 hipLocalPositionOffset;
         public Vector3 hipLocalEuler;
+        public Vector3 lowerSpineLocalEuler;
         public Vector3 spineLocalEuler;
+        public Vector3 chestLocalEuler;
         public Vector3 thighLeftLocalEuler;
         public Vector3 thighRightLocalEuler;
         public Vector3 shinLeftLocalEuler;
@@ -171,7 +174,67 @@ public class PoseDemoController : MonoBehaviour
                 new DemoPose { hipLocalEuler=new Vector3(5,-8,3),
                     thighLeftLocalEuler=new Vector3(30,0,0), shinLeftLocalEuler=new Vector3(-15,0,0),
                     thighRightLocalEuler=new Vector3(-20,0,0), shinRightLocalEuler=new Vector3(-10,0,0), holdSeconds=0.55f }, n },
+            [TaskType.LandingScreen] = new[] { n,
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.05f,0.02f),
+                    hipLocalEuler=new Vector3(15,0,0), lowerSpineLocalEuler=new Vector3(-5,0,0),
+                    spineLocalEuler=new Vector3(-6,0,0), chestLocalEuler=new Vector3(8,0,0),
+                    thighLeftLocalEuler=new Vector3(20,0,0), thighRightLocalEuler=new Vector3(20,0,0),
+                    shinLeftLocalEuler=new Vector3(-20,0,0), shinRightLocalEuler=new Vector3(-20,0,0),
+                    ankleLeftLocalEuler=new Vector3(8,0,0), ankleRightLocalEuler=new Vector3(8,0,0), holdSeconds=0.5f },
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.13f,0.04f),
+                    hipLocalEuler=new Vector3(25,0,0), lowerSpineLocalEuler=new Vector3(-8,0,0),
+                    spineLocalEuler=new Vector3(-10,0,0), chestLocalEuler=new Vector3(12,0,0),
+                    thighLeftLocalEuler=new Vector3(40,0,0), thighRightLocalEuler=new Vector3(40,0,0),
+                    shinLeftLocalEuler=new Vector3(-55,0,0), shinRightLocalEuler=new Vector3(-55,0,0),
+                    ankleLeftLocalEuler=new Vector3(18,0,0), ankleRightLocalEuler=new Vector3(18,0,0), holdSeconds=1.2f },
+                n },
+            [TaskType.ModifiedYBalanceAnterior_R] = new[] { n,
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.06f,0.04f),
+                    hipLocalEuler=new Vector3(12,0,-6), lowerSpineLocalEuler=new Vector3(0,0,3),
+                    spineLocalEuler=new Vector3(4,0,5), chestLocalEuler=new Vector3(6,0,4),
+                    thighRightLocalEuler=new Vector3(18,0,0), shinRightLocalEuler=new Vector3(-20,0,0), ankleRightLocalEuler=new Vector3(8,0,0),
+                    thighLeftLocalEuler=new Vector3(60,0,0), shinLeftLocalEuler=new Vector3(-20,0,0), ankleLeftLocalEuler=new Vector3(8,0,0), holdSeconds=1.8f },
+                n },
+            [TaskType.ModifiedYBalanceAnterior_L] = new[] { n,
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.06f,0.04f),
+                    hipLocalEuler=new Vector3(12,0,6), lowerSpineLocalEuler=new Vector3(0,0,-3),
+                    spineLocalEuler=new Vector3(4,0,-5), chestLocalEuler=new Vector3(6,0,-4),
+                    thighLeftLocalEuler=new Vector3(18,0,0), shinLeftLocalEuler=new Vector3(-20,0,0), ankleLeftLocalEuler=new Vector3(8,0,0),
+                    thighRightLocalEuler=new Vector3(60,0,0), shinRightLocalEuler=new Vector3(-20,0,0), ankleRightLocalEuler=new Vector3(8,0,0), holdSeconds=1.8f },
+                n },
+            [TaskType.SingleLegSquat_R] = new[] { n,
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.11f,0.03f),
+                    hipLocalEuler=new Vector3(18,0,-5), lowerSpineLocalEuler=new Vector3(-4,0,2),
+                    spineLocalEuler=new Vector3(-6,0,4), chestLocalEuler=new Vector3(8,0,3),
+                    thighRightLocalEuler=new Vector3(45,0,0), shinRightLocalEuler=new Vector3(-58,0,0), ankleRightLocalEuler=new Vector3(16,0,0),
+                    thighLeftLocalEuler=new Vector3(18,0,0), shinLeftLocalEuler=new Vector3(-10,0,0), holdSeconds=1.8f },
+                n },
+            [TaskType.SingleLegSquat_L] = new[] { n,
+                new DemoPose {
+                    hipLocalPositionOffset=new Vector3(0f,-0.11f,0.03f),
+                    hipLocalEuler=new Vector3(18,0,5), lowerSpineLocalEuler=new Vector3(-4,0,-2),
+                    spineLocalEuler=new Vector3(-6,0,-4), chestLocalEuler=new Vector3(8,0,-3),
+                    thighLeftLocalEuler=new Vector3(45,0,0), shinLeftLocalEuler=new Vector3(-58,0,0), ankleLeftLocalEuler=new Vector3(16,0,0),
+                    thighRightLocalEuler=new Vector3(18,0,0), shinRightLocalEuler=new Vector3(-10,0,0), holdSeconds=1.8f },
+                n },
         };
+    }
+
+    private static void EnsureDefaultPoseLibrary()
+    {
+        if (_defaultPoses == null)
+            _defaultPoses = BuildDefaultPoses();
+    }
+
+    public static bool TryGetDefaultDemoPoses(TaskType taskType, out DemoPose[] poses)
+    {
+        EnsureDefaultPoseLibrary();
+        return _defaultPoses.TryGetValue(taskType, out poses) && poses != null && poses.Length > 0;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -201,7 +264,7 @@ public class PoseDemoController : MonoBehaviour
 
     private void Awake()
     {
-        _defaultPoses = BuildDefaultPoses();
+        EnsureDefaultPoseLibrary();
         CaptureNeutral();
     }
 
@@ -267,7 +330,7 @@ public class PoseDemoController : MonoBehaviour
 
         // Priority 2: Built-in Euler fallback
         DemoPose[] poses = null;
-        _defaultPoses?.TryGetValue(task.taskType, out poses);
+        TryGetDefaultDemoPoses(task.taskType, out poses);
         if (poses == null || poses.Length == 0)
             poses = new[] { new DemoPose { holdSeconds = 2f } };
 
@@ -363,19 +426,23 @@ public class PoseDemoController : MonoBehaviour
 
     private IEnumerator LerpToEulerPose(DemoPose target, float speed)
     {
-        Quaternion sH  = GetRot(hipBone),        sSp = GetRot(spineBone);
+        Quaternion sH  = GetRot(hipBone),        sLowerSp = GetRot(lowerSpineBone), sSp = GetRot(spineBone), sChest = GetRot(chestBone);
         Quaternion sTL = GetRot(leftThighBone),  sTR = GetRot(rightThighBone);
         Quaternion sSL = GetRot(leftShinBone),   sSR = GetRot(rightShinBone);
         Quaternion sAL = GetRot(leftAnkleBone),  sAR = GetRot(rightAnkleBone);
+        Vector3 sHP = hipBone ? hipBone.localPosition : Vector3.zero;
 
         Quaternion tH   = _hipNeutral        * Quaternion.Euler(target.hipLocalEuler);
+        Quaternion tLowerSp = _lowerSpineNeutral * Quaternion.Euler(target.lowerSpineLocalEuler);
         Quaternion tSp  = _spineNeutral      * Quaternion.Euler(target.spineLocalEuler);
+        Quaternion tChest = _chestNeutral    * Quaternion.Euler(target.chestLocalEuler);
         Quaternion tTL  = _thighLeftNeutral  * Quaternion.Euler(target.thighLeftLocalEuler);
         Quaternion tTR  = _thighRightNeutral * Quaternion.Euler(target.thighRightLocalEuler);
         Quaternion tSL  = _shinLeftNeutral   * Quaternion.Euler(target.shinLeftLocalEuler);
         Quaternion tSR  = _shinRightNeutral  * Quaternion.Euler(target.shinRightLocalEuler);
         Quaternion tAL  = _ankleLeftNeutral  * Quaternion.Euler(target.ankleLeftLocalEuler);
         Quaternion tAR  = _ankleRightNeutral * Quaternion.Euler(target.ankleRightLocalEuler);
+        Vector3 tHP = _hipPositionNeutral + target.hipLocalPositionOffset;
 
         float t = 0f;
         while (t < 1f)
@@ -384,13 +451,16 @@ public class PoseDemoController : MonoBehaviour
             float s = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
 
             SetRot(hipBone,        sH,  tH,  s);
+            SetRot(lowerSpineBone, sLowerSp, tLowerSp, s);
             SetRot(spineBone,      sSp, tSp, s);
+            SetRot(chestBone,      sChest, tChest, s);
             SetRot(leftThighBone,  sTL, tTL, s);
             SetRot(rightThighBone, sTR, tTR, s);
             SetRot(leftShinBone,   sSL, tSL, s);
             SetRot(rightShinBone,  sSR, tSR, s);
             SetRot(leftAnkleBone,  sAL, tAL, s);
             SetRot(rightAnkleBone, sAR, tAR, s);
+            if (hipBone) hipBone.localPosition = Vector3.Lerp(sHP, tHP, s);
 
             yield return null;
         }
@@ -423,6 +493,29 @@ public class PoseDemoController : MonoBehaviour
             leftThighBone, rightThighBone,
             leftShinBone,  rightShinBone,
             leftAnkleBone, rightAnkleBone);
+    }
+
+    public void CaptureNeutralFromCurrentBones()
+    {
+        CaptureNeutral();
+    }
+
+    public void ApplyDemoPoseImmediate(DemoPose pose)
+    {
+        if (hipBone)
+        {
+            hipBone.localRotation = _hipNeutral * Quaternion.Euler(pose.hipLocalEuler);
+            hipBone.localPosition = _hipPositionNeutral + pose.hipLocalPositionOffset;
+        }
+        if (lowerSpineBone) lowerSpineBone.localRotation = _lowerSpineNeutral * Quaternion.Euler(pose.lowerSpineLocalEuler);
+        if (spineBone) spineBone.localRotation = _spineNeutral * Quaternion.Euler(pose.spineLocalEuler);
+        if (chestBone) chestBone.localRotation = _chestNeutral * Quaternion.Euler(pose.chestLocalEuler);
+        if (leftThighBone) leftThighBone.localRotation = _thighLeftNeutral * Quaternion.Euler(pose.thighLeftLocalEuler);
+        if (rightThighBone) rightThighBone.localRotation = _thighRightNeutral * Quaternion.Euler(pose.thighRightLocalEuler);
+        if (leftShinBone) leftShinBone.localRotation = _shinLeftNeutral * Quaternion.Euler(pose.shinLeftLocalEuler);
+        if (rightShinBone) rightShinBone.localRotation = _shinRightNeutral * Quaternion.Euler(pose.shinRightLocalEuler);
+        if (leftAnkleBone) leftAnkleBone.localRotation = _ankleLeftNeutral * Quaternion.Euler(pose.ankleLeftLocalEuler);
+        if (rightAnkleBone) rightAnkleBone.localRotation = _ankleRightNeutral * Quaternion.Euler(pose.ankleRightLocalEuler);
     }
 
     /// <summary>Verilen PoseSnapshotSO'yu kemiklere anında uygular (Lerp yok — editor preview için).</summary>

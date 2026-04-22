@@ -11,6 +11,8 @@ using System;
 ///   [Saki 2024]    Bilateral activation asymmetry between limbs is an independent risk factor.
 ///   [Maki 1990]    COP velocity > 2 cm/s predicts falls better than RMS displacement alone.
 ///   [Kaptein 2006] Sway velocity fraction reflects reactive (perturbation) balance control.
+///   [Read 2019]    LESS / jump-landing screens are the most practical validated field tools in youth cohorts.
+///   [O'Connor 2020, Bennett 2022] Modified Y-Balance is supportive, but should not be used as a sole injury classifier.
 /// </summary>
 [Serializable]
 public class TaskResult
@@ -49,6 +51,12 @@ public class TaskResult
     /// <summary>Absolute degree difference between left and right peak valgus (Saki 2024).</summary>
     public float BilateralValgusAsymmetry;
 
+    /// <summary>Modified Y-Balance anterior reach while standing on the left leg (% approximate leg length).</summary>
+    public float MaxLeftStanceAnteriorReachPct;
+
+    /// <summary>Modified Y-Balance anterior reach while standing on the right leg (% approximate leg length).</summary>
+    public float MaxRightStanceAnteriorReachPct;
+
     // ───────────────────────── Risk Scores [0, 1] ─────────────────────────
 
     /// <summary>
@@ -68,7 +76,7 @@ public class TaskResult
 
     /// <summary>
     /// Knee flexion range risk — task-type-specific target angles (Hewett 2005).
-    /// Squat target: 60°; SingleLeg: 20°; LeanForward: 30°; Standing: 10°.
+    /// Squat target: 60°; landing target: ~45°; single-leg stance tasks: 20°; Standing: 10°.
     /// </summary>
     public float FlexionRiskScore;
 
@@ -78,6 +86,12 @@ public class TaskResult
     /// RMS: normalised to swayRmsThreshold from TaskDefinition (Kaptein 2006).
     /// </summary>
     public float BalanceRiskScore;
+
+    /// <summary>
+    /// Modified anterior-reach risk — supportive, not standalone.
+    /// Reach at/above target = safe; full risk 15% below target.
+    /// </summary>
+    public float ReachRiskScore;
 
     /// <summary>
     /// Weighted total risk. Weights are task-type-specific (evidence-based matrix).
@@ -91,6 +105,9 @@ public class TaskResult
 
     /// <summary>4-zone clinical grade: Yeşil / Sarı / Turuncu / Kırmızı.</summary>
     public string RiskGrade;
+
+    /// <summary>Short Turkish interpretation string used in UI/report summaries.</summary>
+    public string TaskSummaryTR;
 
     // ───────────────────────── Factory ─────────────────────────
 
@@ -109,65 +126,63 @@ public class TaskResult
         float maxFlexLeft,     float maxFlexRight,
         float meanSwayRMS,     float meanSwayVelocity,
         float symmetryIndex,
-        float swayThreshold = 0.015f)
+        float maxLeftStanceAnteriorReachPct = 0f,
+        float maxRightStanceAnteriorReachPct = 0f,
+        float swayThreshold = 0.015f,
+        float targetReachPct = 65f,
+        float landingFlexionTargetDeg = 45f)
     {
+        float meanValgusSource = GetTaskSideValue(taskType, meanValgusLeft, meanValgusRight);
+        float peakValgusSource = GetTaskSideValue(taskType, maxValgusLeft, maxValgusRight);
+
         // ── VALGUS RISK ──────────────────────────────────────────────────────────
-        // Mean valgus = habitual neuromuscular malalignment (Tamura 2017)
-        //   Ramp: 0 at 5°  →  1.0 at 18°
-        float meanValgusMax  = Math.Max(meanValgusLeft, meanValgusRight);
-        float meanValgusRisk = Clamp01((meanValgusMax - 5f) / 13f);
-
-        // Peak valgus = worst-case ACL loading moment (Hewett 2005, Numata 2017)
-        //   Ramp: 0 at 8°  →  1.0 at 18°
-        float peakValgusMax  = Math.Max(maxValgusLeft, maxValgusRight);
-        float peakValgusRisk = Clamp01((peakValgusMax - 8f) / 10f);
-
-        // Combined: peak weighted higher — Hewett's prospective study was peak-based
+        float meanValgusRisk = Clamp01((meanValgusSource - 5f) / 13f);
+        float peakValgusRisk = Clamp01((peakValgusSource - 8f) / 10f);
         float combinedValgusRisk = 0.35f * meanValgusRisk + 0.65f * peakValgusRisk;
 
-        // Bilateral valgus asymmetry: L/R difference > 8° is independent risk factor (Saki 2024)
         float bilateralValgusAsym = Math.Abs(maxValgusLeft - maxValgusRight);
         float bilateralValgusRisk = Clamp01(bilateralValgusAsym / 8f);
-
-        // Final valgus score: 80% combined + 20% bilateral asymmetry component
         float valgusRisk = Clamp01(0.80f * combinedValgusRisk + 0.20f * bilateralValgusRisk);
 
         // ── ASYMMETRY RISK ───────────────────────────────────────────────────────
-        // Symmetry Index: safe < 10%, full risk at 25% (Saki 2024, general consensus)
-        float asymmetryRisk = Clamp01((symmetryIndex - 10f) / 15f);
+        float asymmetryRisk = IsSingleLegTask(taskType) || HasReachMetric(taskType)
+            ? 0f
+            : Clamp01((symmetryIndex - 10f) / 15f);
 
         // ── FLEXION RISK ─────────────────────────────────────────────────────────
-        // Task-specific target angles — low flexion increases stiffness and ACL load (Hewett 2005)
-        float flexTarget = GetFlexTarget(taskType);
-        float maxFlex    = Math.Max(maxFlexLeft, maxFlexRight);
+        float flexTarget = GetFlexTarget(taskType, landingFlexionTargetDeg);
+        float maxFlex = GetTaskSideValue(taskType, maxFlexLeft, maxFlexRight);
         float flexionRisk = (maxFlex >= flexTarget || flexTarget <= 0f)
             ? 0f
             : Clamp01(1f - maxFlex / flexTarget);
 
         // ── BALANCE RISK ─────────────────────────────────────────────────────────
-        // COP velocity is a better fall predictor than displacement alone (Maki 1990)
-        //   Safe: < 0.020 m/s;  full risk: >= 0.050 m/s
         float swayVelRisk = Clamp01((meanSwayVelocity - 0.020f) / 0.030f);
-
-        // RMS displacement normalised to task threshold (Kaptein 2006)
         float swayRmsRisk = swayThreshold > 0f ? Clamp01(meanSwayRMS / swayThreshold) : 0f;
-
-        // 60% velocity + 40% RMS (Maki 1990: velocity fraction weighted higher)
         float balanceRisk = Clamp01(0.60f * swayVelRisk + 0.40f * swayRmsRisk);
 
+        // ── REACH RISK ───────────────────────────────────────────────────────────
+        float reachPct = GetReachValue(taskType, maxLeftStanceAnteriorReachPct, maxRightStanceAnteriorReachPct);
+        float reachRisk = HasReachMetric(taskType)
+            ? Clamp01((targetReachPct - reachPct) / 15f)
+            : 0f;
+
         // ── TASK-TYPE WEIGHTS ────────────────────────────────────────────────────
-        GetTaskWeights(taskType, out float wV, out float wA, out float wB, out float wF);
+        GetTaskWeights(taskType, out float wV, out float wA, out float wB, out float wF, out float wR);
 
         float totalRisk = Clamp01(wV * valgusRisk
                                 + wA * asymmetryRisk
                                 + wB * balanceRisk
-                                + wF * flexionRisk);
+                                + wF * flexionRisk
+                                + wR * reachRisk);
 
         // ── GAME SCORE ───────────────────────────────────────────────────────────
         float gameScore = (1f - totalRisk) * 100f;
-        // Consistency bonus (+5 pts) when ALL sub-scores are in the safe zone
-        if (valgusRisk < 0.20f && balanceRisk < 0.20f && asymmetryRisk < 0.20f)
+        if (valgusRisk < 0.20f && balanceRisk < 0.20f && asymmetryRisk < 0.20f
+            && flexionRisk < 0.20f && reachRisk < 0.20f)
             gameScore = Math.Min(100f, gameScore + 5f);
+
+        string taskSummary = BuildTaskSummaryTR(taskType, valgusRisk, balanceRisk, flexionRisk, reachRisk, asymmetryRisk);
 
         return new TaskResult
         {
@@ -190,95 +205,213 @@ public class TaskResult
             SymmetryIndex     = symmetryIndex,
 
             BilateralValgusAsymmetry = bilateralValgusAsym,
+            MaxLeftStanceAnteriorReachPct  = maxLeftStanceAnteriorReachPct,
+            MaxRightStanceAnteriorReachPct = maxRightStanceAnteriorReachPct,
 
             ValgusRiskScore    = valgusRisk,
             AsymmetryRiskScore = asymmetryRisk,
             FlexionRiskScore   = flexionRisk,
             BalanceRiskScore   = balanceRisk,
+            ReachRiskScore     = reachRisk,
             TotalRiskScore     = totalRisk,
             GameScore          = gameScore,
-            RiskGrade          = GetRiskGrade(totalRisk)
+            RiskGrade          = GetRiskGrade(totalRisk),
+            TaskSummaryTR      = taskSummary
         };
     }
 
     // ───────────────────────── Evidence-based helpers ─────────────────────────
 
-    /// <summary>
-    /// Task-type-specific knee flexion target (degrees).
-    /// Below this value the flexion risk score rises to 1.0 (Hewett 2005).
-    /// </summary>
-    private static float GetFlexTarget(TaskType t)
+    private static float GetFlexTarget(TaskType t, float landingFlexionTargetDeg)
     {
         switch (t)
         {
-            case TaskType.MiniSquat:           return 60f;  // adequate squat depth
-            case TaskType.LeanForward:         return 30f;  // anterior lean demands hip/knee flex
+            case TaskType.MiniSquat:           return 60f;
+            case TaskType.LeanForward:         return 30f;
             case TaskType.SingleLegBalance_R:
-            case TaskType.SingleLegBalance_L:  return 20f;  // slight bend for stability
-            default:                           return 10f;  // minimal for static/lean tasks
+            case TaskType.SingleLegBalance_L:  return 20f;
+            case TaskType.LandingScreen:       return landingFlexionTargetDeg > 0f ? landingFlexionTargetDeg : 45f;
+            case TaskType.SingleLegSquat_R:
+            case TaskType.SingleLegSquat_L:    return 40f;
+            case TaskType.ModifiedYBalanceAnterior_R:
+            case TaskType.ModifiedYBalanceAnterior_L:
+                                             return 20f;
+            default:                           return 10f;
         }
     }
 
-    /// <summary>
-    /// Task-type-specific risk weights (must sum to 1.0).
-    /// Distribution reflects biomechanical demands from the literature.
-    /// </summary>
     private static void GetTaskWeights(TaskType t,
-        out float wValgus, out float wAsymmetry, out float wBalance, out float wFlexion)
+        out float wValgus, out float wAsymmetry, out float wBalance, out float wFlexion, out float wReach)
     {
         switch (t)
         {
             case TaskType.Standing:
-                // Static balance is primary metric; valgus less relevant (Maki 1990, Kaptein 2006)
-                wValgus=0.20f; wAsymmetry=0.20f; wBalance=0.50f; wFlexion=0.10f; break;
+                wValgus=0.20f; wAsymmetry=0.20f; wBalance=0.50f; wFlexion=0.10f; wReach=0.00f; break;
 
             case TaskType.LeanRight:
             case TaskType.LeanLeft:
             case TaskType.LeanForward:
-                // Lean tests dynamic balance + valgus response under load shift (Tamura 2017)
-                wValgus=0.30f; wAsymmetry=0.25f; wBalance=0.35f; wFlexion=0.10f; break;
+                wValgus=0.30f; wAsymmetry=0.25f; wBalance=0.35f; wFlexion=0.10f; wReach=0.00f; break;
 
             case TaskType.SingleLegBalance_R:
             case TaskType.SingleLegBalance_L:
-                // Single-leg: balance dominant; valgus secondary (Tamura 2017, Maki 1990)
-                wValgus=0.30f; wAsymmetry=0.20f; wBalance=0.40f; wFlexion=0.10f; break;
+                wValgus=0.30f; wAsymmetry=0.00f; wBalance=0.55f; wFlexion=0.15f; wReach=0.00f; break;
 
             case TaskType.MiniSquat:
-                // Squat: valgus + flexion clinically most important (Hewett 2005, Saki 2024)
-                wValgus=0.40f; wAsymmetry=0.20f; wBalance=0.20f; wFlexion=0.20f; break;
+                wValgus=0.40f; wAsymmetry=0.15f; wBalance=0.20f; wFlexion=0.25f; wReach=0.00f; break;
 
             case TaskType.WalkSimulation:
-                // Walk: symmetry + valgus; balance secondary (Saki 2024)
-                wValgus=0.35f; wAsymmetry=0.30f; wBalance=0.25f; wFlexion=0.10f; break;
+                wValgus=0.35f; wAsymmetry=0.25f; wBalance=0.30f; wFlexion=0.10f; wReach=0.00f; break;
+
+            case TaskType.LandingScreen:
+                wValgus=0.40f; wAsymmetry=0.05f; wBalance=0.20f; wFlexion=0.35f; wReach=0.00f; break;
+
+            case TaskType.ModifiedYBalanceAnterior_R:
+            case TaskType.ModifiedYBalanceAnterior_L:
+                wValgus=0.20f; wAsymmetry=0.00f; wBalance=0.30f; wFlexion=0.10f; wReach=0.40f; break;
+
+            case TaskType.SingleLegSquat_R:
+            case TaskType.SingleLegSquat_L:
+                wValgus=0.40f; wAsymmetry=0.00f; wBalance=0.25f; wFlexion=0.35f; wReach=0.00f; break;
 
             default:
-                wValgus=0.35f; wAsymmetry=0.25f; wBalance=0.25f; wFlexion=0.15f; break;
+                wValgus=0.35f; wAsymmetry=0.20f; wBalance=0.25f; wFlexion=0.20f; wReach=0.00f; break;
+        }
+    }
+
+    public static bool HasReachMetric(TaskType t)
+    {
+        return t == TaskType.ModifiedYBalanceAnterior_R || t == TaskType.ModifiedYBalanceAnterior_L;
+    }
+
+    private static bool IsSingleLegTask(TaskType t)
+    {
+        switch (t)
+        {
+            case TaskType.SingleLegBalance_R:
+            case TaskType.SingleLegBalance_L:
+            case TaskType.ModifiedYBalanceAnterior_R:
+            case TaskType.ModifiedYBalanceAnterior_L:
+            case TaskType.SingleLegSquat_R:
+            case TaskType.SingleLegSquat_L:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static float GetTaskSideValue(TaskType t, float left, float right)
+    {
+        switch (t)
+        {
+            case TaskType.SingleLegBalance_R:
+            case TaskType.ModifiedYBalanceAnterior_R:
+            case TaskType.SingleLegSquat_R:
+                return right;
+
+            case TaskType.SingleLegBalance_L:
+            case TaskType.ModifiedYBalanceAnterior_L:
+            case TaskType.SingleLegSquat_L:
+                return left;
+
+            default:
+                return Math.Max(left, right);
+        }
+    }
+
+    private static float GetReachValue(TaskType t, float leftStanceReachPct, float rightStanceReachPct)
+    {
+        switch (t)
+        {
+            case TaskType.ModifiedYBalanceAnterior_R: return rightStanceReachPct;
+            case TaskType.ModifiedYBalanceAnterior_L: return leftStanceReachPct;
+            default: return 0f;
+        }
+    }
+
+    private static string BuildTaskSummaryTR(
+        TaskType taskType,
+        float valgusRisk,
+        float balanceRisk,
+        float flexionRisk,
+        float reachRisk,
+        float asymmetryRisk)
+    {
+        switch (taskType)
+        {
+            case TaskType.LandingScreen:
+                if (valgusRisk >= 0.60f && flexionRisk >= 0.50f)
+                    return "İnişte diz içe kaçışı ve sert iniş paterni birlikte görüldü.";
+                if (valgusRisk >= 0.60f)
+                    return "İniş sırasında diz içe kaçışı belirgin.";
+                if (flexionRisk >= 0.50f)
+                    return "İniş sert; diz ve kalça bükülmesi yetersiz.";
+                if (balanceRisk >= 0.50f)
+                    return "İnişten sonra denge toparlanması yavaş.";
+                return "İniş kontrolü kabul edilebilir görünüyor.";
+
+            case TaskType.ModifiedYBalanceAnterior_R:
+            case TaskType.ModifiedYBalanceAnterior_L:
+                if (reachRisk >= 0.60f && balanceRisk >= 0.50f)
+                    return "Uzanma mesafesi kısa ve stance denge kontrolü zayıf.";
+                if (reachRisk >= 0.60f)
+                    return "Anterior reach kapasitesi beklenenin altında.";
+                if (valgusRisk >= 0.60f)
+                    return "Reach sırasında stance dizinde medial çökme izlendi.";
+                if (balanceRisk >= 0.50f)
+                    return "Reach sırasında salınım arttı; dinamik denge zorlandı.";
+                return "Reach ve stance kontrolü kabul edilebilir.";
+
+            case TaskType.SingleLegSquat_R:
+            case TaskType.SingleLegSquat_L:
+                if (valgusRisk >= 0.60f && flexionRisk >= 0.50f)
+                    return "Tek ayak squat sırasında kontrollü yük kabulü zayıf; diz içe kaçıyor.";
+                if (valgusRisk >= 0.60f)
+                    return "Tek ayak squat sırasında stance dizinde içe kaçış izlendi.";
+                if (flexionRisk >= 0.50f)
+                    return "Squat derinliği yetersiz; güvenli yük kabulü sınırlı.";
+                if (balanceRisk >= 0.50f)
+                    return "Tek ayak squat sırasında denge kontrolü zayıf.";
+                return "Tek ayak squat kontrolü kabul edilebilir.";
+
+            default:
+                if (valgusRisk >= 0.60f)
+                    return "Valgus kontrolü öncelikli takip gerektiriyor.";
+                if (balanceRisk >= 0.60f)
+                    return "Denge kontrolü öncelikli takip gerektiriyor.";
+                if (asymmetryRisk >= 0.60f)
+                    return "Sağ-sol asimetri belirgin.";
+                if (flexionRisk >= 0.60f)
+                    return "Fleksiyon stratejisi yetersiz görünüyor.";
+                return "Belirgin bir yüksek-risk paterni görülmedi.";
         }
     }
 
     private static float Clamp01(float v) => Math.Max(0f, Math.Min(1f, v));
 
-    /// <summary>Converts risk score [0,1] to a 4-zone Turkish label (aligned with RiskGrade zones).</summary>
     public static string RiskLabel(float risk)
     {
-        if (risk < 0.25f) return "Düşük Risk";     // Yeşil zone
-        if (risk < 0.50f) return "Orta Risk";      // Sarı zone
-        if (risk < 0.75f) return "Yüksek Risk";    // Turuncu zone
-        return "Kritik Risk";                        // Kırmızı zone
+        if (risk < 0.25f) return "Düşük Risk";
+        if (risk < 0.50f) return "Orta Risk";
+        if (risk < 0.75f) return "Yüksek Risk";
+        return "Kritik Risk";
     }
 
-    /// <summary>4-zone clinical grade string used in session reports and UI.</summary>
     public static string GetRiskGrade(float totalRisk)
     {
-        if (totalRisk < 0.25f) return "Yeşil";     // Low — safe zone
-        if (totalRisk < 0.50f) return "Sarı";      // Moderate — attention zone
-        if (totalRisk < 0.75f) return "Turuncu";   // High — clinical concern
-        return "Kırmızı";                           // Critical — immediate intervention
+        if (totalRisk < 0.25f) return "Yeşil";
+        if (totalRisk < 0.50f) return "Sarı";
+        if (totalRisk < 0.75f) return "Turuncu";
+        return "Kırmızı";
     }
 
     public override string ToString()
     {
+        string reachText = HasReachMetric(TaskType)
+            ? $" Reach:{GetReachValue(TaskType, MaxLeftStanceAnteriorReachPct, MaxRightStanceAnteriorReachPct):F1}%"
+            : "";
+
         return $"[{TaskNameTR}] Skor:{GameScore:F1} Valgus:{MaxValgusLeft:F1}°L/{MaxValgusRight:F1}°R "
-             + $"Sway:{MeanSwayRMS * 1000f:F1}mm SI:{SymmetryIndex:F1}%";
+             + $"Sway:{MeanSwayRMS * 1000f:F1}mm SI:{SymmetryIndex:F1}%{reachText}";
     }
 }

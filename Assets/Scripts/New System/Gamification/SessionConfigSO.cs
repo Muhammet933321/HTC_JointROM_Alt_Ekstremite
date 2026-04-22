@@ -53,6 +53,9 @@ public class SessionConfigSO : ScriptableObject
     [Tooltip("Görev sırasını her oturumda rastgele karıştır.")]
     public bool randomizeOrder = false;
 
+    [Tooltip("Görevleri klinik tarama için önerilen sıraya göre otomatik diz. Manual listeden bağımsız olarak BuildExecutionList() öncesi uygulanır.")]
+    public bool autoSortByClinicalRecommendation = true;
+
     [Tooltip("Oturum başında kalibrasyon ekranını zorla (false = kalibrasyon zaten yapılmışsa atla).")]
     public bool forceRecalibrationOnStart = false;
 
@@ -67,18 +70,18 @@ public class SessionConfigSO : ScriptableObject
     /// </summary>
     public List<TaskDefinition> BuildExecutionList()
     {
+        var sourceTasks = autoSortByClinicalRecommendation
+            ? SortTasksByClinicalRecommendation(tasks)
+            : new List<TaskDefinition>(tasks);
+
         var list = new List<TaskDefinition>();
 
-        foreach (var task in tasks)
+        foreach (var task in sourceTasks)
         {
             if (task == null) continue;
 
-            // Uygula: global rest override
-            if (globalRestOverrideSeconds >= 0f)
-                task.restAfterSeconds = globalRestOverrideSeconds;
-
             for (int r = 0; r < Mathf.Max(1, repetitionsPerTask); r++)
-                list.Add(task);
+                list.Add(PrepareExecutionTask(task));
         }
 
         if (randomizeOrder)
@@ -92,5 +95,51 @@ public class SessionConfigSO : ScriptableObject
         }
 
         return list;
+    }
+
+    private TaskDefinition PrepareExecutionTask(TaskDefinition source)
+    {
+        if (source == null || globalRestOverrideSeconds < 0f)
+            return source;
+
+        var runtimeTask = Instantiate(source);
+        runtimeTask.name = source.name;
+        runtimeTask.hideFlags = HideFlags.DontSave;
+        runtimeTask.restAfterSeconds = globalRestOverrideSeconds;
+        return runtimeTask;
+    }
+
+    public static List<TaskDefinition> SortTasksByClinicalRecommendation(List<TaskDefinition> source)
+    {
+        var ordered = source != null ? new List<TaskDefinition>(source) : new List<TaskDefinition>();
+        ordered.Sort((a, b) => GetClinicalRecommendationOrder(a).CompareTo(GetClinicalRecommendationOrder(b)));
+        return ordered;
+    }
+
+    public static int GetClinicalRecommendationOrder(TaskDefinition task)
+    {
+        if (task == null) return int.MaxValue;
+        return GetClinicalRecommendationOrder(task.taskType);
+    }
+
+    public static int GetClinicalRecommendationOrder(TaskType taskType)
+    {
+        switch (taskType)
+        {
+            case TaskType.Standing:                   return 10;
+            case TaskType.LandingScreen:              return 20;
+            case TaskType.MiniSquat:                  return 30;
+            case TaskType.SingleLegSquat_R:           return 40;
+            case TaskType.SingleLegSquat_L:           return 50;
+            case TaskType.ModifiedYBalanceAnterior_R: return 60;
+            case TaskType.ModifiedYBalanceAnterior_L: return 70;
+            case TaskType.LeanRight:                  return 80;
+            case TaskType.LeanLeft:                   return 90;
+            case TaskType.LeanForward:                return 100;
+            case TaskType.SingleLegBalance_R:         return 110;
+            case TaskType.SingleLegBalance_L:         return 120;
+            case TaskType.WalkSimulation:             return 130;
+            default:                                  return 999;
+        }
     }
 }

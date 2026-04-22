@@ -40,6 +40,13 @@ public class TaskDefinition : ScriptableObject
     [Tooltip("Sway RMS eşiği (metre). Varsayılan 0.015 m = 15 mm.")]
     public float swayRmsThreshold = 0.015f;
 
+    [Header("=== Screening Extensions ===")]
+    [Tooltip("Modified Y-Balance anterior reach görevleri için hedef reach değeri (% bacak uzunluğu).")]
+    public float targetReachPct = 65f;
+
+    [Tooltip("Landing screen görevleri için güvenli iniş diz fleksiyonu hedefi (derece).")]
+    public float landingFlexionTargetDeg = 45f;
+
     [Header("=== Demo Animation (ScriptableObject) ===")]
     [Tooltip("Ghost avatar demo animasyon sekansı.\n" +
              "PoseSequenceSO asset'ini buraya sürükle-bırak.\n" +

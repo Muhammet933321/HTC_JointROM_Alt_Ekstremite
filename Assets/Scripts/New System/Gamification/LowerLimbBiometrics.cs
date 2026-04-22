@@ -51,6 +51,10 @@ public class LowerLimbBiometrics : MonoBehaviour
     public float simSwayRMS = 5f;
     [Range(0f, 20f)]
     public float simSwayVelocity = 2f;
+    [Range(0f, 100f)]
+    public float simLeftStanceAnteriorReachPct = 65f;
+    [Range(0f, 100f)]
+    public float simRightStanceAnteriorReachPct = 65f;
 
     // ───────────────────────── Settings ─────────────────────────
 
@@ -90,6 +94,12 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// </summary>
     public float SymmetryIndex { get; private set; }
 
+    /// <summary>Modified Y-Balance anterior reach while standing on the left leg (% approximate leg length).</summary>
+    public float LeftStanceAnteriorReachPct { get; private set; }
+
+    /// <summary>Modified Y-Balance anterior reach while standing on the right leg (% approximate leg length).</summary>
+    public float RightStanceAnteriorReachPct { get; private set; }
+
     /// <summary>True when at least pelvis + one knee + one ankle on each side are available.</summary>
     public bool IsBilateralAvailable =>
         pelvisTracker != null && leftKneeTracker != null && rightKneeTracker != null
@@ -115,6 +125,7 @@ public class LowerLimbBiometrics : MonoBehaviour
         ComputeKneeFlexion();
         ComputeSwayMetrics();
         ComputeSymmetryIndex();
+        ComputeReachMetrics();
     }
 
     // ───────────────────────── Simulated Path ─────────────────────────
@@ -131,6 +142,8 @@ public class LowerLimbBiometrics : MonoBehaviour
         SymmetryIndex = mean > 0.01f
             ? 100f * Mathf.Abs(simRightKneeFlexion - simLeftKneeFlexion) / mean
             : 0f;
+        LeftStanceAnteriorReachPct = simLeftStanceAnteriorReachPct;
+        RightStanceAnteriorReachPct = simRightStanceAnteriorReachPct;
     }
 
     // ───────────────────────── Valgus / Varus ─────────────────────────
@@ -278,6 +291,52 @@ public class LowerLimbBiometrics : MonoBehaviour
         SymmetryIndex = mean > 0.01f
             ? 100f * Mathf.Abs(xr - xl) / mean
             : 0f;
+    }
+
+    private void ComputeReachMetrics()
+    {
+        if (pelvisTracker == null || leftAnkleTracker == null || rightAnkleTracker == null)
+        {
+            LeftStanceAnteriorReachPct = 0f;
+            RightStanceAnteriorReachPct = 0f;
+            return;
+        }
+
+        Vector3 forward = Vector3.ProjectOnPlane(pelvisTracker.forward, worldUp);
+        if (forward.sqrMagnitude < 1e-6f) forward = Vector3.forward;
+        forward.Normalize();
+
+        LeftStanceAnteriorReachPct = ComputeAnteriorReachPct(isLeftStance: true, forward);
+        RightStanceAnteriorReachPct = ComputeAnteriorReachPct(isLeftStance: false, forward);
+    }
+
+    private float ComputeAnteriorReachPct(bool isLeftStance, Vector3 forward)
+    {
+        Transform stanceAnkle = isLeftStance ? leftAnkleTracker : rightAnkleTracker;
+        Transform reachAnkle = isLeftStance ? rightAnkleTracker : leftAnkleTracker;
+
+        if (stanceAnkle == null || reachAnkle == null) return 0f;
+
+        Vector3 deltaXZ = Vector3.ProjectOnPlane(reachAnkle.position - stanceAnkle.position, worldUp);
+        float anteriorReach = Mathf.Max(0f, Vector3.Dot(deltaXZ, forward));
+        float legLength = ComputeApproxLegLength(isLeftStance, forward);
+
+        return legLength > 0.01f
+            ? 100f * anteriorReach / legLength
+            : 0f;
+    }
+
+    private float ComputeApproxLegLength(bool isLeft, Vector3 forward)
+    {
+        Transform ankle = isLeft ? leftAnkleTracker : rightAnkleTracker;
+        if (ankle == null || pelvisTracker == null) return 0f;
+
+        Vector3 lateral = Vector3.Cross(worldUp, forward).normalized;
+        if (lateral.sqrMagnitude < 1e-6f) lateral = Vector3.right;
+
+        float lateralOffset = isLeft ? -0.10f : 0.10f;
+        Vector3 hipCenter = pelvisTracker.position + lateral * lateralOffset;
+        return Vector3.Distance(hipCenter, ankle.position);
     }
 
     // ───────────────────────── Gizmos ─────────────────────────

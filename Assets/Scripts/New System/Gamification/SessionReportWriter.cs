@@ -93,9 +93,9 @@ public class SessionReportWriter : MonoBehaviour
             "MeanValgusL_deg,MeanValgusR_deg,MaxValgusL_deg,MaxValgusR_deg," +
             "MeanFlexL_deg,MeanFlexR_deg,MaxFlexL_deg,MaxFlexR_deg," +
             "MeanSwayRMS_mm,MeanSwayVelocity_ms," +
-            "SymmetryIndex_pct," +
-            "ValgusRisk,AsymmetryRisk,FlexionRisk,BalanceRisk,TotalRisk," +
-            "GameScore");
+            "SymmetryIndex_pct,MaxLeftStanceAnteriorReach_pct,MaxRightStanceAnteriorReach_pct," +
+            "ValgusRisk,AsymmetryRisk,FlexionRisk,BalanceRisk,ReachRisk,TotalRisk," +
+            "GameScore,TaskSummaryTR");
 
         foreach (var r in results)
         {
@@ -110,10 +110,14 @@ public class SessionReportWriter : MonoBehaviour
                 F(r.MeanSwayRMS * 1000f),  // convert m → mm
                 F(r.MeanSwayVelocity),
                 F(r.SymmetryIndex),
+                F(r.MaxLeftStanceAnteriorReachPct),
+                F(r.MaxRightStanceAnteriorReachPct),
                 F(r.ValgusRiskScore),  F(r.AsymmetryRiskScore),
                 F(r.FlexionRiskScore), F(r.BalanceRiskScore),
+                F(r.ReachRiskScore),
                 F(r.TotalRiskScore),
-                F(r.GameScore)));
+                F(r.GameScore),
+                EscapeCsv(r.TaskSummaryTR)));
         }
 
         // Summary row
@@ -121,7 +125,10 @@ public class SessionReportWriter : MonoBehaviour
         foreach (var r in results) sessionAvg += r.GameScore;
         sessionAvg /= results.Count;
         sb.AppendLine();
-        sb.AppendLine($"Session Average,,,,,,,,,,,,,,,,,,,,{F(sessionAvg)}");
+            string[] summaryRow = new string[24];
+            summaryRow[0] = "Session Average";
+            summaryRow[22] = F(sessionAvg);
+            sb.AppendLine(string.Join(",", summaryRow));
 
         File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
     }
@@ -147,15 +154,17 @@ public class SessionReportWriter : MonoBehaviour
 
             sb.AppendLine("    {");
             sb.AppendLine($"      \"taskType\": \"{r.TaskType}\",");
-            sb.AppendLine($"      \"taskNameTR\": \"{r.TaskNameTR}\",");
+            sb.AppendLine($"      \"taskNameTR\": \"{EscapeJson(r.TaskNameTR)}\",");
             sb.AppendLine($"      \"durationSec\": {F(r.MeasuredDurationSec)},");
             sb.AppendLine($"      \"valgus\": {{ \"meanL\": {F(r.MeanValgusLeft)}, \"meanR\": {F(r.MeanValgusRight)}, \"maxL\": {F(r.MaxValgusLeft)}, \"maxR\": {F(r.MaxValgusRight)} }},");
             sb.AppendLine($"      \"flexion\": {{ \"meanL\": {F(r.MeanFlexLeft)}, \"meanR\": {F(r.MeanFlexRight)}, \"maxL\": {F(r.MaxFlexLeft)}, \"maxR\": {F(r.MaxFlexRight)} }},");
             sb.AppendLine($"      \"swayRMS_mm\": {F(r.MeanSwayRMS * 1000f)},");
             sb.AppendLine($"      \"swayVelocity\": {F(r.MeanSwayVelocity)},");
             sb.AppendLine($"      \"symmetryIndex\": {F(r.SymmetryIndex)},");
-            sb.AppendLine($"      \"risks\": {{ \"valgus\": {F(r.ValgusRiskScore)}, \"asymmetry\": {F(r.AsymmetryRiskScore)}, \"flexion\": {F(r.FlexionRiskScore)}, \"balance\": {F(r.BalanceRiskScore)}, \"total\": {F(r.TotalRiskScore)} }},");
-            sb.AppendLine($"      \"gameScore\": {F(r.GameScore)}");
+            sb.AppendLine($"      \"reach\": {{ \"leftStancePct\": {F(r.MaxLeftStanceAnteriorReachPct)}, \"rightStancePct\": {F(r.MaxRightStanceAnteriorReachPct)} }},");
+            sb.AppendLine($"      \"risks\": {{ \"valgus\": {F(r.ValgusRiskScore)}, \"asymmetry\": {F(r.AsymmetryRiskScore)}, \"flexion\": {F(r.FlexionRiskScore)}, \"balance\": {F(r.BalanceRiskScore)}, \"reach\": {F(r.ReachRiskScore)}, \"total\": {F(r.TotalRiskScore)} }},");
+            sb.AppendLine($"      \"gameScore\": {F(r.GameScore)},");
+            sb.AppendLine($"      \"taskSummaryTR\": \"{EscapeJson(r.TaskSummaryTR)}\"");
             sb.AppendLine(last ? "    }" : "    },");
         }
 
@@ -175,5 +184,11 @@ public class SessionReportWriter : MonoBehaviour
         if (s.Contains(',') || s.Contains('"') || s.Contains('\n'))
             return "\"" + s.Replace("\"", "\"\"") + "\"";
         return s;
+    }
+
+    private static string EscapeJson(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

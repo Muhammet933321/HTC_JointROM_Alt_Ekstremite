@@ -25,5 +25,20 @@ public enum TaskType
     MiniSquat,
 
     /// <summary>Yürüme simülasyonu / adım alma (§9.6)</summary>
-    WalkSimulation
+    WalkSimulation,
+
+    /// <summary>LESS-esinli çift ayak iniş taraması</summary>
+    LandingScreen,
+
+    /// <summary>Modifiye Y-Balance anterior reach — sağ stance</summary>
+    ModifiedYBalanceAnterior_R,
+
+    /// <summary>Modifiye Y-Balance anterior reach — sol stance</summary>
+    ModifiedYBalanceAnterior_L,
+
+    /// <summary>Tek ayak squat taraması — sağ stance</summary>
+    SingleLegSquat_R,
+
+    /// <summary>Tek ayak squat taraması — sol stance</summary>
+    SingleLegSquat_L
 }
