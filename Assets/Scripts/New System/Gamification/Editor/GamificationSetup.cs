@@ -196,64 +196,56 @@ public class GamificationSetup : EditorWindow
             }
         }
 
-        // Task data: (type, nameTR, instructions, duration, valgusThresh, swayThresh, hipEuler, kneeEuler)
-        var defs = new (TaskType type, string name, string instr, float dur, float rest, Vector3 hip, Vector3 knee)[]
+        // Task data: (type, nameTR, instructions, duration, rest)
+        var defs = new (TaskType type, string name, string instr, float dur, float rest)[]
         {
             (
                 TaskType.Standing,
                 "Dik Duruş",
                 "Ayaklarınızı omuz genişliğinde açarak dik durun.\nKollarınızı yanlara serbest bırakın ve doğal bir duruş alın.",
-                10f, 3f,
-                Vector3.zero, Vector3.zero
+                10f, 3f
             ),
             (
                 TaskType.LeanRight,
                 "Sağa Eğilme",
                 "Vücudunuzu sağa doğru yavaşça eğin.\nAyaklarınız yerden kalkmadan gövdenizi yana doğru uzatın.",
-                8f, 3f,
-                new Vector3(0f, 0f, -15f), Vector3.zero
+                8f, 3f
             ),
             (
                 TaskType.LeanLeft,
                 "Sola Eğilme",
                 "Vücudunuzu sola doğru yavaşça eğin.\nAyaklarınız yerden kalkmadan gövdenizi yana doğru uzatın.",
-                8f, 3f,
-                new Vector3(0f, 0f, 15f), Vector3.zero
+                8f, 3f
             ),
             (
                 TaskType.LeanForward,
                 "Öne Eğilme",
                 "Belkemiğinizi düz tutarak öne doğru yavaşça eğilin.\nDizlerinizi hafifçe bükebilirsiniz.",
-                8f, 3f,
-                new Vector3(20f, 0f, 0f), new Vector3(10f, 0f, 0f)
+                8f, 3f
             ),
             (
                 TaskType.SingleLegBalance_R,
                 "Sağ Ayak Dengesi",
                 "Sol ayağınızı yerden kaldırın ve sadece sağ ayağınız üzerinde dengede durun.\nGözlerinizi karşıya sabitleyin.",
-                10f, 4f,
-                new Vector3(0f, 0f, 5f), Vector3.zero
+                10f, 4f
             ),
             (
                 TaskType.SingleLegBalance_L,
                 "Sol Ayak Dengesi",
                 "Sağ ayağınızı yerden kaldırın ve sadece sol ayağınız üzerinde dengede durun.\nGözlerinizi karşıya sabitleyin.",
-                10f, 4f,
-                new Vector3(0f, 0f, -5f), Vector3.zero
+                10f, 4f
             ),
             (
                 TaskType.MiniSquat,
                 "Mini Squat",
                 "Ayaklarınız omuz genişliğinde açık, ayak uçları hafif dışarı dönük.\nDizlerinizi ayak uçlarınızın hizasında tutarak yavaşça çömelin ve kalkın.",
-                15f, 4f,
-                new Vector3(25f, 0f, 0f), new Vector3(50f, 0f, 0f)
+                15f, 4f
             ),
             (
                 TaskType.WalkSimulation,
                 "Yürüme Simülasyonu",
                 "Yerinde yavaşça adım alın — önce sağ, sonra sol ayak.\nHer adımda dizinizi kaldırın ve yavaş bir tempoda devam edin.",
-                12f, 3f,
-                Vector3.zero, new Vector3(15f, 0f, 0f)
+                12f, 3f
             ),
         };
 
@@ -282,11 +274,9 @@ public class GamificationSetup : EditorWindow
             td.asymmetryThresholdPct = 10f;
             td.minFlexionDeg         = 45f;
             td.swayRmsThreshold      = 0.015f;
-            td.demoHipEuler          = d.hip;
-            td.demoKneeEuler         = d.knee;
-            td.demoPauseDuration     = 1.5f;
-            td.demoTransitionSpeed   = 2f;
-            td.loopDemo              = true;
+            // demoSequence (PoseSequenceSO) will be assigned manually in the Inspector
+            // after recording poses with PoseDemoControllerEditor.
+            td.demoTransitionSpeedOverride = 2f;
 
             AssetDatabase.CreateAsset(td, assetPath);
             list.Add(td);
@@ -357,9 +347,24 @@ public class GamificationSetup : EditorWindow
 
         // Try to auto-find bones via Mixamo naming convention
         Transform hipBone       = FindBoneByKeyword(ghost.transform, "hips", "pelvis");
-        // Spine1 preferred for lean counter-rotation (mid-lumbar); fall back to Spine
-        Transform spineBone     = FindBoneByKeyword(ghost.transform, "spine1") ??
-                                   FindBoneByKeyword(ghost.transform, "spine");
+        Transform lowerSpineBone = FindBoneByKeywordExcluding(ghost.transform,
+                       new[] { "spine" }, "spine1", "spine2");
+        Transform spineBone     = FindBoneByKeyword(ghost.transform, "spine1") ?? lowerSpineBone;
+        Transform chestBone     = FindBoneByKeyword(ghost.transform, "spine2", "chest", "upperchest");
+        Transform neckBone      = FindBoneByKeyword(ghost.transform, "neck");
+        Transform headBone      = FindBoneByKeyword(ghost.transform, "head");
+        Transform leftShoulderBone  = FindBoneByKeyword(ghost.transform, "leftshoulder", "lshoulder");
+        Transform rightShoulderBone = FindBoneByKeyword(ghost.transform, "rightshoulder", "rshoulder");
+        Transform leftUpperArmBone  = FindBoneByKeywordExcluding(ghost.transform,
+                       new[] { "leftarm", "larm" }, "forearm", "hand", "shoulder");
+        Transform rightUpperArmBone = FindBoneByKeywordExcluding(ghost.transform,
+                       new[] { "rightarm", "rarm" }, "forearm", "hand", "shoulder");
+        Transform leftForearmBone   = FindBoneByKeyword(ghost.transform, "leftforearm", "lforearm");
+        Transform rightForearmBone  = FindBoneByKeyword(ghost.transform, "rightforearm", "rforearm");
+        Transform leftHandBone      = FindBoneByKeywordExcluding(ghost.transform,
+                       new[] { "lefthand", "lhand" }, "thumb", "index", "middle", "ring", "pinky");
+        Transform rightHandBone     = FindBoneByKeywordExcluding(ghost.transform,
+                       new[] { "righthand", "rhand" }, "thumb", "index", "middle", "ring", "pinky");
         // Thigh = UpLeg; Shin = Leg (different keywords — "leftleg" does NOT match "leftupleg")
         Transform leftThighBone  = FindBoneByKeyword(ghost.transform, "leftupleg",  "l_upleg");
         Transform rightThighBone = FindBoneByKeyword(ghost.transform, "rightupleg", "r_upleg");
@@ -370,7 +375,19 @@ public class GamificationSetup : EditorWindow
 
         // Assign whichever bones were found
         if (hipBone)        demo.hipBone        = hipBone;
+        if (lowerSpineBone) demo.lowerSpineBone = lowerSpineBone;
         if (spineBone)      demo.spineBone      = spineBone;
+        if (chestBone)      demo.chestBone      = chestBone;
+        if (neckBone)       demo.neckBone       = neckBone;
+        if (headBone)       demo.headBone       = headBone;
+        if (leftShoulderBone)  demo.leftShoulderBone  = leftShoulderBone;
+        if (rightShoulderBone) demo.rightShoulderBone = rightShoulderBone;
+        if (leftUpperArmBone)  demo.leftUpperArmBone  = leftUpperArmBone;
+        if (rightUpperArmBone) demo.rightUpperArmBone = rightUpperArmBone;
+        if (leftForearmBone)   demo.leftForearmBone   = leftForearmBone;
+        if (rightForearmBone)  demo.rightForearmBone  = rightForearmBone;
+        if (leftHandBone)      demo.leftHandBone      = leftHandBone;
+        if (rightHandBone)     demo.rightHandBone     = rightHandBone;
         if (leftThighBone)  demo.leftThighBone  = leftThighBone;
         if (rightThighBone) demo.rightThighBone = rightThighBone;
         if (leftShinBone)   demo.leftShinBone   = leftShinBone;
@@ -620,15 +637,59 @@ public class GamificationSetup : EditorWindow
     {
         foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
         {
-            string lower = t.name.ToLowerInvariant().Replace(":", "").Replace("_", "").Replace("-", "").Replace(" ", "");
+            string lower = SanitizeBoneName(t.name);
             foreach (var kw in keywords)
             {
-                string kwClean = kw.ToLowerInvariant().Replace("_", "").Replace("-", "");
+                string kwClean = SanitizeBoneName(kw);
                 if (lower.Contains(kwClean))
                     return t;
             }
         }
         return null;
+    }
+
+    private static Transform FindBoneByKeywordExcluding(Transform root, string[] keywords, params string[] excludeKeywords)
+    {
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            string lower = SanitizeBoneName(t.name);
+
+            bool matches = false;
+            foreach (var kw in keywords)
+            {
+                if (lower.Contains(SanitizeBoneName(kw)))
+                {
+                    matches = true;
+                    break;
+                }
+            }
+
+            if (!matches)
+                continue;
+
+            foreach (var exclude in excludeKeywords)
+            {
+                if (lower.Contains(SanitizeBoneName(exclude)))
+                {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if (matches)
+                return t;
+        }
+
+        return null;
+    }
+
+    private static string SanitizeBoneName(string value)
+    {
+        return value.ToLowerInvariant()
+            .Replace(":", "")
+            .Replace("_", "")
+            .Replace("-", "")
+            .Replace(" ", "");
     }
 
     // ───────────────────────── Reflection Helper ─────────────────────────

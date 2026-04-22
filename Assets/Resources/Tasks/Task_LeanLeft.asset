@@ -23,8 +23,5 @@ MonoBehaviour:
   asymmetryThresholdPct: 10
   minFlexionDeg: 45
   swayRmsThreshold: 0.015
-  demoHipEuler: {x: 0, y: 0, z: 15}
-  demoKneeEuler: {x: 0, y: 0, z: 0}
-  demoPauseDuration: 1.5
-  demoTransitionSpeed: 2
-  loopDemo: 1
+  demoSequence: {fileID: 11400000, guid: 1fd719ba8f256f942855838443f91992, type: 2}
+  demoTransitionSpeedOverride: -1

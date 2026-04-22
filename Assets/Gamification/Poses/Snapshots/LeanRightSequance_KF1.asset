@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 277a521c653cd454aa437149a4514b93, type: 3}
+  m_Name: LeanRightSequance_KF1
+  m_EditorClassIdentifier: 
+  poseName: LeanRightSequance_KF1_KF1
+  descriptionTR: 
+  holdSeconds: 1.5
+  hipPosition: {x: 0.00000062584877, y: 1.0018692, z: 0.006344795}
+  hip: {x: -0, y: -0, z: -0, w: 1}
+  spine: {x: -0.00000016763805, y: 0.040986005, z: -0.33744976, w: 0.94045085}
+  hasChest: 0
+  chest: {x: 0, y: 0, z: 0, w: 1}
+  hasNeck: 1
+  neck: {x: 0.060135238, y: -0.0056114458, z: 0.09274097, w: 0.99385685}
+  hasHead: 1
+  head: {x: 0.000000048428774, y: 0.000000017695129, z: 0.095060825, w: 0.99547154}
+  thighLeft: {x: 0.0026989777, y: 0.015308573, z: 0.99987924, w: 0.000035248922}
+  shinLeft: {x: -0.0445905, y: 0.000052192514, z: 0.0016210835, w: 0.99900407}
+  ankleLeft: {x: 0.48387855, y: -0.0040582675, z: -0.046031743, w: 0.87391436}
+  thighRight: {x: -0.0024751928, y: 0.01658567, z: 0.99985945, w: -0.000055449415}
+  shinRight: {x: -0.044238742, y: -0.00004865657, z: -0.0015993865, w: 0.99901974}
+  ankleRight: {x: 0.48376065, y: 0.0045127026, z: 0.04587235, w: 0.8739857}
+  hasLeftShoulder: 1
+  shoulderLeft: {x: 0.53344166, y: -0.46004006, z: 0.54912245, w: 0.44974178}
+  hasLeftUpperArm: 1
+  upperArmLeft: {x: 0.56853306, y: 0.26740342, z: 0.25080305, w: 0.7364533}
+  hasLeftForearm: 1
+  forearmLeft: {x: 0.24937975, y: 0.03793528, z: 0.1634682, w: 0.95375514}
+  hasLeftHand: 1
+  handLeft: {x: 0.06256978, y: -0.032744877, z: 0.08882987, w: 0.99354017}
+  hasRightShoulder: 1
+  shoulderRight: {x: -0.5093764, y: -0.48870784, z: 0.51140296, w: -0.4900688}
+  hasRightUpperArm: 1
+  upperArmRight: {x: 0.4768228, y: -0.28748816, z: -0.20407203, w: 0.8051989}
+  hasRightForearm: 1
+  forearmRight: {x: 0.002010375, y: 0.0043190266, z: 0.086462535, w: 0.9962438}
+  hasRightHand: 1
+  handRight: {x: -0.05721548, y: 0.06372147, z: 0.018701876, w: 0.9961507}

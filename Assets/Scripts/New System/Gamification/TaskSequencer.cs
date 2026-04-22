@@ -16,7 +16,13 @@ public class TaskSequencer : MonoBehaviour
 {
     // ───────────────────────── Inspector ─────────────────────────
 
-    [Header("=== Task Sequence ===")]
+    [Header("=== Session Config (ScriptableObject) ===")]
+    [Tooltip("SessionConfigSO'dan görev listesi, tekrar sayısı ve sıralama otomatik yüklenir.\n" +
+             "Atanırsa StartSession() çağrısında taskSequence'in üzerine yazar.\n" +
+             "Boş bırakılırsa aşağıdaki taskSequence manuel kullanılır.")]
+    public SessionConfigSO sessionConfig;
+
+    [Header("=== Task Sequence (manuel — sessionConfig boşsa kullanılır) ===")]
     [Tooltip("Ordered list of tasks to execute each session.")]
     public List<TaskDefinition> taskSequence = new();
 
@@ -80,6 +86,14 @@ public class TaskSequencer : MonoBehaviour
             Debug.LogWarning("[TaskSequencer] Session already running. Stop it first.");
             return;
         }
+
+        // SessionConfigSO atanmışsa görev listesini oradan al
+        if (sessionConfig != null)
+        {
+            taskSequence = sessionConfig.BuildExecutionList();
+            Debug.Log($"[TaskSequencer] SessionConfig '{sessionConfig.sessionName}' yüklendi — {taskSequence.Count} görev.");
+        }
+
         if (taskSequence == null || taskSequence.Count == 0)
         {
             Debug.LogWarning("[TaskSequencer] No tasks in taskSequence.");

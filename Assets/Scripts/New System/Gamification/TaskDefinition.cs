@@ -40,19 +40,14 @@ public class TaskDefinition : ScriptableObject
     [Tooltip("Sway RMS eşiği (metre). Varsayılan 0.015 m = 15 mm.")]
     public float swayRmsThreshold = 0.015f;
 
-    [Header("=== Demo Character Poses ===")]
-    [Tooltip("Demo karakter için görev başlangıç pozu (hip local Euler açıları).")]
-    public Vector3 demoHipEuler = Vector3.zero;
+    [Header("=== Demo Animation (ScriptableObject) ===")]
+    [Tooltip("Ghost avatar demo animasyon sekansı.\n" +
+             "PoseSequenceSO asset'ini buraya sürükle-bırak.\n" +
+             "Boş bırakılırsa dahili Euler fallback library kullanılır.")]
+    public PoseSequenceSO demoSequence;
 
-    [Tooltip("Demo karakter için görev başlangıç pozu (knee local Euler açıları).")]
-    public Vector3 demoKneeEuler = Vector3.zero;
-
-    [Tooltip("Demo karakterin görev pozunda kalma süresi (saniye).")]
-    public float demoPauseDuration = 2f;
-
-    [Tooltip("Demo pose geçiş hızı (Lerp factor, derece/saniye benzeri). Yüksek = hızlı.")]
-    public float demoTransitionSpeed = 2f;
-
-    [Tooltip("Demo görevi döngüde göstersin mi?")]
-    public bool loopDemo = true;
+    [Tooltip("Demo geçiş hızı geçersiz kılması (yüksek = hızlı Slerp). " +
+             "-1 = PoseDemoController.transitionSpeed kullan. " +
+             "PoseSequenceSO.transitionSpeedOverride > 0 ise o önceliklidir.")]
+    public float demoTransitionSpeedOverride = -1f;
 }

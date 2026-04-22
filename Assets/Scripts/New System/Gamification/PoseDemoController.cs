@@ -1,19 +1,24 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Drives a "ghost" avatar to demonstrate the correct posture for each task.
+/// Ghost avatar'ı her görev için doğru pozu gösterecek şekilde animasyonlar.
+/// ScriptableObject tabanlı: TaskDefinition.demoSequence → PoseSequenceSO → PoseSnapshotSO.
 ///
-/// HOW TO RECORD POSES (edit mode, NO Play required):
-///   1. Select GhostAvatar_Demo in the Hierarchy.
-///   2. In the Inspector → "=== Pose Capture ===" section:
-///      a. Pick the TaskType you want to record.
-///      b. Rotate the ghost bones to the desired position in the Scene view.
-///      c. Click  "► Keyframe Ekle"  — saves the current bone rotations.
-///      d. Adjust for the next keyframe and click again.
-///   3. Press Play to verify. Captured sequences override the Euler fallback.
+/// POZ KAYDETME ADIMLARI (edit modda, Play gerekmez):
+///   1. Ghost avatar kemiklerini dik duruşa al.
+///   2. Inspector → "⊙ Nötr Poz Kaydet" → onay ver. (Bir kerelik)
+///   3. Kemikleri istediğin göreve uygun pozisyona getir.
+///   4. Inspector → Hedef PoseSequenceSO'yu seç → "► Keyframe Ekle".
+///      Yeni bir PoseSnapshotSO asset'i Assets/Gamification/Poses/Snapshots/ klasöründe oluşturulur.
+///   5. Birden fazla keyframe için 3-4'ü tekrarla.
+///   6. PoseSequenceSO'yu TaskDefinition.demoSequence alanına ata.
+///   7. Play modunda TaskSequencer ilgili görevi başlatınca demo otomatik çalışır.
+///
+/// Öncelik sırası:
+///   1. task.demoSequence (PoseSequenceSO) — varsa ve en az 1 geçerli keyframe içeriyorsa
+///   2. Dahili DemoPose Euler fallback library — SO yoksa otomatik devreye girer
 /// </summary>
 public class PoseDemoController : MonoBehaviour
 {
@@ -22,28 +27,64 @@ public class PoseDemoController : MonoBehaviour
     // ═══════════════════════════════════════════════════════════════
 
     [Header("=== Ghost Avatar Bone References ===")]
-    [Tooltip("Pelvis/root hip bone (mixamorig:Hips).")]
+    [Tooltip("Hips kemiği (mixamorig:Hips).")]
     public Transform hipBone;
 
-    [Tooltip("Lower spine (mixamorig:Spine1 or Spine) — lean counter-rotation.")]
+    [Tooltip("İlk omurga segmenti (mixamorig:Spine).")]
+    public Transform lowerSpineBone;
+
+    [Tooltip("İkinci omurga segmenti (mixamorig:Spine1) — eğilme karşı-rotasyonu için.")]
     public Transform spineBone;
 
-    [Tooltip("Left thigh / hip joint (mixamorig:LeftUpLeg).")]
+    [Tooltip("Üçüncü omurga segmenti / chest (mixamorig:Spine2).")]
+    public Transform chestBone;
+
+    [Tooltip("Boyun (mixamorig:Neck).")]
+    public Transform neckBone;
+
+    [Tooltip("Baş (mixamorig:Head).")]
+    public Transform headBone;
+
+    [Tooltip("Sol clavicle / shoulder root (mixamorig:LeftShoulder).")]
+    public Transform leftShoulderBone;
+
+    [Tooltip("Sağ clavicle / shoulder root (mixamorig:RightShoulder).")]
+    public Transform rightShoulderBone;
+
+    [Tooltip("Sol üst kol (mixamorig:LeftArm).")]
+    public Transform leftUpperArmBone;
+
+    [Tooltip("Sağ üst kol (mixamorig:RightArm).")]
+    public Transform rightUpperArmBone;
+
+    [Tooltip("Sol ön kol (mixamorig:LeftForeArm).")]
+    public Transform leftForearmBone;
+
+    [Tooltip("Sağ ön kol (mixamorig:RightForeArm).")]
+    public Transform rightForearmBone;
+
+    [Tooltip("Sol el (mixamorig:LeftHand).")]
+    public Transform leftHandBone;
+
+    [Tooltip("Sağ el (mixamorig:RightHand).")]
+    public Transform rightHandBone;
+
+    [Tooltip("Sol uyluk (mixamorig:LeftUpLeg).")]
     public Transform leftThighBone;
 
-    [Tooltip("Right thigh / hip joint (mixamorig:RightUpLeg).")]
+    [Tooltip("Sağ uyluk (mixamorig:RightUpLeg).")]
     public Transform rightThighBone;
 
-    [Tooltip("Left shin / knee joint (mixamorig:LeftLeg).")]
+    [Tooltip("Sol bacak / diz (mixamorig:LeftLeg).")]
     public Transform leftShinBone;
 
-    [Tooltip("Right shin / knee joint (mixamorig:RightLeg).")]
+    [Tooltip("Sağ bacak / diz (mixamorig:RightLeg).")]
     public Transform rightShinBone;
 
-    [Tooltip("Left foot / ankle (mixamorig:LeftFoot).")]
+    [Tooltip("Sol ayak (mixamorig:LeftFoot).")]
     public Transform leftAnkleBone;
 
-    [Tooltip("Right foot / ankle (mixamorig:RightFoot).")]
+    [Tooltip("Sağ ayak (mixamorig:RightFoot).")]
     public Transform rightAnkleBone;
 
     // ═══════════════════════════════════════════════════════════════
@@ -54,78 +95,30 @@ public class PoseDemoController : MonoBehaviour
     public TaskSequencer sequencer;
 
     [Header("=== Settings ===")]
+    [Tooltip("Geri sayım sırasında demo göster.")]
     public bool playDuringCountdown = true;
+
+    [Tooltip("Ölçüm sırasında demo göstermeye devam et.")]
     public bool playDuringMeasurement = false;
+
+    [Tooltip("Keyframeler arası varsayılan geçiş hızı (PoseSequenceSO.transitionSpeedOverride > 0 ise o önceliklidir).")]
     public float transitionSpeed = 2f;
 
     // ═══════════════════════════════════════════════════════════════
-    // SNAPSHOT DATA STRUCTURES
+    // NEUTRAL POSE  (ScriptableObject — edit modda kalıcı)
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// A single absolute-rotation keyframe. Stored as Vector4 because Unity
-    /// can serialise Vector4 but not Quaternion directly in custom classes.
-    /// </summary>
-    [Serializable]
-    public class BoneSnapshot
-    {
-        [Tooltip("Hold time at this pose (seconds).")]
-        public float holdSeconds = 1.5f;
-
-        public Vector4 hip;
-        public Vector4 spine;
-        public Vector4 thighLeft;
-        public Vector4 thighRight;
-        public Vector4 shinLeft;
-        public Vector4 shinRight;
-        public Vector4 ankleLeft;
-        public Vector4 ankleRight;
-
-        [Tooltip("Hip bone local position (for squat/lean height offset).")]
-        public Vector3 hipPosition;
-
-        public Quaternion HipQ        => ToQ(hip);
-        public Quaternion SpineQ      => ToQ(spine);
-        public Quaternion ThighLeftQ  => ToQ(thighLeft);
-        public Quaternion ThighRightQ => ToQ(thighRight);
-        public Quaternion ShinLeftQ   => ToQ(shinLeft);
-        public Quaternion ShinRightQ  => ToQ(shinRight);
-        public Quaternion AnkleLeftQ  => ToQ(ankleLeft);
-        public Quaternion AnkleRightQ => ToQ(ankleRight);
-
-        private static Quaternion ToQ(Vector4 v) => new Quaternion(v.x, v.y, v.z, v.w);
-        public  static Vector4    ToV(Quaternion q) => new Vector4(q.x, q.y, q.z, q.w);
-
-        public BoneSnapshot()
-        {
-            var id = ToV(Quaternion.identity);
-            hip = spine = thighLeft = thighRight =
-            shinLeft = shinRight = ankleLeft = ankleRight = id;
-            hipPosition = Vector3.zero;
-        }
-    }
-
-    [Serializable]
-    public class TaskPoseSequence
-    {
-        public TaskType taskType;
-        public List<BoneSnapshot> keyframes = new List<BoneSnapshot>();
-    }
-
-    [Header("=== Captured Pose Sequences ===")]
-    [Tooltip("Recorded sequences per task. Use the custom Inspector buttons to populate.")]
-    public List<TaskPoseSequence> capturedSequences = new List<TaskPoseSequence>();
-
-    [Header("=== Neutral Pose (edit-mode persistent) ===")]
-    [Tooltip("Saved via '⊙ Şu Anki Pozu Nötr Olarak Kaydet' button. Required for 'Nötr Poza Döndür' to work in edit mode.")]
-    [SerializeField] public BoneSnapshot neutralSnapshot = new BoneSnapshot();
-    [SerializeField] public bool neutralCaptured = false;
+    [Header("=== Neutral Pose ===")]
+    [Tooltip("Ghost avatar nötr / dik duruş pozu.\n" +
+             "Inspector'daki '⊙ Nötr Poz Kaydet' butonu bu SO'yu oluşturur / günceller.\n" +
+             "Boş bırakılırsa Awake'te runtime'da yakalanan rotasyonlar kullanılır.")]
+    public PoseSnapshotSO neutralPose;
 
     // ═══════════════════════════════════════════════════════════════
-    // EULER FALLBACK LIBRARY
+    // EULER FALLBACK LIBRARY  (SO ataması yoksa devreye girer)
     // ═══════════════════════════════════════════════════════════════
 
-    [Serializable]
+    [System.Serializable]
     public struct DemoPose
     {
         public Vector3 hipLocalEuler;
@@ -182,10 +175,15 @@ public class PoseDemoController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // NEUTRAL CAPTURES
+    // NEUTRAL RUNTIME CACHE  (Awake'te yakalanır — SO yoksa fallback)
     // ═══════════════════════════════════════════════════════════════
 
-    private Quaternion _hipNeutral, _spineNeutral;
+    private Quaternion _hipNeutral, _lowerSpineNeutral, _spineNeutral;
+    private Quaternion _chestNeutral, _neckNeutral, _headNeutral;
+    private Quaternion _leftShoulderNeutral, _rightShoulderNeutral;
+    private Quaternion _leftUpperArmNeutral, _rightUpperArmNeutral;
+    private Quaternion _leftForearmNeutral, _rightForearmNeutral;
+    private Quaternion _leftHandNeutral, _rightHandNeutral;
     private Quaternion _thighLeftNeutral, _thighRightNeutral;
     private Quaternion _shinLeftNeutral,  _shinRightNeutral;
     private Quaternion _ankleLeftNeutral, _ankleRightNeutral;
@@ -256,23 +254,25 @@ public class PoseDemoController : MonoBehaviour
     {
         if (_demoCoroutine != null) StopCoroutine(_demoCoroutine);
 
-        var captured = GetCapturedSequence(task.taskType);
-        if (captured != null && captured.keyframes.Count > 0)
+        // Priority 1: PoseSequenceSO (ScriptableObject path)
+        var seq = task.demoSequence;
+        if (seq != null && seq.ValidCount() > 0)
         {
-            _demoCoroutine = StartCoroutine(
-                AnimateSnapshots(captured.keyframes, transitionSpeed, task.loopDemo));
+            float speed = seq.transitionSpeedOverride > 0f
+                ? seq.transitionSpeedOverride
+                : (task.demoTransitionSpeedOverride > 0f ? task.demoTransitionSpeedOverride : transitionSpeed);
+            _demoCoroutine = StartCoroutine(AnimateSequence(seq, speed));
             return;
         }
 
+        // Priority 2: Built-in Euler fallback
         DemoPose[] poses = null;
         _defaultPoses?.TryGetValue(task.taskType, out poses);
         if (poses == null || poses.Length == 0)
-            poses = new[] { new DemoPose { hipLocalEuler = task.demoHipEuler,
-                shinLeftLocalEuler = task.demoKneeEuler, shinRightLocalEuler = task.demoKneeEuler,
-                holdSeconds = task.demoPauseDuration } };
+            poses = new[] { new DemoPose { holdSeconds = 2f } };
 
-        _demoCoroutine = StartCoroutine(
-            AnimateEulerPoses(poses, task.demoTransitionSpeed, task.loopDemo));
+        float eulerSpeed = task.demoTransitionSpeedOverride > 0f ? task.demoTransitionSpeedOverride : transitionSpeed;
+        _demoCoroutine = StartCoroutine(AnimateEulerPoses(poses, eulerSpeed, loop: true));
     }
 
     public void StopDemo()
@@ -282,29 +282,64 @@ public class PoseDemoController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // COROUTINES — SNAPSHOT PATH
+    // COROUTINES — SO PATH
     // ═══════════════════════════════════════════════════════════════
 
-    private IEnumerator AnimateSnapshots(List<BoneSnapshot> frames, float speed, bool loop)
+    private IEnumerator AnimateSequence(PoseSequenceSO seq, float speed)
     {
-        do { foreach (var f in frames) { yield return StartCoroutine(LerpToSnapshot(f, speed)); yield return new WaitForSeconds(f.holdSeconds); } }
-        while (loop);
+        do
+        {
+            foreach (var snap in seq.keyframes)
+            {
+                if (snap == null) continue;
+                yield return StartCoroutine(LerpToSnapshotSO(snap, speed));
+                yield return new WaitForSeconds(snap.holdSeconds);
+            }
+        }
+        while (seq.loop);
     }
 
-    private IEnumerator LerpToSnapshot(BoneSnapshot target, float speed)
+    private IEnumerator LerpToSnapshotSO(PoseSnapshotSO target, float speed)
     {
-        Quaternion sH=Get(hipBone), sSp=Get(spineBone), sTL=Get(leftThighBone), sTR=Get(rightThighBone);
-        Quaternion sSL=Get(leftShinBone), sSR=Get(rightShinBone), sAL=Get(leftAnkleBone), sAR=Get(rightAnkleBone);
-        Vector3 sHPos = hipBone ? hipBone.localPosition : Vector3.zero;
+        Quaternion sH = GetRot(hipBone), sLowerSp = GetRot(lowerSpineBone), sSp = GetRot(spineBone), sChest = GetRot(chestBone);
+        Quaternion sNeck = GetRot(neckBone), sHead = GetRot(headBone);
+        Quaternion sLS = GetRot(leftShoulderBone), sRS = GetRot(rightShoulderBone);
+        Quaternion sLUA = GetRot(leftUpperArmBone), sRUA = GetRot(rightUpperArmBone);
+        Quaternion sLF = GetRot(leftForearmBone), sRF = GetRot(rightForearmBone);
+        Quaternion sLH = GetRot(leftHandBone), sRH = GetRot(rightHandBone);
+        Quaternion sTL = GetRot(leftThighBone), sTR = GetRot(rightThighBone);
+        Quaternion sSL = GetRot(leftShinBone), sSR = GetRot(rightShinBone);
+        Quaternion sAL = GetRot(leftAnkleBone), sAR = GetRot(rightAnkleBone);
+        Vector3 sHP = hipBone ? hipBone.localPosition : Vector3.zero;
+
         float t = 0f;
         while (t < 1f)
         {
-            t += Time.deltaTime * speed; float s = Mathf.SmoothStep(0,1,Mathf.Clamp01(t));
-            Set(hipBone, sH, target.HipQ, s);           Set(spineBone, sSp, target.SpineQ, s);
-            Set(leftThighBone, sTL, target.ThighLeftQ, s);  Set(rightThighBone, sTR, target.ThighRightQ, s);
-            Set(leftShinBone, sSL, target.ShinLeftQ, s);    Set(rightShinBone, sSR, target.ShinRightQ, s);
-            Set(leftAnkleBone, sAL, target.AnkleLeftQ, s);  Set(rightAnkleBone, sAR, target.AnkleRightQ, s);
-            if (hipBone) hipBone.localPosition = Vector3.Lerp(sHPos, target.hipPosition, s);
+            t += Time.deltaTime * speed;
+            float s = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+
+            SetRot(hipBone,        sH,  target.HipQ,        s);
+            SetOptionalRot(lowerSpineBone, target.hasLowerSpine, sLowerSp, target.LowerSpineQ, s);
+            SetRot(spineBone,      sSp, target.SpineQ,      s);
+            SetOptionalRot(chestBone, target.hasChest, sChest, target.ChestQ, s);
+            SetOptionalRot(neckBone, target.hasNeck, sNeck, target.NeckQ, s);
+            SetOptionalRot(headBone, target.hasHead, sHead, target.HeadQ, s);
+            SetOptionalRot(leftShoulderBone, target.hasLeftShoulder, sLS, target.ShoulderLeftQ, s);
+            SetOptionalRot(rightShoulderBone, target.hasRightShoulder, sRS, target.ShoulderRightQ, s);
+            SetOptionalRot(leftUpperArmBone, target.hasLeftUpperArm, sLUA, target.UpperArmLeftQ, s);
+            SetOptionalRot(rightUpperArmBone, target.hasRightUpperArm, sRUA, target.UpperArmRightQ, s);
+            SetOptionalRot(leftForearmBone, target.hasLeftForearm, sLF, target.ForearmLeftQ, s);
+            SetOptionalRot(rightForearmBone, target.hasRightForearm, sRF, target.ForearmRightQ, s);
+            SetOptionalRot(leftHandBone, target.hasLeftHand, sLH, target.HandLeftQ, s);
+            SetOptionalRot(rightHandBone, target.hasRightHand, sRH, target.HandRightQ, s);
+            SetRot(leftThighBone,  sTL, target.ThighLeftQ,  s);
+            SetRot(rightThighBone, sTR, target.ThighRightQ, s);
+            SetRot(leftShinBone,   sSL, target.ShinLeftQ,   s);
+            SetRot(rightShinBone,  sSR, target.ShinRightQ,  s);
+            SetRot(leftAnkleBone,  sAL, target.AnkleLeftQ,  s);
+            SetRot(rightAnkleBone, sAR, target.AnkleRightQ, s);
+            if (hipBone) hipBone.localPosition = Vector3.Lerp(sHP, target.hipPosition, s);
+
             yield return null;
         }
     }
@@ -315,147 +350,294 @@ public class PoseDemoController : MonoBehaviour
 
     private IEnumerator AnimateEulerPoses(DemoPose[] poses, float speed, bool loop)
     {
-        do { foreach (var p in poses) { yield return StartCoroutine(LerpToEulerPose(p, speed)); yield return new WaitForSeconds(p.holdSeconds); } }
+        do
+        {
+            foreach (var p in poses)
+            {
+                yield return StartCoroutine(LerpToEulerPose(p, speed));
+                yield return new WaitForSeconds(p.holdSeconds);
+            }
+        }
         while (loop);
     }
 
     private IEnumerator LerpToEulerPose(DemoPose target, float speed)
     {
-        Quaternion sH=Get(hipBone), sSp=Get(spineBone), sTL=Get(leftThighBone), sTR=Get(rightThighBone);
-        Quaternion sSL=Get(leftShinBone), sSR=Get(rightShinBone), sAL=Get(leftAnkleBone), sAR=Get(rightAnkleBone);
+        Quaternion sH  = GetRot(hipBone),        sSp = GetRot(spineBone);
+        Quaternion sTL = GetRot(leftThighBone),  sTR = GetRot(rightThighBone);
+        Quaternion sSL = GetRot(leftShinBone),   sSR = GetRot(rightShinBone);
+        Quaternion sAL = GetRot(leftAnkleBone),  sAR = GetRot(rightAnkleBone);
 
-        Quaternion tH  = _hipNeutral        * Quaternion.Euler(target.hipLocalEuler);
-        Quaternion tSp = _spineNeutral      * Quaternion.Euler(target.spineLocalEuler);
-        Quaternion tTL = _thighLeftNeutral  * Quaternion.Euler(target.thighLeftLocalEuler);
-        Quaternion tTR = _thighRightNeutral * Quaternion.Euler(target.thighRightLocalEuler);
-        Quaternion tSL = _shinLeftNeutral   * Quaternion.Euler(target.shinLeftLocalEuler);
-        Quaternion tSR = _shinRightNeutral  * Quaternion.Euler(target.shinRightLocalEuler);
-        Quaternion tAL = _ankleLeftNeutral  * Quaternion.Euler(target.ankleLeftLocalEuler);
-        Quaternion tAR = _ankleRightNeutral * Quaternion.Euler(target.ankleRightLocalEuler);
+        Quaternion tH   = _hipNeutral        * Quaternion.Euler(target.hipLocalEuler);
+        Quaternion tSp  = _spineNeutral      * Quaternion.Euler(target.spineLocalEuler);
+        Quaternion tTL  = _thighLeftNeutral  * Quaternion.Euler(target.thighLeftLocalEuler);
+        Quaternion tTR  = _thighRightNeutral * Quaternion.Euler(target.thighRightLocalEuler);
+        Quaternion tSL  = _shinLeftNeutral   * Quaternion.Euler(target.shinLeftLocalEuler);
+        Quaternion tSR  = _shinRightNeutral  * Quaternion.Euler(target.shinRightLocalEuler);
+        Quaternion tAL  = _ankleLeftNeutral  * Quaternion.Euler(target.ankleLeftLocalEuler);
+        Quaternion tAR  = _ankleRightNeutral * Quaternion.Euler(target.ankleRightLocalEuler);
 
         float t = 0f;
         while (t < 1f)
         {
-            t += Time.deltaTime * speed; float s = Mathf.SmoothStep(0,1,Mathf.Clamp01(t));
-            Set(hipBone,sH,tH,s); Set(spineBone,sSp,tSp,s);
-            Set(leftThighBone,sTL,tTL,s); Set(rightThighBone,sTR,tTR,s);
-            Set(leftShinBone,sSL,tSL,s);  Set(rightShinBone,sSR,tSR,s);
-            Set(leftAnkleBone,sAL,tAL,s); Set(rightAnkleBone,sAR,tAR,s);
+            t += Time.deltaTime * speed;
+            float s = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+
+            SetRot(hipBone,        sH,  tH,  s);
+            SetRot(spineBone,      sSp, tSp, s);
+            SetRot(leftThighBone,  sTL, tTL, s);
+            SetRot(rightThighBone, sTR, tTR, s);
+            SetRot(leftShinBone,   sSL, tSL, s);
+            SetRot(rightShinBone,  sSR, tSR, s);
+            SetRot(leftAnkleBone,  sAL, tAL, s);
+            SetRot(rightAnkleBone, sAR, tAR, s);
+
             yield return null;
         }
     }
 
     private IEnumerator ReturnToNeutralCoroutine()
     {
-        // Prefer serialized neutralSnapshot (works in edit mode too).
-        // Fall back to runtime-captured quaternions if not yet saved.
-        BoneSnapshot snap;
-        if (neutralCaptured)
-        {
-            snap = neutralSnapshot;
-        }
-        else
-        {
-            snap = new BoneSnapshot {
-                hip        = BoneSnapshot.ToV(_hipNeutral),
-                spine      = BoneSnapshot.ToV(_spineNeutral),
-                thighLeft  = BoneSnapshot.ToV(_thighLeftNeutral),
-                thighRight = BoneSnapshot.ToV(_thighRightNeutral),
-                shinLeft   = BoneSnapshot.ToV(_shinLeftNeutral),
-                shinRight  = BoneSnapshot.ToV(_shinRightNeutral),
-                ankleLeft  = BoneSnapshot.ToV(_ankleLeftNeutral),
-                ankleRight = BoneSnapshot.ToV(_ankleRightNeutral),
-                hipPosition = _hipPositionNeutral,
-                holdSeconds = 0f
-            };
-        }
-        yield return StartCoroutine(LerpToSnapshot(snap, transitionSpeed));
+        PoseSnapshotSO target = BuildNeutralSnapshot();
+        yield return StartCoroutine(LerpToSnapshotSO(target, transitionSpeed));
+        DestroyTempSnapshot(target);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // PUBLIC SNAPSHOT CAPTURE  (called by Editor)
+    // PUBLIC API  (Editor + runtime)
     // ═══════════════════════════════════════════════════════════════
 
-    public BoneSnapshot CaptureCurrentPose(float holdSec = 1.5f) => new BoneSnapshot {
-        holdSeconds = holdSec,
-        hip         = BoneSnapshot.ToV(hipBone        ? hipBone.localRotation        : Quaternion.identity),
-        spine       = BoneSnapshot.ToV(spineBone      ? spineBone.localRotation      : Quaternion.identity),
-        thighLeft   = BoneSnapshot.ToV(leftThighBone  ? leftThighBone.localRotation  : Quaternion.identity),
-        thighRight  = BoneSnapshot.ToV(rightThighBone ? rightThighBone.localRotation : Quaternion.identity),
-        shinLeft    = BoneSnapshot.ToV(leftShinBone   ? leftShinBone.localRotation   : Quaternion.identity),
-        shinRight   = BoneSnapshot.ToV(rightShinBone  ? rightShinBone.localRotation  : Quaternion.identity),
-        ankleLeft   = BoneSnapshot.ToV(leftAnkleBone  ? leftAnkleBone.localRotation  : Quaternion.identity),
-        ankleRight  = BoneSnapshot.ToV(rightAnkleBone ? rightAnkleBone.localRotation : Quaternion.identity),
-        hipPosition = hipBone ? hipBone.localPosition : Vector3.zero,
-    };
-
-    public void ApplySnapshot(BoneSnapshot s)
+    /// <summary>
+    /// Mevcut kemik transformlarını verilen PoseSnapshotSO'ya yazar.
+    /// Editor scripti bunu çağırır, ardından AssetDatabase.SaveAssets() çağırmalı.
+    /// </summary>
+    public void CaptureIntoPoseSnapshotSO(PoseSnapshotSO target)
     {
-        if (hipBone)        { hipBone.localRotation = s.HipQ; hipBone.localPosition = s.hipPosition; }
-        if (spineBone)      spineBone.localRotation      = s.SpineQ;
-        if (leftThighBone)  leftThighBone.localRotation  = s.ThighLeftQ;
-        if (rightThighBone) rightThighBone.localRotation = s.ThighRightQ;
-        if (leftShinBone)   leftShinBone.localRotation   = s.ShinLeftQ;
-        if (rightShinBone)  rightShinBone.localRotation  = s.ShinRightQ;
-        if (leftAnkleBone)  leftAnkleBone.localRotation  = s.AnkleLeftQ;
-        if (rightAnkleBone) rightAnkleBone.localRotation = s.AnkleRightQ;
+        target.CaptureFrom(
+            hipBone, lowerSpineBone, spineBone,
+            chestBone, neckBone, headBone,
+            leftShoulderBone, rightShoulderBone,
+            leftUpperArmBone, rightUpperArmBone,
+            leftForearmBone, rightForearmBone,
+            leftHandBone, rightHandBone,
+            leftThighBone, rightThighBone,
+            leftShinBone,  rightShinBone,
+            leftAnkleBone, rightAnkleBone);
     }
 
+    /// <summary>Verilen PoseSnapshotSO'yu kemiklere anında uygular (Lerp yok — editor preview için).</summary>
+    public void ApplySnapshotSO(PoseSnapshotSO snap)
+    {
+        if (snap == null) return;
+        snap.ApplyTo(
+            hipBone, lowerSpineBone, spineBone,
+            chestBone, neckBone, headBone,
+            leftShoulderBone, rightShoulderBone,
+            leftUpperArmBone, rightUpperArmBone,
+            leftForearmBone, rightForearmBone,
+            leftHandBone, rightHandBone,
+            leftThighBone, rightThighBone,
+            leftShinBone,  rightShinBone,
+            leftAnkleBone, rightAnkleBone);
+    }
+
+    /// <summary>Nötr pozu kemiklere uygular.</summary>
     public void ApplyNeutral()
     {
-        if (neutralCaptured)
-        {
-            ApplySnapshot(neutralSnapshot);
-            return;
-        }
-        // Runtime fallback (only valid during Play — Awake must have run)
-        if (hipBone)        { hipBone.localRotation = _hipNeutral; hipBone.localPosition = _hipPositionNeutral; }
-        if (spineBone)      spineBone.localRotation      = _spineNeutral;
-        if (leftThighBone)  leftThighBone.localRotation  = _thighLeftNeutral;
-        if (rightThighBone) rightThighBone.localRotation = _thighRightNeutral;
-        if (leftShinBone)   leftShinBone.localRotation   = _shinLeftNeutral;
-        if (rightShinBone)  rightShinBone.localRotation  = _shinRightNeutral;
-        if (leftAnkleBone)  leftAnkleBone.localRotation  = _ankleLeftNeutral;
-        if (rightAnkleBone) rightAnkleBone.localRotation = _ankleRightNeutral;
-    }
-
-    public TaskPoseSequence GetCapturedSequence(TaskType t)
-    {
-        foreach (var s in capturedSequences) if (s.taskType == t) return s;
-        return null;
-    }
-
-    public TaskPoseSequence GetOrCreateSequence(TaskType t)
-    {
-        var s = GetCapturedSequence(t);
-        if (s == null) { s = new TaskPoseSequence { taskType = t }; capturedSequences.Add(s); }
-        return s;
+        PoseSnapshotSO target = BuildNeutralSnapshot();
+        ApplySnapshotSO(target);
+        DestroyTempSnapshot(target);
     }
 
     // ═══════════════════════════════════════════════════════════════
     // PRIVATE HELPERS
     // ═══════════════════════════════════════════════════════════════
 
-    private static Quaternion Get(Transform bone) =>
-        bone ? bone.localRotation : Quaternion.identity;
+    private static Quaternion GetRot(Transform b) =>
+        b ? b.localRotation : Quaternion.identity;
 
-    private static void Set(Transform bone, Quaternion from, Quaternion to, float t)
+    private static void SetRot(Transform b, Quaternion from, Quaternion to, float t)
     {
-        if (bone) bone.localRotation = Quaternion.Slerp(from, to, t);
+        if (b) b.localRotation = Quaternion.Slerp(from, to, t);
+    }
+
+    private static void SetOptionalRot(Transform b, bool hasTarget, Quaternion from, Quaternion to, float t)
+    {
+        if (b != null && hasTarget)
+            b.localRotation = Quaternion.Slerp(from, to, t);
+    }
+
+    private PoseSnapshotSO BuildNeutralSnapshot()
+    {
+        var snapshot = ScriptableObject.CreateInstance<PoseSnapshotSO>();
+
+        if (neutralPose != null)
+            CopySnapshot(neutralPose, snapshot);
+        else
+            FillRuntimeNeutral(snapshot);
+
+        FillMissingOptionalNeutralBones(snapshot);
+        snapshot.holdSeconds = 0f;
+        return snapshot;
+    }
+
+    private void FillRuntimeNeutral(PoseSnapshotSO snapshot)
+    {
+        snapshot.hip = PoseSnapshotSO.ToV(_hipNeutral);
+        snapshot.hasLowerSpine = lowerSpineBone != null;
+        snapshot.lowerSpine = PoseSnapshotSO.ToV(_lowerSpineNeutral);
+        snapshot.spine = PoseSnapshotSO.ToV(_spineNeutral);
+        snapshot.thighLeft = PoseSnapshotSO.ToV(_thighLeftNeutral);
+        snapshot.thighRight = PoseSnapshotSO.ToV(_thighRightNeutral);
+        snapshot.shinLeft = PoseSnapshotSO.ToV(_shinLeftNeutral);
+        snapshot.shinRight = PoseSnapshotSO.ToV(_shinRightNeutral);
+        snapshot.ankleLeft = PoseSnapshotSO.ToV(_ankleLeftNeutral);
+        snapshot.ankleRight = PoseSnapshotSO.ToV(_ankleRightNeutral);
+        snapshot.hipPosition = _hipPositionNeutral;
+    }
+
+    private void FillMissingOptionalNeutralBones(PoseSnapshotSO snapshot)
+    {
+        if (!Application.isPlaying)
+            return;
+
+        if (!snapshot.hasLowerSpine && lowerSpineBone != null)
+        {
+            snapshot.hasLowerSpine = true;
+            snapshot.lowerSpine = PoseSnapshotSO.ToV(_lowerSpineNeutral);
+        }
+        if (!snapshot.hasChest && chestBone != null)
+        {
+            snapshot.hasChest = true;
+            snapshot.chest = PoseSnapshotSO.ToV(_chestNeutral);
+        }
+        if (!snapshot.hasNeck && neckBone != null)
+        {
+            snapshot.hasNeck = true;
+            snapshot.neck = PoseSnapshotSO.ToV(_neckNeutral);
+        }
+        if (!snapshot.hasHead && headBone != null)
+        {
+            snapshot.hasHead = true;
+            snapshot.head = PoseSnapshotSO.ToV(_headNeutral);
+        }
+        if (!snapshot.hasLeftShoulder && leftShoulderBone != null)
+        {
+            snapshot.hasLeftShoulder = true;
+            snapshot.shoulderLeft = PoseSnapshotSO.ToV(_leftShoulderNeutral);
+        }
+        if (!snapshot.hasRightShoulder && rightShoulderBone != null)
+        {
+            snapshot.hasRightShoulder = true;
+            snapshot.shoulderRight = PoseSnapshotSO.ToV(_rightShoulderNeutral);
+        }
+        if (!snapshot.hasLeftUpperArm && leftUpperArmBone != null)
+        {
+            snapshot.hasLeftUpperArm = true;
+            snapshot.upperArmLeft = PoseSnapshotSO.ToV(_leftUpperArmNeutral);
+        }
+        if (!snapshot.hasRightUpperArm && rightUpperArmBone != null)
+        {
+            snapshot.hasRightUpperArm = true;
+            snapshot.upperArmRight = PoseSnapshotSO.ToV(_rightUpperArmNeutral);
+        }
+        if (!snapshot.hasLeftForearm && leftForearmBone != null)
+        {
+            snapshot.hasLeftForearm = true;
+            snapshot.forearmLeft = PoseSnapshotSO.ToV(_leftForearmNeutral);
+        }
+        if (!snapshot.hasRightForearm && rightForearmBone != null)
+        {
+            snapshot.hasRightForearm = true;
+            snapshot.forearmRight = PoseSnapshotSO.ToV(_rightForearmNeutral);
+        }
+        if (!snapshot.hasLeftHand && leftHandBone != null)
+        {
+            snapshot.hasLeftHand = true;
+            snapshot.handLeft = PoseSnapshotSO.ToV(_leftHandNeutral);
+        }
+        if (!snapshot.hasRightHand && rightHandBone != null)
+        {
+            snapshot.hasRightHand = true;
+            snapshot.handRight = PoseSnapshotSO.ToV(_rightHandNeutral);
+        }
+    }
+
+    private static void CopySnapshot(PoseSnapshotSO source, PoseSnapshotSO target)
+    {
+        target.poseName = source.poseName;
+        target.descriptionTR = source.descriptionTR;
+        target.holdSeconds = source.holdSeconds;
+        target.hipPosition = source.hipPosition;
+        target.hip = source.hip;
+        target.hasLowerSpine = source.hasLowerSpine;
+        target.lowerSpine = source.lowerSpine;
+        target.spine = source.spine;
+        target.hasChest = source.hasChest;
+        target.chest = source.chest;
+        target.hasNeck = source.hasNeck;
+        target.neck = source.neck;
+        target.hasHead = source.hasHead;
+        target.head = source.head;
+        target.thighLeft = source.thighLeft;
+        target.thighRight = source.thighRight;
+        target.shinLeft = source.shinLeft;
+        target.shinRight = source.shinRight;
+        target.ankleLeft = source.ankleLeft;
+        target.ankleRight = source.ankleRight;
+        target.hasLeftShoulder = source.hasLeftShoulder;
+        target.shoulderLeft = source.shoulderLeft;
+        target.hasRightShoulder = source.hasRightShoulder;
+        target.shoulderRight = source.shoulderRight;
+        target.hasLeftUpperArm = source.hasLeftUpperArm;
+        target.upperArmLeft = source.upperArmLeft;
+        target.hasRightUpperArm = source.hasRightUpperArm;
+        target.upperArmRight = source.upperArmRight;
+        target.hasLeftForearm = source.hasLeftForearm;
+        target.forearmLeft = source.forearmLeft;
+        target.hasRightForearm = source.hasRightForearm;
+        target.forearmRight = source.forearmRight;
+        target.hasLeftHand = source.hasLeftHand;
+        target.handLeft = source.handLeft;
+        target.hasRightHand = source.hasRightHand;
+        target.handRight = source.handRight;
+    }
+
+    private static void DestroyTempSnapshot(PoseSnapshotSO snapshot)
+    {
+        if (snapshot == null) return;
+
+        if (Application.isPlaying)
+            Destroy(snapshot);
+        else
+            DestroyImmediate(snapshot);
     }
 
     private void CaptureNeutral()
     {
-        _hipNeutral         = Get(hipBone);
-        _spineNeutral       = Get(spineBone);
-        _thighLeftNeutral   = Get(leftThighBone);
-        _thighRightNeutral  = Get(rightThighBone);
-        _shinLeftNeutral    = Get(leftShinBone);
-        _shinRightNeutral   = Get(rightShinBone);
-        _ankleLeftNeutral   = Get(leftAnkleBone);
+        _hipNeutral         = GetRot(hipBone);
+        _lowerSpineNeutral  = GetRot(lowerSpineBone);
+        _spineNeutral       = GetRot(spineBone);
+        _chestNeutral       = GetRot(chestBone);
+        _neckNeutral        = GetRot(neckBone);
+        _headNeutral        = GetRot(headBone);
+        _leftShoulderNeutral = GetRot(leftShoulderBone);
+        _rightShoulderNeutral = GetRot(rightShoulderBone);
+        _leftUpperArmNeutral = GetRot(leftUpperArmBone);
+        _rightUpperArmNeutral = GetRot(rightUpperArmBone);
+        _leftForearmNeutral = GetRot(leftForearmBone);
+        _rightForearmNeutral = GetRot(rightForearmBone);
+        _leftHandNeutral = GetRot(leftHandBone);
+        _rightHandNeutral = GetRot(rightHandBone);
+        _thighLeftNeutral   = GetRot(leftThighBone);
+        _thighRightNeutral  = GetRot(rightThighBone);
+        _shinLeftNeutral    = GetRot(leftShinBone);
+        _shinRightNeutral   = GetRot(rightShinBone);
+        _ankleLeftNeutral   = GetRot(leftAnkleBone);
+        _ankleRightNeutral  = GetRot(rightAnkleBone);
         _hipPositionNeutral = hipBone ? hipBone.localPosition : Vector3.zero;
-        // Also refresh the serialized neutralSnapshot so Euler fallback stays consistent.
-        if (!neutralCaptured) neutralSnapshot = CaptureCurrentPose(0f);
-        _ankleRightNeutral  = Get(rightAnkleBone);
+
+        // neutralPose yoksa Awake'te runtime cache yeterli;
+        // varsa SO zaten edit modda kaydedilmiş demektir.
     }
 }
