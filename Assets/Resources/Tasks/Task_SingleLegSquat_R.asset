@@ -26,5 +26,5 @@ MonoBehaviour:
   swayRmsThreshold: 0.02
   targetReachPct: 65
   landingFlexionTargetDeg: 45
-  demoSequence: {fileID: 11400000, guid: dfe25814adc367240a5735586182b1da, type: 2}
-  demoTransitionSpeedOverride: 2
+  demoSequence: {fileID: 11400000, guid: 58aec1efdc0343641b347369b0f5bd1b, type: 2}
+  demoTransitionSpeedOverride: -1

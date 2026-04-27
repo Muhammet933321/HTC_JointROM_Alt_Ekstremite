@@ -1,0 +1,546 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{turkish}
+\setotherlanguage{english}
+\setmainfont{Times New Roman}
+\newfontfamily\englishfont{Times New Roman}
+\usepackage[a4paper,left=3.5cm,right=2.5cm,top=3cm,bottom=3cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{chngcntr}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{lastpage}
+\usepackage{caption}
+\usepackage{titlesec}
+
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+\renewcommand{\contentsname}{İÇİNDEKİLER}
+\renewcommand{\listfigurename}{ŞEKİLLER DİZİNİ}
+\renewcommand{\listtablename}{TABLOLAR DİZİNİ}
+
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+\captionsetup{labelsep=period, labelfont=normalfont, textfont=normalfont}
+\captionsetup[figure]{position=bottom, justification=centering, singlelinecheck=false}
+\captionsetup[table]{position=top, justification=centering, singlelinecheck=false}
+
+\titleformat{\chapter}[display]{\normalfont\bfseries\centering}{\thechapter.}{0.5em}{\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{0pt}{18pt}
+\renewcommand{\thesection}{\thechapter.\arabic{section}.}
+\renewcommand{\thesubsection}{\thechapter.\arabic{section}.\arabic{subsection}.}
+\renewcommand{\thesubsubsection}{\thechapter.\arabic{section}.\arabic{subsection}.\arabic{subsubsection}.}
+\titleformat{\section}{\normalfont\bfseries}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries}{\thesubsubsection}{0.5em}{}
+
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+\newcommand{\university}{Gümüşhane Üniversitesi}
+\newcommand{\faculty}{Mühendislik ve Doğa Bilimleri Fakültesi}
+\newcommand{\department}{Yazılım Mühendisliği Bölümü}
+\newcommand{\thesistitle}{HTC VIVE Ultimate Tracker ve XR Tabanlı Oyunlaştırılmış Alt Ekstremite Hareket Analizi Sistemi}
+\newcommand{\thesisauthor}{Muhammet Çiğdem}
+\newcommand{\studentnumber}{227231041}
+\newcommand{\advisor}{Samet Tonyalı}
+\newcommand{\thesiscity}{Gümüşhane}
+\newcommand{\thesisdate}{Mayıs 2026}
+\newcommand{\templatelogo}{gumushane_logo.png}
+
+\makeatletter
+\newcommand{\pageNoLabel}{\noindent\hfill\underline{Sayfa No}\par\vspace{0.75\baselineskip}}
+\newcommand{\customtableofcontents}{%
+	\chapter*{İÇİNDEKİLER}
+	\addcontentsline{toc}{chapter}{İÇİNDEKİLER}
+	\pageNoLabel
+	\@starttoc{toc}}
+\newcommand{\customlistoffigures}{%
+	\chapter*{ŞEKİLLER DİZİNİ}
+	\addcontentsline{toc}{chapter}{ŞEKİLLER DİZİNİ}
+	\pageNoLabel
+	\@starttoc{lof}}
+\newcommand{\customlistoftables}{%
+	\chapter*{TABLOLAR DİZİNİ}
+	\addcontentsline{toc}{chapter}{TABLOLAR DİZİNİ}
+	\pageNoLabel
+	\@starttoc{lot}}
+\makeatother
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1.0cm}
+\includegraphics[width=3.2cm]{\templatelogo}\par
+\vspace{0.6cm}
+{\Large\bfseries \MakeUppercase{\university}\par}
+\vspace{0.4cm}
+{\large\bfseries \MakeUppercase{\faculty}\par}
+\vspace{0.4cm}
+{\large\bfseries \MakeUppercase{\department}\par}
+\vspace{2.4cm}
+{\LARGE\bfseries \thesistitle\par}
+\vspace{1.6cm}
+{\Large\bfseries LİSANS BİTİRME TEZİ\par}
+\vfill
+{\Large\bfseries \MakeUppercase{\thesisauthor}\par}
+\vspace{0.6cm}
+{\large\bfseries \MakeUppercase{\thesisdate}\par}
+\vspace{0.3cm}
+{\large\bfseries \MakeUppercase{\thesiscity}\par}
+\end{center}
+\end{titlepage}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+{\Large\bfseries \MakeUppercase{\university}\par}
+\vspace{0.4cm}
+{\large\bfseries \MakeUppercase{\faculty}\par}
+\vspace{0.4cm}
+{\large\bfseries \MakeUppercase{\department}\par}
+\vspace{1.5cm}
+{\Large\bfseries \thesistitle\par}
+\vspace{1.5cm}
+{\large\bfseries \MakeUppercase{\thesisauthor}\par}
+\vspace{0.3cm}
+{\large\bfseries \studentnumber\par}
+\vspace{1.4cm}
+\begin{tabular}{p{6cm}p{7cm}}
+\textbf{TEZ DANIŞMANI:} & \textbf{\advisor} \\
+\textbf{JÜRİ ÜYESİ:} & \textbf{Taslak aşamasında eklenecek} \\
+\textbf{JÜRİ ÜYESİ:} & \textbf{Taslak aşamasında eklenecek} \\
+\end{tabular}
+\vfill
+{\large \thesiscity, 2026\par}
+\end{center}
+\end{titlepage}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+{\Large\bfseries \MakeUppercase{\university}\par}
+\vspace{0.4cm}
+{\large\bfseries \MakeUppercase{\faculty}\par}
+\vspace{0.4cm}
+{\large\bfseries YAZILIM MÜHENDİSLİĞİ BÖLÜM BAŞKANLIĞI'NA\par}
+\vspace{1.2cm}
+{\large \MakeUppercase{\thesisauthor}\par}
+\vspace{0.3cm}
+{\large \studentnumber\par}
+\vspace{0.6cm}
+tarafından hazırlanan
+\vspace{0.6cm}
+
+{\Large\bfseries \thesistitle\par}
+\vspace{0.8cm}
+Başlıklı bitirme çalışmasının teslim edilmesi uygundur ( ) uygun değildir ( ).
+\vspace{0.8cm}
+
+\begin{flushleft}
+Tarih : \ldots / \ldots / 2026\\[0.8cm]
+Danışman : .............................................................. \\
+\end{flushleft}
+
+\vspace{0.6cm}
+Başlıklı bitirme çalışması jürimizce değerlendirilmiştir.
+\vspace{0.8cm}
+
+\begin{flushleft}
+Tarih : \ldots / \ldots / 2026\\[0.8cm]
+Danışman : .............................................................. \\
+Üye : ........................................................................ \\
+Üye : ........................................................................ \\
+\end{flushleft}
+
+\vfill
+Doç. Dr. Mesut MELEK\\
+Bölüm Başkanı
+\end{center}
+\end{titlepage}
+
+\clearpage
+\pagenumbering{roman}
+\setcounter{page}{4}
+
+\chapter*{ÖNSÖZ}
+\addcontentsline{toc}{chapter}{ÖNSÖZ}
+Bu tez taslağı, HTC VIVE Ultimate Tracker ve XR tabanlı altyapı ile geliştirilen alt ekstremite hareket analizi projesini akademik tez düzeninde sunmak amacıyla hazırlanmıştır. Metin; proje kod tabanı, sahne kurgusu, görev protokolü ve doğrulanmış literatür temel alınarak oluşturulmuştur. Nihai sürümde kurumsal onaylar, jüri bilgileri ve deneysel doğrulama sonuçları güncellenecek olsa da mevcut çalışma; yöntem, mimari, teknik katkı ve sınırlılıkları bakımından savunulabilir bir tez iskeleti sunmaktadır.
+
+\vspace{2cm}
+\begin{flushright}
+\thesisauthor \\
+\thesiscity, 2026
+\end{flushright}
+
+\chapter*{TEZ ETİK BEYANNAMESİ}
+\addcontentsline{toc}{chapter}{TEZ ETİK BEYANNAMESİ}
+Lisans Tezi olarak sunduğum ``\thesistitle'' başlıklı bu çalışmayı baştan sona kadar danışmanım \advisor'nın sorumluluğunda tamamladığımı, çalışma kapsamında kullandığım bilgileri ve kaynakları metinde ve kaynakçada eksiksiz olarak gösterdiğimi, çalışma sürecinde bilimsel araştırma ve etik kurallara uygun olarak davrandığımı ve aksinin ortaya çıkması durumunda her türlü yasal sonucu kabul ettiğimi beyan ederim. \ldots/\ldots/2026
+
+\vspace{2cm}
+\begin{flushright}
+\thesisauthor\\[0.6cm]
+İmza
+\end{flushright}
+
+\customtableofcontents
+\clearpage
+
+\chapter*{ÖZET}
+\addcontentsline{toc}{chapter}{ÖZET}
+\begin{center}
+\textbf{HTC VIVE Ultimate Tracker ve XR Tabanlı Oyunlaştırılmış Alt Ekstremite Hareket Analizi Sistemi}\\[0.5em]
+\thesisauthor\\
+\university\\
+\faculty\\
+\department\\
+Danışman: \advisor\\
+2026, \pageref{LastPage} sayfa
+\end{center}
+
+Bu çalışmada, HTC VIVE Ultimate Tracker ve OpenXR verisi kullanan Unity tabanlı bir XR hareket analizi sistemi geliştirilmiştir. Sistem, kalça ve diz kinematiğini gerçek zamanlı hesaplamakta, tam vücut avatar görselleştirmesi sağlamakta ve oyunlaştırılmış görevler üzerinden hareket paternlerini izlemektedir. Sensör yerleşimi, kalibrasyon, kinematik çözüm ve görev motoru açıklanmış; kontrollü iniş, mini squat, tek ayak denge, tek ayak squat ve modifiye anterior reach görevleri için valgus eğilimi, fleksiyon, reach yüzdesi ve salınım temelli metrikler üretilmiştir. Bulgular, sistemin gerçek zamanlı veri akışı ve görev bazlı yorumlama sunabildiğini göstermektedir. Bununla birlikte mevcut yapı, tanı koyan bir sistemden çok destekleyici bir tarama ve izleme prototipi olarak değerlendirilmelidir.
+
+\vspace{1em}
+\noindent\textbf{Anahtar Kelimeler:} Sanal Gerçeklik, Hareket Açıklığı, Alt Ekstremite, HTC VIVE Ultimate Tracker, OpenXR, Oyunlaştırma, Hareket Tarama.
+\clearpage
+
+\customlistoffigures
+\clearpage
+
+\customlistoftables
+\clearpage
+
+\chapter*{SEMBOLLER VE KISALTMALAR DİZİNİ}
+\addcontentsline{toc}{chapter}{SEMBOLLER VE KISALTMALAR DİZİNİ}
+\begin{longtable}{p{3cm}p{11cm}}
+ACL & Ön çapraz bağ \\
+API & Uygulama programlama arayüzü \\
+CCD & Cyclic Coordinate Descent \\
+DoF & Serbestlik derecesi \\
+FK & İleri kinematik \\
+HMD & Head-Mounted Display, başa takılan görüntüleme birimi \\
+IK & Ters kinematik \\
+IMU & Ataletsel ölçüm birimi \\
+LESS & Landing Error Scoring System \\
+OpenXR & XR uygulamaları için açık standart arayüz \\
+RMS & Kök ortalama kare değeri \\
+ROM & Range of Motion, hareket açıklığı \\
+SLAM & Simultaneous Localization and Mapping \\
+UI & Kullanıcı arayüzü \\
+XR & Genişletilmiş gerçeklik \\
+\end{longtable}
+
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{GENEL BİLGİLER}
+
+\section{Giriş}
+Eklem hareket açıklığının güvenilir ölçümü, ortopedik değerlendirme ve rehabilitasyon takibi için önemlidir. Geleneksel gonyometri yaygın olsa da değerlendirici bağımlılığı ve anlık ölçüm sınırlılıkları taşır. Bu tezde geliştirilen proje, alt ekstremite hareket analizini XR ortamına taşıyarak sensör verisi, avatar görselleştirme, görev akışı ve kullanıcı geri bildirimini tek bir yazılım yapısında birleştirmektedir.
+
+\section{Problem Tanımı ve Motivasyon}
+Alt ekstremiteye ait diz valgusu, tek ayak dengesizliği ve yük kabulü sorunları gibi dinamik paternler, statik açı ölçümleriyle tam açıklanamaz. Buna karşın laboratuvar tipi hareket yakalama sistemleri maliyetli ve taşınabilirliği sınırlıdır. Çalışmanın motivasyonu; HTC VIVE Ultimate Tracker ve OpenXR ile daha erişilebilir bir altyapı kurmak, bunu görev tabanlı bir XR akışına dönüştürmek ve üretilen metrikleri tanı iddiası taşımadan destekleyici hareket tarama çıktıları olarak sunmaktır.
+
+\section{Literatür ve Teknik Arka Plan}
+
+\subsection{Eklem hareket açıklığı ölçümü ve giyilebilir sensörler}
+Eklem hareket açıklığı ölçümü klinik değerlendirmede temel bir parametredir. Literatürde gonyometriye ek olarak IMU tabanlı, optik ve hibrit çözümler önerilmiştir. Bu tezde kullanılan yaklaşım, HTC VIVE Ultimate Tracker cihazlarının takip verisini kemik hiyerarşisi ile birleştirerek aynı veri hattından hem klinik açı hem de avatar sürüşü üretmeyi amaçlamaktadır.
+
+\subsection{XR izleme, kalibrasyon ve kinematik modelleme}
+HTC VIVE Ultimate Tracker, kamera ve IMU verisini birleştirerek altı serbestlik dereceli poz çıktısı üretmektedir. Sensör anatomik eksene tam hizalanamadığı için kalibrasyon aşamasında sensör-kemik ofseti tanımlanır. Bu çalışmada kullanılan temel ilişki Denklem~\ref{eq:offset} ile gösterilmiştir.
+
+\begin{equation}
+Q_{\text{offset}} = Q_T^{-1} \cdot Q_B
+\label{eq:offset}
+\end{equation}
+
+Burada $Q_T$ tracker'ın, $Q_B$ ise ilgili kemik segmentinin kalibrasyon anındaki yönelimini ifade etmektedir. Çalışma zamanındaki segment yönelimi Denklem~\ref{eq:runtime} ile elde edilir.
+
+\begin{equation}
+Q_B^t = Q_T^t \cdot Q_{\text{offset}}
+\label{eq:runtime}
+\end{equation}
+
+Kalça ve diz lokal rotasyonları hiyerarşik ileri kinematik mantığıyla parent-child kemikler arasındaki bağıl dönüşümler üzerinden hesaplanır.
+
+\begin{align}
+Q_{\text{hip}}^{\text{local}} &= Q_{\text{pelvis}}^{-1} \cdot Q_{\text{thigh}} \\
+Q_{\text{knee}}^{\text{local}} &= Q_{\text{thigh}}^{-1} \cdot Q_{\text{shin}}
+\label{eq:localrot}
+\end{align}
+
+Bu matematiksel yapı, klinik açı üretimi ile avatar kemik sürüşünün ortak temelini oluşturmaktadır.
+
+\subsection{Oyunlaştırılmış hareket tarama yaklaşımı}
+Dinamik görevler, statik ölçümlere göre valgus, denge salınımı ve reach kapasitesi gibi paternleri daha görünür kılar. Bununla birlikte projedeki görevler literatürdeki testlerin birebir karşılığı değildir; LESS ve Y-Balance gibi yaklaşımlar yalnızca kavramsal referans olarak alınmıştır. Bu nedenle çalışma, oyunlaştırılmış görevleri tanı aracı değil, destekleyici bir hareket tarama yaklaşımı olarak konumlandırmaktadır.
+
+\chapter{YAPILAN ÇALIŞMALAR}
+
+\section{Giriş}
+Bu bölümde geliştirilen sistemin donanım-yazılım bileşenleri, veri akışı ve görev tabanlı işleyişi özetlenmektedir.
+
+\section{Sistem hedefleri ve gereksinimleri}
+Geliştirilen sistemin temel hedefi, alt ekstremite hareket verisini gerçek zamanlı olarak toplamak, bu veriyi anlamlı kinematik çıktılara dönüştürmek ve kullanıcıya anlaşılır bir XR deneyimi içinde sunmaktır. Bu amaç doğrultusunda proje için belirlenen temel gereksinimler Tablo~\ref{tab:gereksinimler}'de özetlenmiştir.
+
+\begin{table}[H]
+\centering
+\caption{Sistemin temel donanım ve yazılım bileşenleri}
+\label{tab:gereksinimler}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{L{4.2cm}L{4cm}Y}
+\toprule
+\textbf{Katman} & \textbf{Bileşen} & \textbf{Amaç} \\
+\midrule
+Donanım & HTC VIVE Ultimate Tracker & Pelvis, femur, tibia ve gerektiğinde üst ekstremite segmentlerini izlemek \\
+Donanım & XR başlık ve kontrolcü & Baş pozu, kontrol girdileri ve kalibrasyon etkileşimi sağlamak \\
+Yazılım & Unity 6 & Sahne yönetimi, avatar sürüşü, görev akışı ve görselleştirme \\
+Yazılım & OpenXR ve VIVE eklentileri & Cihaz verisini standart arayüz üzerinden uygulamaya aktarmak \\
+Algoritma & FK ve IK çözücüleri & Segment rotasyonlarını eklem ve kemik sürüşüne çevirmek \\
+Uygulama & Gamification modülü & Görev sıralama, demo sekansları, sonuç üretimi ve kullanıcı yönlendirmesi \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Sistem, gerçek zamanlı açı üretiminin yanında kısa kalibrasyon, anlaşılır avatar geri bildirimi ve Türkçe sonuç yorumları sunan uygulanabilir bir XR iş akışı hedefiyle tasarlanmıştır.
+
+\section{Yazılım mimarisi}
+Projede iki ana teknik hat bulunmaktadır. Birinci hat, sensör verisinden segment ve eklem kinematiği üreten ROM ölçüm hattıdır. İkinci hat ise avatar davranışını yöneten full-body katmandır. İlk hatta tracker atama, kalibrasyon ve klinik açı hesaplama; ikinci hatta takip yönetimi, IK çözümü ve görselleştirme yer almaktadır.
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.84\textwidth}
+\centering
+\small
+\textbf{OpenXR Cihaz Katmanı}\\
+Başlık, tracker, kontrolcü ve el izleme\\[6pt]
+$\Downarrow$\\[6pt]
+\textbf{Toplama ve Eşleme Katmanı}\\
+Takip yöneticisi, cihaz eşleme ve kalibrasyon\\[6pt]
+$\Downarrow$\\[6pt]
+\textbf{Kinematik Çözüm Katmanı}\\
+ROM hesaplama, tam vücut IK ve kemik sürüşü\\[6pt]
+$\Downarrow$\\[6pt]
+\textbf{Uygulama Katmanı}\\
+Klinik açı göstergeleri, avatar görselleştirme, görev motoru, rapor ve kullanıcı arayüzü
+\end{minipage}}
+\caption{Sistemin katmanlı veri akışı}
+\label{fig:systemflow}
+\end{figure}
+
+Bu ayrım, aynı sensör altyapısından hem klinik çıktılar hem de etkileşimli görev akışı üretmeyi mümkün kılmakta; bakım ve genişletmeyi kolaylaştırmaktadır.
+
+\section{Alt ekstremite ROM alt sistemi}
+
+\subsection{Sensör yerleşimi ve kalibrasyon}
+Alt ekstremite çözümünde pelvis, femur ve tibia için üç tracker kullanılmıştır. Yerleşimde yumuşak doku etkisini azaltmak ve segment temsilini korumak amaçlanmıştır. Kalibrasyonda nötr ayakta duruş referans alınarak sensör ve kemik yönelimleri eşleştirilmiş, çalışma sırasında açısal değişimler bu referansa göre yorumlanmıştır.
+
+\subsection{Klinik açı üretimi}
+Kalibrasyon sonrası lokal rotasyonlar kalça ve diz açılarına dönüştürülmektedir. Sagittal düzlem öncelikli olmakla birlikte frontal düzlem için valgus eğilimi vekil ölçütleri de izlenmektedir. Bu çıktı seti, ROM tabanlı egzersizler ve görev değerlendirmeleri için temel oluşturmaktadır.
+
+\subsection{Otomatik tracker atama}
+Kurulum süresini azaltmak için otomatik tracker atama bileşeni aktif cihazları sahne çözücülerine aktarmaktadır. Mevcut yapı prototip için yeterli olsa da daha fazla rol içeren senaryolarda kullanıcı seçimi desteklenmelidir.
+
+\section{Full-body avatar ve IK alt sistemi}
+
+\subsection{Başlangıç sorunları ve çözüm ihtiyacı}
+Projenin erken aşamalarında dirsek ve diz bükülmelerinde anatomik olmayan davranışlar, hint yönü kararsızlığı ve uzuv oran uyumsuzlukları gözlenmiştir. Bu problemler görsel doğruluğu ve hareket yorumunu zayıflattığı için IK zincirinin yeniden düzenlenmesi gerekmiştir.
+
+\subsection{Uygulanan teknik iyileştirmeler}
+Sorunları azaltmak için shin-tracker modu, çoklu tracker ile doğrudan FK sürüşü, omurgada CCD tabanlı dağıtım ve her karede bind-pose sıfırlaması uygulanmıştır. Böylece alt bacak temsili, gövde yönelimi ve uzun süreli kararlılık iyileştirilmiştir.
+
+\begin{table}[H]
+\centering
+\caption{Full-body katmanında uygulanan başlıca iyileştirmeler}
+\label{tab:iyilestirmeler}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{L{4cm}L{4cm}Y}
+\toprule
+\textbf{Problem} & \textbf{İyileştirme} & \textbf{Beklenen etkisi} \\
+\midrule
+Yanlış bükülme düzlemi & Hint mantığının iyileştirilmesi ve doğrudan tracker kullanımı & Dirsek ve diz yönünün daha anatomik görünmesi \\
+Uzuv oran uyumsuzluğu & Kalibrasyon bazlı ofset ve daha iyi hedef sürüşü & Avatar ile kullanıcı hareketinin daha uyumlu olması \\
+Shin bölgesinde kararsızlık & Shin-tracker modu & Alt bacak yöneliminin daha doğru temsil edilmesi \\
+Uzun süreli drift & Her karede bind-pose sıfırlaması & Biriken rotasyon hatalarının azaltılması \\
+Sahne kurulum karmaşıklığı & Otomatik kemik bulma ve editor test sürücüleri & Geliştirme ve hata ayıklama süresinin kısalması \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Avatar tabanlı geri bildirim}
+Full-body katman, kullanıcının hareketini avatar üzerinde izlemesine olanak tanıyan bir geri bildirim mekanizmasıdır. Pose follower, retargeter ve debug bileşenleri bu zinciri desteklemektedir.
+
+\section{Oyunlaştırılmış tarama ve görev motoru}
+
+\subsection{Görev tasarımı}
+Oyunlaştırma katmanı, belirli hareket paternlerini kullanıcı için anlaşılır ve tekrar edilebilir görevler halinde sunmak üzere tasarlanmıştır. Mevcut görev seti nötr duruş, eğilme, tek ayak denge, mini squat, kontrollü iniş, modifiye anterior reach, tek ayak squat ve yerinde yürüme simülasyonunu içermektedir.
+
+\begin{table}[H]
+\centering
+\caption{Görevler ve üretilen başlıca metrikler}
+\label{tab:gorevler}
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabularx}{\textwidth}{L{3.6cm}L{4.2cm}Y}
+\toprule
+\textbf{Görev} & \textbf{Birincil metrikler} & \textbf{Yorumlanan hareket paterni} \\
+\midrule
+Kontrollü iniş görevi & Pik diz valgusu, diz fleksiyonu, salınım & Yük kabulü, iniş kalitesi ve stabilizasyon \\
+Mini squat & Diz fleksiyonu, valgus eğilimi & Çift ayak yüklenme ve temel squat stratejisi \\
+Tek ayak squat\newline (sağ/sol) & Diz valgusu, fleksiyon, sway & Tek taraflı yük kontrolü ve frontal düzlem stabilitesi \\
+Modifiye anterior reach\newline (sağ/sol) & Reach yüzdesi, stance valgusu, sway & Dinamik denge ve erişim kapasitesi \\
+Tek ayak denge\newline (sağ/sol) & Pelvis sway RMS, sway velocity & Tek ayak denge kontrolü \\
+Gövde eğimi görevleri & Gövde yönelimi ve dolaylı denge sinyalleri & Proksimal kontrol ve postüral strateji \\
+Yerinde yürüme\newline simülasyonu & Alternasyon ve akış gözlemi & Gösterim amaçlı yürüme benzeri sekans \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\normalsize
+
+Anterior reach yüzdesi, uzanılan mesafenin yaklaşık bacak uzunluğuna oranlanması ile Denklem~\ref{eq:reach} kullanılarak ifade edilebilir.
+
+\begin{equation}
+\text{Reach \%} = \frac{d_{\text{reach}}}{L_{\text{limb}}} \times 100
+\label{eq:reach}
+\end{equation}
+
+Benzer biçimde pelvis ya da kütle merkezi vekili salınımın zamana yayılmış büyüklüğü RMS temelli bir denge göstergesi olarak Denklem~\ref{eq:sway} ile özetlenebilir.
+
+\begin{equation}
+\text{Sway}_{\text{RMS}} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} \left(x_i - \bar{x}\right)^2}
+\label{eq:sway}
+\end{equation}
+
+\subsection{Oturum sıralama ve demo sekansları}
+Görevler yalnızca tekil hareketler olarak değil, oturum bazlı bir akış içinde planlanmaktadır. Demo sekanslarında ghost avatar ve pose kütüphanesi kullanılarak görevler kullanıcıya önceden gösterilmektedir.
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}[c][6.5cm][c]{0.84\textwidth}
+\centering
+\textbf{Oturum Akışı}\\[6pt]
+Standing $\rightarrow$ LandingScreen $\rightarrow$ MiniSquat $\rightarrow$ SingleLegSquat\\[10pt]
+$\Downarrow$\\[10pt]
+ModifiedYBalanceAnterior $\rightarrow$ Lean görevleri $\rightarrow$ SingleLegBalance $\rightarrow$ WalkSimulation\\[10pt]
+$\Downarrow$\\[10pt]
+Türkçe yorum, risk alanları, görev bazlı geri bildirim ve sonraki oturum planı
+\end{minipage}}
+\caption{Oyunlaştırılmış görev akışının yüksek seviyeli görünümü}
+\label{fig:sessionflow}
+\end{figure}
+
+\subsection{Kullanıcı arayüzü ve sonuçların sunumu}
+Sistem, sonuçları yalnızca sayısal açı değerleri olarak göstermemekte; görev bağlamına göre Türkçe yorumlara da dönüştürmektedir. Böylece teknik veri kullanıcı için daha anlaşılır hale gelmektedir.
+
+\section{Sistemin gelişim aşamaları}
+Proje artımlı biçimde gelişmiştir: önce temel ROM ölçüm hattı, sonra avatar ve IK kararlılığı, son olarak görev tabanlı tarama ile kullanıcı geri bildirimi eklenmiştir. Tablo~\ref{tab:takvim}, bu gelişim çizgisini teknik bileşenler üzerinden özetlemektedir.
+
+\begin{table}[H]
+\centering
+\caption{Sistemin gelişim aşamaları ve teknik katkılar}
+\label{tab:takvim}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{L{3.2cm}L{4.5cm}Y}
+\toprule
+\textbf{Aşama} & \textbf{Odak} & \textbf{Tez içindeki karşılığı} \\
+\midrule
+Temel ölçüm katmanı & Sensör yerleşimi, statik poz kalibrasyonu, temel FK ve klinik açı hesabı & ROM ölçüm altyapısının kuramsal ve teknik temeli \\
+Avatar ve IK katmanı & Hint yönü kararlılığı, uzuv oranı uyumu, shin-tracker yaklaşımı ve çoklu tracker sürüşü & Full-body çözümlemenin teknik olgunlaşması \\
+Görev tabanlı tarama katmanı & İniş, denge, reach ve squat görevleri ile görev bazlı metrik üretimi & Tezin özgün uygulama katmanı ve risk paterni yorumları \\
+Arayüz ve raporlama katmanı & Oturum sıralama, görsel demo, kullanıcı geri bildirimi ve çıktı düzeni & Sistemin kullanıcı deneyimi ve raporlama boyutu \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\chapter{BULGULAR VE TARTIŞMA}
+
+\section{Giriş}
+Bu bölümde geliştirilen sistemden elde edilen çıktılar, teknik katkılar ve sınırlılıklar birlikte değerlendirilmektedir.
+
+\section{Elde edilen temel çıktılar}
+Geliştirilen sistem, tracker verisinden gerçek zamanlı alt ekstremite kinematiği üretebilmekte, bu veriyi eşzamanlı avatar sürüşüne aktarabilmekte ve kullanıcıya görsel geri bildirim sunabilmektedir. Görev tabanlı akış sayesinde iniş, tek ayak squat ve modifiye anterior reach gibi senaryolarda eklem açılarına ek olarak daha zengin hareket paternleri yorumlanabilmektedir. Modüler kalibrasyon, hesaplama, IK ve oyunlaştırma bileşenleri ise projenin araştırma prototipinden daha sürdürülebilir bir yazılım yapısına yaklaşmasını sağlamıştır.
+
+\section{Teknik katkıların değerlendirilmesi}
+Temel teknik katkı, ROM ölçümünü XR tabanlı görselleştirme ve görev akışıyla aynı veri hattında birleştirmesidir. Ayrıca hint kararlılığı, bind-pose sürüklenmesi, uzuv oran uyumu ve shin-tracker temsili gibi pratik sorunlara yönelik iyileştirmeler, çalışmanın yalnızca prototip üretmekle kalmadığını; mühendislik problem çözümünü de belgelediğini göstermektedir.
+
+\section{Geçerlilik sınırları ve sınırlılıklar}
+Sistem umut verici olsa da referans ölçüm sistemiyle nicel doğrulama yapılmamıştır; bu nedenle doğruluk ve tekrar edilebilirlik henüz nitel düzeydedir. Ayrıca görevler literatürdeki testlerle birebir örtüşmemekte ve trunk lean ile yürüme simülasyonu ayrıntılı klinik ölçütler üretmemektedir. Bu nedenle sistem, tanı aracı değil; daha ileri değerlendirmeyi destekleyen bir tarama platformu olarak sunulmalıdır.
+
+\section{Tartışma}
+Prototip, yazılım mühendisliği ile hareket analizini ortak bir yapıda birleştirmesi bakımından güçlüdür. Ancak tez savunusunu güçlendirmek için örnek kullanıcı verisi, referans sistemlerle karşılaştırma ve görev eşiklerinin kullanıcı grubuna göre kalibrasyonu gereklidir.
+
+\chapter{SONUÇLAR}
+
+\section{Genel sonuç}
+Bu tez, HTC VIVE Ultimate Tracker ve OpenXR tabanlı XR hareket analizi projesini akademik çerçevede sunmuştur. Sistem, ROM ölçümü, tam vücut avatar sürüşü ve oyunlaştırılmış görev akışını tek mimaride birleştirerek kalça ve diz odaklı gerçek zamanlı kinematik bilgi ve kullanıcı geri bildirimi üretmektedir.
+
+\section{Gelecek çalışmalar}
+Gelecek çalışmalar üç başlıkta ilerleyebilir: referans sistemlerle doğrulama ve tekrarlanabilirlik analizi, yürüyüş ve trunk ölçütleri ile çoklu tracker rol seçimi gibi teknik geliştirmeler, ve raporlama ile terapist paneli gibi ürünleşme adımları. Mevcut taslak, deneysel veri ve kurumsal bilgilerle tamamlandığında savunulabilir bir lisans bitirme tezine dönüştürülebilecek yapıdadır.
+
+\chapter{KAYNAKÇA}
+\begin{enumerate}[label={[\arabic*]}, leftmargin=1.2cm]
+\item C. C. Norkin ve D. J. White, \textit{Measurement of Joint Motion: A Guide to Goniometry}, 5. baskı, F.A. Davis Company, Philadelphia, 2016.
+\item R. L. Gajdosik ve R. W. Bohannon, ``Clinical measurement of range of motion: Review of goniometry emphasizing reliability and validity,'' \textit{Physical Therapy}, cilt 67, sayı 12, ss. 1867-1872, 1987.
+\item A. Cuesta-Vargas, A. Galán-Mercant ve J. M. Williams, ``The use of inertial sensors system for human motion analysis,'' \textit{Physical Therapy Reviews}, cilt 15, sayı 6, ss. 462-473, 2010.
+\item T. Seel, J. Raisch ve T. Schauer, ``IMU-based joint angle measurement for gait analysis,'' \textit{Sensors}, cilt 14, sayı 4, ss. 6891-6909, 2014.
+\item HTC Corporation, ``VIVE Ultimate Tracker Specifications,'' 2024, \url{https://www.vive.com/us/accessory/vive-ultimate-tracker/}.
+\item D. C. Niehorster, L. Li ve M. Lappe, ``The accuracy and precision of position and orientation tracking in the HTC Vive virtual reality system for scientific research,'' \textit{i-Perception}, cilt 8, sayı 3, 2017.
+\item A. Leardini, L. Chiari, U. Della Croce ve A. Cappozzo, ``Human movement analysis using stereophotogrammetry -- Part 3: Soft tissue artifact assessment and compensation,'' \textit{Gait \& Posture}, cilt 21, sayı 2, ss. 212-225, 2005.
+\item W. Niswander, W. Wang ve K. Kontson, ``Optimization of IMU sensor placement for the measurement of lower limb joint kinematics,'' \textit{Sensors}, cilt 20, sayı 21, 2020.
+\item J. J. Craig, \textit{Introduction to Robotics: Mechanics and Control}, 3. baskı, Pearson Prentice Hall, 2005.
+\item C. Cadena ve diğerleri, ``Past, present, and future of simultaneous localization and mapping: Toward the robust-perception age,'' \textit{IEEE Transactions on Robotics}, cilt 32, sayı 6, ss. 1309-1332, 2016.
+\item B. Kenwright, ``Inverse kinematics -- cyclic coordinate descent (CCD),'' \textit{Journal of Graphics Tools}, cilt 16, sayı 1, ss. 1-12, 2012.
+\item S. V. Adamovich ve diğerleri, ``Sensorimotor interactions in cerebral palsy: new approaches to assessment and therapy using virtual environments,'' \textit{Developmental Medicine \& Child Neurology}, cilt 51, ek 4, ss. 61-67, 2009.
+\item A. Mirelman ve diğerleri, ``Virtual reality for gait training: can it induce motor learning to enhance complex walking and reduce fall risk in patients with Parkinson's disease?,'' \textit{Journals of Gerontology: Series A}, cilt 66A, sayı 2, ss. 234-240, 2011.
+\item J. Jerald, \textit{The VR Book: Human-Centered Design for Virtual Reality}, Morgan \& Claypool, 2015.
+\item P. Renström, A. Ljungqvist, E. Arendt ve diğerleri, ``Non-contact ACL injuries in female athletes: an International Olympic Committee current concepts statement,'' \textit{British Journal of Sports Medicine}, cilt 42, sayı 6, ss. 394-412, 2008. DOI: \url{https://doi.org/10.1136/bjsm.2008.048934}.
+\item B. T. Zazulak, T. E. Hewett, N. P. Reeves, B. Goldberg ve J. Cholewicki, ``Deficits in neuromuscular control of the trunk predict knee injury risk: a prospective biomechanical-epidemiologic study,'' \textit{The American Journal of Sports Medicine}, cilt 35, sayı 7, ss. 1123-1130, 2007. DOI: \url{https://doi.org/10.1177/0363546507301585}.
+\item G. D. Myer, K. R. Ford, J. Khoury, P. Succop ve T. E. Hewett, ``Development and validation of a clinic-based prediction tool to identify female athletes at high risk for anterior cruciate ligament injury,'' \textit{The American Journal of Sports Medicine}, cilt 38, sayı 10, ss. 2025-2033, 2010. DOI: \url{https://doi.org/10.1177/0363546510370933}.
+\item I. Hanzlíková, J. Athens ve K. Hébert-Losier, ``Factors influencing the Landing Error Scoring System: Systematic review with meta-analysis,'' \textit{Journal of Science and Medicine in Sport}, cilt 24, sayı 3, ss. 269-280, 2021. DOI: \url{https://doi.org/10.1016/j.jsams.2020.08.013}.
+\item S. O'Connor, N. McCaffrey, E. F. Whyte, M. Fop, B. Murphy ve K. Moran, ``Can the Y balance test identify those at risk of contact or non-contact lower extremity injury in adolescent and collegiate Gaelic games?,'' \textit{Journal of Science and Medicine in Sport}, cilt 23, sayı 10, ss. 943-948, 2020. DOI: \url{https://doi.org/10.1016/j.jsams.2020.04.017}.
+\item H. Bennett, S. Chalmers, S. Milanese ve J. Fuller, ``The association between Y-balance test scores, injury, and physical performance in elite adolescent Australian footballers,'' \textit{Journal of Science and Medicine in Sport}, cilt 25, sayı 4, ss. 306-311, 2022. DOI: \url{https://doi.org/10.1016/j.jsams.2021.10.014}.
+\end{enumerate}
+
+\chapter{EKLER}
+
+\section{Ek A. Görev protokolünün kısa özeti}
+Görev protokolünde nötr duruş temel referans olarak alınmakta; ardından çift ayak yük kabulü, tek taraflı denge, anterior reach ve gövde kontrolüne ilişkin görevler uygulanmaktadır. Tüm görevler kısa süreli, anlaşılır ve görsel demo ile desteklenen bir yapıda tasarlanmıştır.
+
+\section{Ek B. Taslakta açık bırakılan alanlar}
+Bu sürümde jüri üyeleri, kesin sayfa sayısı, kurumsal onay alanları, kullanıcı verisi tabloları ve deneysel istatistikler yer tutucu olarak bırakılmıştır. Nihai sürümde bu alanların kurum formatına göre doldurulması gerekmektedir.
+
+\section{Ek C. Önerilen deneysel doğrulama planı}
+Nihai sürüm için aynı kullanıcıdan tekrarlı ölçümler alınması, ROM çıktılarının klinik gonyometre veya referans sistem ile karşılaştırılması, görevlere ait örnek kullanıcı tablolarının oluşturulması ve uzman görüşüyle nitel değerlendirme yapılması önerilmektedir.
+
+\chapter{ÖZGEÇMİŞ}
+\noindent\textbf{Ad Soyad:} \thesisauthor
+
+\noindent\textbf{Doğum Yeri ve Tarihi:} Taslak aşamasında eklenecek.
+
+\noindent\textbf{Lisans Eğitimi:} Gümüşhane Üniversitesi, Yazılım Mühendisliği Bölümü.
+
+\noindent\textbf{İlgi Alanları:} Sanal gerçeklik, biyomekanik veri işleme, oyunlaştırma, sağlık teknolojileri, Unity tabanlı etkileşimli sistemler.
+
+\end{document}

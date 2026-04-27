@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 277a521c653cd454aa437149a4514b93, type: 3}
-  m_Name: WalkSimulation_KF1
+  m_Name: RightLegSquatSequence_KF3
   m_EditorClassIdentifier: 
-  poseName: WalkSimulation_KF1
-  descriptionTR: "Y\xFCr\xFCme Sim\xFClasyonu otomatik demo keyframe 1."
+  poseName: RightLegSquatSequence_KF3
+  descriptionTR: 
   holdSeconds: 0.1
-  hipPosition: {x: 0.00000062584877, y: 1.0018692, z: 0.006344795}
-  hip: {x: 0, y: 0, z: 0, w: 1}
+  hipPosition: {x: 0.00000062584877, y: 0.837, z: 0.006344795}
+  hip: {x: -0, y: -0, z: -0, w: 1}
   hasLowerSpine: 1
   lowerSpine: {x: -0.060396273, y: -0.000000976381, z: 0.000010212562, w: 0.9981745}
   spine: {x: 8.370894e-26, y: -1.2456606e-13, z: 6.720044e-13, w: 1}
@@ -26,12 +26,12 @@ MonoBehaviour:
   neck: {x: 0.06039648, y: 1.1910963e-30, z: 1.968552e-29, w: 0.9981745}
   hasHead: 1
   head: {x: -0, y: 4.2768337e-14, z: 1.202473e-12, w: 1}
-  thighLeft: {x: 0.0026989777, y: 0.015308573, z: 0.99987924, w: 0.000035248922}
-  shinLeft: {x: -0.0445905, y: 0.000052192514, z: 0.0016210835, w: 0.99900407}
+  thighLeft: {x: 0.0025125525, y: 0.36750358, z: 0.9300182, w: 0.0009863228}
+  shinLeft: {x: -0.87700194, y: 0.0012172743, z: 0.0054068677, w: 0.48045492}
   ankleLeft: {x: 0.48387855, y: -0.0040582675, z: -0.046031743, w: 0.87391436}
-  thighRight: {x: -0.0024751928, y: 0.01658567, z: 0.99985945, w: -0.000055449415}
-  shinRight: {x: -0.044238742, y: -0.00004865657, z: -0.0015993865, w: 0.99901974}
-  ankleRight: {x: 0.48376065, y: 0.0045127026, z: 0.04587235, w: 0.8739857}
+  thighRight: {x: -0.0024022069, y: 0.23639764, z: 0.9716533, w: -0.0005992505}
+  shinRight: {x: -0.5699692, y: -0.00076164765, z: -0.0039635063, w: 0.8216562}
+  ankleRight: {x: 0.7559824, y: -0.009958271, z: 0.0456515, w: 0.6529222}
   hasLeftShoulder: 1
   shoulderLeft: {x: 0.55010265, y: -0.43868297, z: 0.57106215, w: 0.42288578}
   hasLeftUpperArm: 1
@@ -39,7 +39,7 @@ MonoBehaviour:
   hasLeftForearm: 1
   forearmLeft: {x: 0.044701654, y: 0.0027824186, z: -0.044784743, w: 0.9979922}
   hasLeftHand: 1
-  handLeft: {x: 0.0109003205, y: -0.044209108, z: 0.04208709, w: 0.99807584}
+  handLeft: {x: 0.0109003205, y: -0.04420911, z: 0.04208709, w: 0.9980759}
   hasRightShoulder: 1
   shoulderRight: {x: -0.5529884, y: -0.43644837, z: 0.5687412, w: -0.4245588}
   hasRightUpperArm: 1

@@ -27,4 +27,4 @@ MonoBehaviour:
   targetReachPct: 65
   landingFlexionTargetDeg: 45
   demoSequence: {fileID: 11400000, guid: 6fdcf018eca679049ab995950d19d145, type: 2}
-  demoTransitionSpeedOverride: 2
+  demoTransitionSpeedOverride: -1

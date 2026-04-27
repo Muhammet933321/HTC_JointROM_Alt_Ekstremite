@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   poseName: MiniSquadSequance_FK1
   descriptionTR: 
-  holdSeconds: 1.5
+  holdSeconds: 0.7
   hipPosition: {x: 0.00000062584877, y: 0.813, z: 0.006344795}
   hip: {x: -0, y: -0, z: -0, w: 1}
+  hasLowerSpine: 0
+  lowerSpine: {x: 0, y: 0, z: 0, w: 1}
   spine: {x: 8.370894e-26, y: -1.2456606e-13, z: 6.720044e-13, w: 1}
   hasChest: 0
   chest: {x: 0, y: 0, z: 0, w: 1}

@@ -1,0 +1,47 @@
+\xpg@aux {}{turkish}
+\contentsline {chapter}{ÖNSÖZ}{iv}{chapter*.1}%
+\contentsline {chapter}{TEZ ETİK BEYANNAMESİ}{v}{chapter*.2}%
+\contentsline {chapter}{İÇİNDEKİLER}{vi}{chapter*.3}%
+\contentsline {chapter}{ÖZET}{viii}{chapter*.4}%
+\contentsline {chapter}{ŞEKİLLER DİZİNİ}{ix}{chapter*.5}%
+\contentsline {chapter}{TABLOLAR DİZİNİ}{x}{chapter*.6}%
+\contentsline {chapter}{SEMBOLLER VE KISALTMALAR DİZİNİ}{xi}{chapter*.7}%
+\contentsline {chapter}{\numberline {1}GENEL BİLGİLER}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1.}Giriş}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2.}Problem Tanımı ve Motivasyon}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3.}Literatür ve Teknik Arka Plan}{1}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1.}Eklem hareket açıklığı ölçümü ve giyilebilir sensörler}{1}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2.}XR izleme, kalibrasyon ve kinematik modelleme}{1}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3.}Oyunlaştırılmış hareket tarama yaklaşımı}{2}{subsection.1.3.3}%
+\contentsline {chapter}{\numberline {2}YAPILAN ÇALIŞMALAR}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1.}Giriş}{3}{section.2.1}%
+\contentsline {section}{\numberline {2.2.}Sistem hedefleri ve gereksinimleri}{3}{section.2.2}%
+\contentsline {section}{\numberline {2.3.}Yazılım mimarisi}{4}{section.2.3}%
+\contentsline {section}{\numberline {2.4.}Alt ekstremite ROM alt sistemi}{4}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1.}Sensör yerleşimi ve kalibrasyon}{4}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2.}Klinik açı üretimi}{4}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3.}Otomatik tracker atama}{5}{subsection.2.4.3}%
+\contentsline {section}{\numberline {2.5.}Full-body avatar ve IK alt sistemi}{5}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1.}Başlangıç sorunları ve çözüm ihtiyacı}{5}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2.}Uygulanan teknik iyileştirmeler}{5}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3.}Avatar tabanlı geri bildirim}{6}{subsection.2.5.3}%
+\contentsline {section}{\numberline {2.6.}Oyunlaştırılmış tarama ve görev motoru}{6}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1.}Görev tasarımı}{6}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.6.2.}Oturum sıralama ve demo sekansları}{7}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.6.3.}Kullanıcı arayüzü ve sonuçların sunumu}{7}{subsection.2.6.3}%
+\contentsline {section}{\numberline {2.7.}Sistemin gelişim aşamaları}{7}{section.2.7}%
+\contentsline {chapter}{\numberline {3}BULGULAR VE TARTIŞMA}{9}{chapter.3}%
+\contentsline {section}{\numberline {3.1.}Giriş}{9}{section.3.1}%
+\contentsline {section}{\numberline {3.2.}Elde edilen temel çıktılar}{9}{section.3.2}%
+\contentsline {section}{\numberline {3.3.}Teknik katkıların değerlendirilmesi}{9}{section.3.3}%
+\contentsline {section}{\numberline {3.4.}Geçerlilik sınırları ve sınırlılıklar}{9}{section.3.4}%
+\contentsline {section}{\numberline {3.5.}Tartışma}{9}{section.3.5}%
+\contentsline {chapter}{\numberline {4}SONUÇLAR}{11}{chapter.4}%
+\contentsline {section}{\numberline {4.1.}Genel sonuç}{11}{section.4.1}%
+\contentsline {section}{\numberline {4.2.}Gelecek çalışmalar}{11}{section.4.2}%
+\contentsline {chapter}{\numberline {5}KAYNAKÇA}{12}{chapter.5}%
+\contentsline {chapter}{\numberline {6}EKLER}{15}{chapter.6}%
+\contentsline {section}{\numberline {6.1.}Ek A. Görev protokolünün kısa özeti}{15}{section.6.1}%
+\contentsline {section}{\numberline {6.2.}Ek B. Taslakta açık bırakılan alanlar}{15}{section.6.2}%
+\contentsline {section}{\numberline {6.3.}Ek C. Önerilen deneysel doğrulama planı}{15}{section.6.3}%
+\contentsline {chapter}{\numberline {7}ÖZGEÇMİŞ}{16}{chapter.7}%

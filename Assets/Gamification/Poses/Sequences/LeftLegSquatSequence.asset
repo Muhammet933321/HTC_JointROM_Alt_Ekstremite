@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62402b6d194c3f04f91fead141e42c9e, type: 3}
-  m_Name: LandingScreenSequance
+  m_Name: LeftLegSquatSequence
   m_EditorClassIdentifier: 
-  sequenceName: LandingScreenSequance
+  sequenceName: LeftLegSquatSequence
   descriptionTR: 
   loop: 1
   transitionSpeedOverride: -1
   keyframes:
-  - {fileID: 11400000, guid: bf2c2a152562fbb42b2403f9d83ae396, type: 2}
-  - {fileID: 11400000, guid: 801ba8adea347e244b6ce1cb176d9297, type: 2}
-  - {fileID: 11400000, guid: d14dc1f48fb4aa3409ff40b29c9958f3, type: 2}
-  - {fileID: 11400000, guid: 801ba8adea347e244b6ce1cb176d9297, type: 2}
-  - {fileID: 11400000, guid: bf2c2a152562fbb42b2403f9d83ae396, type: 2}
+  - {fileID: 11400000, guid: 18d40522e8a463b4fbe0406e5ccda426, type: 2}
+  - {fileID: 11400000, guid: b03ffa5e660fa594d8d278fde040ca8c, type: 2}
+  - {fileID: 11400000, guid: ff6b60e5d48b0f74598a8bd351726e62, type: 2}
+  - {fileID: 11400000, guid: b03ffa5e660fa594d8d278fde040ca8c, type: 2}
+  - {fileID: 11400000, guid: 18d40522e8a463b4fbe0406e5ccda426, type: 2}

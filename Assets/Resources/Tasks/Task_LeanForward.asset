@@ -23,5 +23,7 @@ MonoBehaviour:
   asymmetryThresholdPct: 10
   minFlexionDeg: 45
   swayRmsThreshold: 0.015
+  targetReachPct: 65
+  landingFlexionTargetDeg: 45
   demoSequence: {fileID: 11400000, guid: b88b468598ff01a48bf97fde4472cdf5, type: 2}
-  demoTransitionSpeedOverride: -1
+  demoTransitionSpeedOverride: 1

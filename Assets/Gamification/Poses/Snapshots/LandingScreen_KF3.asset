@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   poseName: LandingScreen_KF3
   descriptionTR: 
-  holdSeconds: 0
+  holdSeconds: 0.01
   hipPosition: {x: 0.00000062584877, y: 1.62, z: 0.006344795}
   hip: {x: -0, y: -0, z: -0, w: 1}
   hasLowerSpine: 1

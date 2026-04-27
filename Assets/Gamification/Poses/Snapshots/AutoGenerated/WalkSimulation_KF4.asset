@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   poseName: WalkSimulation_KF4
   descriptionTR: "Y\xFCr\xFCme Sim\xFClasyonu otomatik demo keyframe 4."
-  holdSeconds: 0.55
+  holdSeconds: 0.1
   hipPosition: {x: 0.00000062584877, y: 1.0018692, z: 0.006344795}
   hip: {x: 0.041673947, y: -0.070805244, z: 0.029130023, w: 0.99619347}
   hasLowerSpine: 1
