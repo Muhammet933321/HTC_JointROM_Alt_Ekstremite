@@ -1,0 +1,448 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{gensymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\definecolor{demoblue}{rgb}{0.10,0.24,0.62}
+\definecolor{armgreen}{rgb}{0.10,0.44,0.20}
+\definecolor{thesisred}{rgb}{0.62,0.15,0.15}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Hafta 4 -- Demo Sistemi, Ust Ekstremite ve Tez Taslagi}
+\fancyhead[R]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Hafta 4 Gelistirme Raporu:\\[4pt]
+    \textcolor{demoblue}{Ornek Hareketleri Gosterme Sistemi},\\[4pt]
+    \textcolor{armgreen}{Daha Kararli Kol Takibi} ve\\[4pt]
+    \textcolor{thesisred}{Bitirme Tezi Taslagi}}\\[12pt]
+    {\normalsize Nisan 2026}
+\end{center}
+
+\vspace{6pt}
+
+\begin{abstract}
+Bu rapor, proje gelisim surecinin dorduncu haftasinda tamamlanan uc ana
+calismayi belgelemektedir. Ilk olarak, oyunlastirilmis tarama gorevleri icin
+kullaniciya ornek hareketleri gosteren \textbf{ghost avatar tabanli demo sistemi}
+tasarlanmis ve gorev tanimlariyla butunlestirilmistir. Ikinci olarak,
+ust ekstremite izleme hattinda \textbf{omuz referans cercevesi},
+\textbf{kalibrasyon tabanli goreli rotasyonlar} ve \textbf{avatar yansitma}
+katmanlari tanimlanarak kol takibinin daha stabil ve tekrar edilebilir hale
+gelmesi saglanmistir. Ucuncu olarak, projenin akademik teslimi icin
+\textbf{bitirme tezi taslagi} universite formatina uygun bicimde yazilmistir.
+Bu uc ciktinin ortak amaci; sistemin teknik olgunlugunu, kullanici
+yonlendirme kapasitesini ve akademik raporlanabilirligini ayni anda ileri
+tasimaktir.
+\end{abstract}
+
+\tableofcontents
+\vspace{8pt}
+
+% ================================================================
+\section{Rapor Kapsami ve Hafta 3 Uzerine Eklenenler}
+\label{sec:kapsam}
+
+Hafta~3 raporu agirlikli olarak full-body IK altyapisinin gercek zamanli
+uygulamasina, shin-tracker ve 5-tracker modlarina, omurga cozumune,
+editor araclarina ve sahne ortam tasarimina odaklanmisti. Hafta~4'te ise
+odak, ayni altyapiyi \textbf{kullaniciya gosteren}, \textbf{daha kararli}
+hale getiren ve \textbf{akademik olarak raporlayan} ust katmanlara kaymistir.
+
+\begin{table}[H]
+\centering
+\caption{Hafta 3 ve Hafta 4 odak farki}
+\label{tab:hafta34}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Baslik} & \textbf{Hafta 3} & \textbf{Hafta 4} \\
+\midrule
+Ana hedef & Kinematik altyapiyi uygulamak & Uygulanan sistemi gostermek, stabil hale getirmek ve tezlestirmek \\
+Kullanici deneyimi & IK ve cevre kurulumu & Ghost avatar ile ornek hareket gosterimi \\
+Ust ekstremite & Temel IK/FK genislemesi & Referans cercevesi, goreli rotasyon, pose follower ve retargeting \\
+Dokumantasyon & Teknik implementasyon raporu & Haftalik rapor + bitirme tezi taslagi \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu rapor, hafta~4'te tamamlanan uc somut teslim etrafinda yapilandirilmistir:
+\begin{enumerate}[nosep]
+    \item Gorev bazli \textbf{ornek hareketleri gosteren demo sistemi},
+    \item Kol track islemini daha stabil hale getiren \textbf{ust ekstremite izleme/avatar} katmani,
+    \item Projenin akademik teslimi icin yazilan \textbf{bitirme tezi taslagi}.
+\end{enumerate}
+
+% ================================================================
+\section{Ornek Hareketleri Gosteren Sistem}
+\label{sec:demo}
+
+Oyunlastirilmis tarama uygulamalarinda yazili yonlendirme tek basina yeterli
+degildir. Ozellikle mini squat, kontrollu inis, tek ayak squat ve reach
+gorevleri gibi hareketlerde kullanicinin neyi ne kadar yapmasi gerektigi,
+bir \textit{gorsel referans} olmadan farkli sekillerde yorumlanabilir.
+Bu nedenle hafta~4'te, gorev aciklamalarina paralel calisan bir
+\textbf{ghost avatar demo sistemi} hazirlanmistir.
+
+\subsection{ScriptableObject Tabanli Poz Veri Modeli}
+
+Sistem, her gorev icin poz bilgisini sahne icine hard-code etmek yerine
+asset tabanli bir veri modeli uzerine kurulmustur. Bu sayede yeni gorev
+eklemek veya mevcut gosteri hareketlerini guncellemek icin kod degistirmek
+gerekmez; ilgili pose asset'i guncellemek yeterlidir.
+
+\begin{table}[H]
+\centering
+\caption{Demo sisteminin temel bilesenleri}
+\label{tab:demo_bilesen}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Bilesen} & \textbf{Sorumluluk} \\
+\midrule
+\texttt{PoseSnapshotSO} & Tek bir keyframe'in kalca pozisyonu ve tum eklem rotasyonlarini saklar \\
+\texttt{PoseSequenceSO} & Bir goreve ait sirali keyframe listesini ve gecis hizini tutar \\
+\texttt{TaskDefinition.demoSequence} & Her gorevin hangi demo sekansi ile eslesecegini belirler \\
+\texttt{PoseDemoController} & Ghost avatar uzerinde bu keyframe'leri oynatir \\
+\texttt{GamificationSetup} & Demo asset'lerini ve sahne baglantilarini editor ortaminda otomatik kurar \\
+\texttt{SessionConfigSO} & Gorevlerin klinik oncelige gore sirasini ve oturum akisini tanimlar \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\texttt{PoseSnapshotSO}, hips local position verisini de tuttugu icin sadece
+eklem rotasyonlari degil; comelme, alcak inis ve reach gibi durumlarda
+gorulen \textbf{gobde-agirlik merkezi dususu} da kaydedilebilmektedir.
+Bu, onceki sabit Euler yaklasimina gore daha gercekci bir gosterim sunar.
+
+\subsection{Pozlar Arasi Gecis Mantigi}
+
+Ghost avatar tek bir sabit poza atlamaz; keyframe'ler arasi yumusak gecis
+uygular. Rotasyonlar kuaternion uzayinda \textit{Slerp}, kalca pozisyonu ise
+dogrusal enterpolasyon ile guncellenir:
+
+\begin{align}
+    Q(t) &= \mathrm{Slerp}(Q_i, Q_{i+1}, \alpha)
+    \label{eq:slerp_demo} \\
+    \mathbf{p}_{\text{hip}}(t) &= (1-\alpha)\,\mathbf{p}_i + \alpha\,\mathbf{p}_{i+1}
+    \label{eq:lerp_demo}
+\end{align}
+
+Burada $\alpha \in [0,1]$ gecis ilerlemesini, $Q_i$ ve $Q_{i+1}$ ise ardisik
+keyframe rotasyonlarini temsil eder. Boylece gosterim sistemi ``fotograf
+degitirir'' gibi degil, \textbf{hareket eder} gibi algilanir.
+
+\subsection{Varsayilan Gorev Kutuphanesi}
+
+\texttt{PoseDemoController} icinde, gorev tipine gore cagrilabilen bir
+varsayilan demo kutuphanesi de tanimlanmistir. Bu kutuphane, ozellikle
+asset atamasi yapilmamis gorevlerde sistemin bos kalmasini onler.
+Varsayilan kutuphane asagidaki gorevleri kapsar:
+
+\begin{itemize}[nosep]
+    \item Dik durus,
+    \item Saga egilme, sola egilme ve one egilme,
+    \item Mini squat,
+    \item Sag/sol tek ayak denge,
+    \item Yerinde yurume simulasyonu,
+    \item Kontrollu inis taramasi,
+    \item Modifiye anterior Y-balance sag/sol,
+    \item Tek ayak squat sag/sol.
+\end{itemize}
+
+Boylece yeni bir sahnede demo asset'leri henuz elle uretilmemis olsa bile,
+sistem gorevleri gorsel olarak gosterebilecek minimum bir davranisa sahip
+olur.
+
+\subsection{Editor Otomasyonu ve Ghost Avatar Uretimi}
+
+Hafta~4'te sadece runtime oynatici degil, ayni zamanda onu uretmeyi ve
+baglamayi hizlandiran bir editor kurulumu da eklenmistir.
+\texttt{GamificationSetup} araci tek tikla:
+
+\begin{enumerate}[nosep]
+    \item \texttt{TaskDefinition} asset'lerini olusturur veya yukler,
+    \item Ghost avatar'i ana avatarin kopyasi olarak sahneye ekler,
+    \item Demo keyframe ve sequence asset'lerini otomatik uretir,
+    \item Klinik onerili gorev sirasi icin bir \texttt{SessionConfigSO} hazirlar,
+    \item UI, skor ve gorev yonetimi bilesenlerini birbirine baglar.
+\end{enumerate}
+
+Ozellikle \texttt{CreateOrUpdateAutoDemoSequences()} akisinda,
+varsayilan demo kutuphanesindeki pozlar ghost avatar'a uygulanmakta,
+ardindan her biri birer \texttt{PoseSnapshotSO} asset'i olarak yakalanmakta
+ve ilgili \texttt{PoseSequenceSO} icine yazilmaktadir. Bu yontem, editorde
+olusturulan gosterim verisinin tekrar kullanilabilir ve surdurulebilir
+olmasini saglar.
+
+\subsection{Klinik Oturum Sirasi ile Butunlesme}
+
+Demo sistemi yalnizca gorsel bir yardimci degil, ayni zamanda gorev akisini
+standardize eden oturum yapisinin parcasi haline getirilmistir.
+\texttt{SessionConfigSO.SortTasksByClinicalRecommendation()} ile gorevler,
+klinik oncelige gore asagidaki gibi dizilmektedir:
+
+\begin{center}
+\textit{Standing $\rightarrow$ LandingScreen $\rightarrow$ MiniSquat
+$\rightarrow$ SingleLegSquat $\rightarrow$ ModifiedYBalanceAnterior
+$\rightarrow$ Lean gorevleri $\rightarrow$ SingleLegBalance
+$\rightarrow$ WalkSimulation}
+\end{center}
+
+Bu siralama, daha fazla diz fleksiyonu ve valgus gozlemi gerektiren
+gorevleri oturumun erken asamasina alarak tarama kalitesini artirmayi
+hedeflemektedir.
+
+% ================================================================
+\section{Kol Takibini Daha Stabil Hale Getiren Ust Ekstremite Sistemi}
+\label{sec:arm}
+
+Hafta~4'te ust ekstremite calismalari, ``kol takip edilsin'' seviyesinden
+``kol takibi daha kararli, yorumlanabilir ve avatara aktarilabilir
+olsun'' seviyesine tasinmistir. Bu kapsamdaki ana katmanlar:
+\texttt{UpperLimbKinematicsUI}, \texttt{IUpperLimbKinematicsSource},
+\texttt{UpperLimbAvatarPoseFollower}, \texttt{UpperLimbAvatarRetargeter}
+ve donanimsiz test icin \texttt{UpperLimbKinematicsTestSource}'dur.
+
+\subsection{Omuz Referans Cercevesinin Secimi}
+
+Kol izleme sistemlerinde en onemli sorunlardan biri, omuz hareketlerinin hangi
+referans cercevesine gore yorumlanacagidir. Sadece dunya eksenlerine gore
+olculen ust kol rotasyonlari, kullanici govdesi dondugunde veya HMD yonu
+degistiginde kararsiz gorunebilir. Bu nedenle sistemde omuz referansi uc kademeli
+olarak secilir:
+
+\begin{enumerate}[nosep]
+    \item Torso tracker varsa ve takipteyse: \textbf{birincil referans},
+    \item Torso tracker yoksa: HMD veya alternatif omuz referansi,
+    \item Ikisi de yoksa: dunya eksenleri.
+\end{enumerate}
+
+Bu secim, \texttt{ResolveShoulderFrame()} mantigi ile yapilir. Sonuc olarak
+omuz abduksiyon acisi ve goreli rotasyonlar, kullanicinin govdesine daha bagli
+ve daha anlamli bicimde uretilir.
+
+\subsection{Kalibrasyon Tabanli Goreli Rotasyonlar}
+
+Sistem, onkol tracker'i, ust kol tracker'i ve el bilegi pozu arasindaki iliskiyi
+mutlak dunya rotasyonlariyla degil, kalibrasyonla sifirlanmis goreli rotasyonlarla
+hesaplar. Temel iliskiler sunlardir:
+
+\begin{align}
+    Q_{\text{wrist,rel}} &= Q_{\text{forearmTracker}}^{-1} Q_{\text{wrist}}
+    \label{eq:wrist_rel} \\
+    Q_{\text{elbow,rel}} &= Q_{\text{upperArmTracker}}^{-1} Q_{\text{forearmTracker}}
+    \label{eq:elbow_rel} \\
+    Q_{\text{shoulder,rel}} &= Q_{\text{ref}}^{-1} Q_{\text{upperArmTracker}}
+    \label{eq:shoulder_rel}
+\end{align}
+
+Kalibrasyon aninda olculen notr rotasyonlar $Q_{\text{neutral}}$ olarak
+kaydedilir ve calisma zamaninda:
+
+\begin{equation}
+    \Delta Q = Q_{\text{neutral}}^{-1} Q_{\text{rel}}
+    \label{eq:delta_q}
+\end{equation}
+
+seklinde sifir referansli hareket elde edilir. Bu, kullanicinin tracker'i kola
+tam ideal acida takmamis oldugu durumlarda bile sistemin ayni anatomik pozu
+tekrar tekrar benzer sekilde yorumlamasini saglar.
+
+\subsection{Eklem Pozlarinin Yeniden Kurulmasi}
+
+El bilegi pozu OpenXR el izleme verisinden, dirsek ve omuz pozlari ise
+anatomik uzunluklar ve tracker eksenleri kullanilarak turetilir. Forearm
+yonu $\hat{f}$ ve upper-arm yonu $\hat{u}$ olmak uzere:
+
+\begin{align}
+    \mathbf{p}_{\text{elbow}} &= \mathbf{p}_{\text{wrist}} + \hat{f}\,L_f
+    \label{eq:elbow_pos} \\
+    \mathbf{p}_{\text{shoulder}} &= \mathbf{p}_{\text{elbow}} + \hat{u}\,L_u
+    \label{eq:shoulder_pos}
+\end{align}
+
+Burada $L_f$ onkol, $L_u$ ise ust kol uzunlugudur. Bu geometri sayesinde
+sistem yalnizca aci okumakla kalmaz; ayni zamanda omuz-dirsek-bilek zincirini
+uzayda yeniden kurarak gorsellestirme ve avatar yansitma katmanlarini besler.
+
+\subsection{Pose Follower ve Retargeter Katmani}
+
+Kararlilik yalnizca veri uretiminde degil, verinin gorsel modele aktariminda da
+gereklidir. Bu nedenle iki farkli sunum katmani eklenmistir:
+
+\begin{table}[H]
+\centering
+\caption{Ust ekstremite gorsellestirme katmanlari}
+\label{tab:ustextremite_katman}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Bilesen} & \textbf{Islev} \\
+\midrule
+\texttt{UpperLimbAvatarPoseFollower} & Dunya uzayinda hesaplanan omuz-dirsek-bilek pozlarini dogrudan preview rig'e uygular \\
+\texttt{UpperLimbAvatarRetargeter} & Goreli omuz/dirsek/bilek rotasyonlarini farkli bir avatar kol hiyerarsisine aktarir \\
+\texttt{UpperLimbKinematicsSource} & Bu iki bilesen icin ortak veri sozlesmesini tanimlar \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\texttt{UpperLimbAvatarPoseFollower}, takipten gelen eklem pozlarini
+istenirse bir \texttt{previewRoot} altina yeniden esitler. Bu esitleme,
+kaynak omuz referans pozu ile hedef preview koku arasinda bir donusum
+matrisi tanimlayarak yapilir:
+
+\begin{equation}
+    M_{\text{map}} = T_{\text{preview}}\,T_{\text{sourceRef}}^{-1}
+    \label{eq:preview_map}
+\end{equation}
+
+Bu sayede ayni takip verisi, kullanicidan farkli bir konumda duran ghost veya
+uzak avatar uzerinde de bozulmadan gosterilebilir.\
+\texttt{UpperLimbAvatarRetargeter} ise segment uzunluklarini degil, dogrudan
+kalibrasyon-sonrasi goreli rotasyonlari uyguladigi icin farkli avatar oranlarinda
+bile daha kararlı bir gorunum sunar.
+
+\subsection{Donanimsiz Test ve Stabilize Up-Vector Mantigi}
+
+Canli tracker verisi olmadan gelistirme yapabilmek icin
+\texttt{UpperLimbKinematicsTestSource} yazilmistir. Bu bilesen,
+sentetik omuz sallanimi ve dirsek fleksiyonu uretir; boylece pose follower,
+retargeter ve gorsellestirme katmani editor icinde test edilebilir.
+
+Bu test kaynaginda ileri yon vektoru ile uyumlu bir ``up'' vektoru elde etmek
+icin projeksiyon ve onceki kare bilgisi birlikte kullanilir. $\mathbf{u}_{t-1}$
+onceki kareden gelen onbellekli up vektoru olmak uzere:
+
+\begin{equation}
+    \mathbf{u}_t = \mathrm{normalize}\left(\mathrm{Slerp}(\mathbf{u}_{t-1},\;\Pi_{\perp \mathbf{f}}(\mathbf{u}_{\text{aday}}),\;0.5)\right)
+    \label{eq:stable_up}
+\end{equation}
+
+Bu yaklasim, ani eksen ters donmelerini ve segment mesh'lerinde gorulebilen
+titremeyi azaltir. Dolayisiyla hafta~4 calismasi sadece ``poz hesaplama''
+degil, ayni zamanda \textbf{stabil sunum} katmanini da kurmustur.
+
+% ================================================================
+\section{Bitirme Tezi Taslaginin Hazirlanmasi}
+\label{sec:thesis}
+
+Hafta~4'un ucuncu buyuk ciktisi, projenin daginik teknik notlarini tek bir
+akademik omurgada toplayan bitirme tezi taslagidir. Hazirlanan
+\texttt{BitirmeTezi\_Taslak.tex} dosyasi, universitenin tez formatina uygun
+kapak, onsoz, etik beyanname, ozet, simgeler dizini ve bolumlendirme duzenine
+sahiptir.
+
+\subsection{Taslagin Akademik Islevi}
+
+Bu belge yalnizca ``ileride yazilacak tez icin bos bir kabuk'' degildir.
+Mevcut durumda bile;
+
+\begin{itemize}[nosep]
+    \item proje amacini,
+    \item teknik mimariyi,
+    \item alt ekstremite ve full-body alt sistemlerini,
+    \item oyunlastirilmis gorev motorunu,
+    \item temel ciktilari, sinirliliklari ve gelecek calismalari
+\end{itemize}
+
+tek bir savunulabilir akista toplamaktadir.
+
+\subsection{Taslakta Yer Alan Ana Bolumler}
+
+\begin{table}[H]
+\centering
+\caption{Bitirme tezi taslaginin ana bolumleri}
+\label{tab:tez_bolumleri}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Bolum} & \textbf{Icerik} \\
+\midrule
+On kisim & Kapaklar, onsoz, etik beyanname, ozet, sekiller/tablolar dizini, kisaltmalar \\
+\texttt{Genel Bilgiler} & Giris, problem tanimi, motivasyon, literatur ve teknik arka plan \\
+\texttt{Yapilan Calismalar} & Sistem hedefleri, yazilim mimarisi, alt sistemler, gorev motoru ve gelisim asamalari \\
+\texttt{Bulgular ve Tartisma} & Elde edilen teknik ciktilar, katkilar ve sinirliliklar \\
+\texttt{Sonuclar} & Genel degerlendirme ve gelecek calismalar \\
+Ekler & Gorev protokolu, acik birakilan alanlar, deneysel dogrulama plani \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu yapinin onemi sudur: hafta hafta gelistirilen teknik bilesenler artik
+ayri notlar halinde kalmamakta, tek bir akademik anlatinin parcasi haline
+gelmektedir. Ozellikle \texttt{Yazilim mimarisi}, \texttt{Alt ekstremite ROM alt
+sistemi}, \texttt{Full-body avatar ve IK alt sistemi} ve
+\texttt{Oyunlastirilmis tarama ve gorev motoru} basliklari, proje kod tabaninin
+tez duzeyinde savunulabilir bir sekilde aktarilmasini saglamaktadir.
+
+\subsection{Hafta 4 Acisindan Anlami}
+
+Hafta~4'te yazilan tez taslagi iki nedenle kritik bir esik olusturur:
+
+\begin{enumerate}[nosep]
+    \item Proje bundan sonra yalnizca teknik olarak calisan bir prototip degil,
+          ayni zamanda \textbf{raporlanabilir bir bitirme calismasi} haline gelmistir.
+    \item Sonraki haftalarda uretilecek deneysel sonuc, ekran goruntusu ve
+          dogrulama verileri icin hazir bir belge iskeleti olusmustur.
+\end{enumerate}
+
+Kisacasi, bu hafta yalnizca yeni bir ozellik eklenmemis; projenin akademik
+teslim yolu da somutlastirilmistir.
+
+% ================================================================
+\section{Hafta 4 ciktilari ve Degerlendirme}
+\label{sec:sonuc}
+
+Hafta~4 sonunda proje uc farkli eksende ilerlemistir:
+
+\begin{table}[H]
+\centering
+\caption{Hafta 4 somut ciktilari}
+\label{tab:week4_outputs}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Cikti} & \textbf{Saglanan fayda} \\
+\midrule
+Ghost avatar demo sistemi & Kullaniciya gorevi metinle degil hareketle gosterebilme \\
+Pose/sequence asset modeli & Demo hareketlerini kod degistirmeden guncelleyebilme \\
+Editor otomasyonu & Sahne kurulumu ve gorev asset uretimini hizlandirma \\
+Ust ekstremite referans cercevesi & Omuz/dirsek/bilek verisini daha anlamli ve daha stabil yorumlama \\
+Pose follower + retargeter & Takip verisini farkli avatar ve preview rig'lerde guvenli gosterme \\
+Tez taslagi & Projenin akademik teslimine hazir bir yapi kazandirma \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu haftanin genel sonucu, sistemin yalnizca hesap yapan bir XR prototipi olmaktan
+cikarak; kullaniciyi yonlendiren, cikan veriyi daha tutarli gosteren ve
+akademik olarak savunulabilir bicimde kayda gecirilen bir calisma haline
+gelmesidir.
+
+Bir sonraki mantikli adimlar sunlardir:
+
+\begin{enumerate}[nosep]
+    \item Ghost avatar gosterimlerinin gercek kullanici oturumlarinda anlasilabilirlik acisindan gozlenmesi,
+    \item Ust ekstremite hattinin canli tracker oturumlarinda tekrar edilebilirlik testleriyle dogrulanmasi,
+    \item Tez taslagina nicel deney sonuclari, ekran goruntuleri ve kaynakca son halinin eklenmesi.
+\end{enumerate}
+
+\end{document}

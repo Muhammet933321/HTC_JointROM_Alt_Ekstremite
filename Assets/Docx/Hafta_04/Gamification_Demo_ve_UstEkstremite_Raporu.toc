@@ -1,0 +1,19 @@
+\babel@toc {turkish}{}\relax 
+\contentsline {section}{\numberline {1}Rapor Kapsami ve Hafta 3 Uzerine Eklenenler}{1}{section.1}%
+\contentsline {section}{\numberline {2}Ornek Hareketleri Gosteren Sistem}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}ScriptableObject Tabanli Poz Veri Modeli}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Pozlar Arasi Gecis Mantigi}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Varsayilan Gorev Kutuphanesi}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Editor Otomasyonu ve Ghost Avatar Uretimi}{3}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Klinik Oturum Sirasi ile Butunlesme}{3}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Kol Takibini Daha Stabil Hale Getiren Ust Ekstremite Sistemi}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Omuz Referans Cercevesinin Secimi}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Kalibrasyon Tabanli Goreli Rotasyonlar}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Eklem Pozlarinin Yeniden Kurulmasi}{4}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Pose Follower ve Retargeter Katmani}{5}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Donanimsiz Test ve Stabilize Up-Vector Mantigi}{5}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Bitirme Tezi Taslaginin Hazirlanmasi}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Taslagin Akademik Islevi}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Taslakta Yer Alan Ana Bolumler}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Hafta 4 Acisindan Anlami}{6}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Hafta 4 ciktilari ve Degerlendirme}{6}{section.5}%
