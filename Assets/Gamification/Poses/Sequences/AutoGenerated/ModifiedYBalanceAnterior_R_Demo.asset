@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62402b6d194c3f04f91fead141e42c9e, type: 3}
+  m_Name: ModifiedYBalanceAnterior_R_Demo
+  m_EditorClassIdentifier: 
+  sequenceName: ModifiedYBalanceAnterior_R_Demo
+  descriptionTR: "mY-Balance \xD6n Uzanma (Sa\u011F) icin otomatik uretilen ghost
+    demo sekansi."
+  loop: 1
+  transitionSpeedOverride: 2
+  keyframes:
+  - {fileID: 11400000, guid: bbb3b9f4fb4f8f84195199f5aad4c9f4, type: 2}
+  - {fileID: 11400000, guid: 33476230a74e63e48a2b191a0893e01e, type: 2}
+  - {fileID: 11400000, guid: 7e7d08750bdcd6941adb5459054137a9, type: 2}

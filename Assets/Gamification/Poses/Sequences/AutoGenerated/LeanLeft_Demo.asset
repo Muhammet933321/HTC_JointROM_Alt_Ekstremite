@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62402b6d194c3f04f91fead141e42c9e, type: 3}
+  m_Name: LeanLeft_Demo
+  m_EditorClassIdentifier: 
+  sequenceName: LeanLeft_Demo
+  descriptionTR: "Sola E\u011Filme icin otomatik uretilen ghost demo sekansi."
+  loop: 1
+  transitionSpeedOverride: 2
+  keyframes:
+  - {fileID: 11400000, guid: 568d1ce4fbc495d489ff7d3da3a5b4d2, type: 2}
+  - {fileID: 11400000, guid: 676fd410dbab56d419852ccb6c51c5ba, type: 2}
+  - {fileID: 11400000, guid: ebd89fcd017f21547bf8e5887fb04a59, type: 2}

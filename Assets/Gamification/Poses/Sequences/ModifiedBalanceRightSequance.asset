@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62402b6d194c3f04f91fead141e42c9e, type: 3}
+  m_Name: ModifiedBalanceRightSequance
+  m_EditorClassIdentifier: 
+  sequenceName: ModifiedBalanceRightSequance
+  descriptionTR: 
+  loop: 1
+  transitionSpeedOverride: -1
+  keyframes:
+  - {fileID: 11400000, guid: 5b69094f5810bc545a428ff459e6e9e8, type: 2}
+  - {fileID: 11400000, guid: e4f08f97974888c4dad0679a787ad5b2, type: 2}
+  - {fileID: 11400000, guid: 1ffa3c35abca5d74e99227de82f20794, type: 2}
+  - {fileID: 11400000, guid: e4f08f97974888c4dad0679a787ad5b2, type: 2}
+  - {fileID: 11400000, guid: 5b69094f5810bc545a428ff459e6e9e8, type: 2}

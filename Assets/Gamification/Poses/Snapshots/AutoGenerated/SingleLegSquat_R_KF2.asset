@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 277a521c653cd454aa437149a4514b93, type: 3}
+  m_Name: SingleLegSquat_R_KF2
+  m_EditorClassIdentifier: 
+  poseName: SingleLegSquat_R_KF2
+  descriptionTR: "Tek Ayak Squat (Sa\u011F) otomatik demo keyframe 2."
+  holdSeconds: 1.8
+  hipPosition: {x: 0.00000062584877, y: 0.8918692, z: 0.036344796}
+  hip: {x: 0.15628558, y: 0.006823576, z: -0.04308236, w: 0.98674834}
+  hasLowerSpine: 1
+  lowerSpine: {x: -0.09518078, y: 0.0016600544, z: 0.017383317, w: 0.9953069}
+  spine: {x: -0.052304078, y: 0.0018264985, z: 0.034851667, w: 0.9980212}
+  hasChest: 1
+  chest: {x: 0.06973257, y: -0.0018260117, z: 0.026113184, w: 0.99722224}
+  hasNeck: 1
+  neck: {x: 0.06039648, y: 1.1910963e-30, z: 1.968552e-29, w: 0.9981745}
+  hasHead: 1
+  head: {x: -0, y: 4.2768337e-14, z: 1.202473e-12, w: 1}
+  thighLeft: {x: 0.0026712627, y: 0.17153567, z: 0.9851742, w: -0.00038739815}
+  shinLeft: {x: -0.13148975, y: -0.000089292815, z: 0.0016194636, w: 0.9913162}
+  ankleLeft: {x: 0.48387855, y: -0.0040582675, z: -0.046031743, w: 0.87391436}
+  thighRight: {x: -0.0023079994, y: 0.39795282, z: 0.91740257, w: 0.00089598674}
+  shinRight: {x: -0.52302647, y: 0.0007328419, z: -0.0014224441, w: 0.852315}
+  ankleRight: {x: 0.60068804, y: 0.010852982, z: 0.044797875, w: 0.79815364}
+  hasLeftShoulder: 1
+  shoulderLeft: {x: 0.55010265, y: -0.43868297, z: 0.57106215, w: 0.42288578}
+  hasLeftUpperArm: 1
+  upperArmLeft: {x: 0.5251539, y: 0.277876, z: 0.22838444, w: 0.77125806}
+  hasLeftForearm: 1
+  forearmLeft: {x: 0.044701654, y: 0.0027824186, z: -0.044784743, w: 0.9979922}
+  hasLeftHand: 1
+  handLeft: {x: 0.0109003205, y: -0.044209108, z: 0.04208709, w: 0.99807584}
+  hasRightShoulder: 1
+  shoulderRight: {x: -0.5529884, y: -0.43644837, z: 0.5687412, w: -0.4245588}
+  hasRightUpperArm: 1
+  upperArmRight: {x: 0.52537125, y: -0.27781653, z: -0.22846404, w: 0.77110785}
+  hasRightForearm: 1
+  forearmRight: {x: 0.044285644, y: -0.0028691583, z: 0.04519521, w: 0.997992}
+  hasRightHand: 1
+  handRight: {x: 0.007205322, y: 0.04989304, z: -0.038197786, w: 0.9979979}

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62402b6d194c3f04f91fead141e42c9e, type: 3}
+  m_Name: SingleLegSquat_R_Demo
+  m_EditorClassIdentifier: 
+  sequenceName: SingleLegSquat_R_Demo
+  descriptionTR: "Tek Ayak Squat (Sa\u011F) icin otomatik uretilen ghost demo sekansi."
+  loop: 1
+  transitionSpeedOverride: 2
+  keyframes:
+  - {fileID: 11400000, guid: e6449bb1beac2134eb387c6b7a7eadce, type: 2}
+  - {fileID: 11400000, guid: 5ea3c987abca2594cb8413d51a61c6be, type: 2}
+  - {fileID: 11400000, guid: 005bef5852afad74b81f3227a4bdeda6, type: 2}
