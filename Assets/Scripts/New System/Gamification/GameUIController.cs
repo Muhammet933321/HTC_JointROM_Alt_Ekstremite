@@ -266,14 +266,14 @@ public class GameUIController : MonoBehaviour
         foreach (var r in results)
         {
             string reachText = TaskResult.HasReachMetric(r.TaskType)
-                ? $"  Erişim: {TaskResult.RiskLabel(r.ReachRiskScore)}"
+                ? $"  Erişim Uyarısı: {TaskResult.RiskLabel(r.ReachRiskScore)}"
                 : "";
 
             sb.AppendLine($"<b>{r.TaskNameTR}</b>  →  {r.GameScore:F0} puan");
-            sb.AppendLine($"  Valgus: {TaskResult.RiskLabel(r.ValgusRiskScore)}  " +
-                          $"Denge: {TaskResult.RiskLabel(r.BalanceRiskScore)}  " +
-                          $"Asimetri: {TaskResult.RiskLabel(r.AsymmetryRiskScore)}  " +
-                          $"Fleksiyon: {TaskResult.RiskLabel(r.FlexionRiskScore)}{reachText}");
+            sb.AppendLine($"  Valgus Uyarısı: {TaskResult.RiskLabel(r.ValgusRiskScore)}  " +
+                          $"Denge Uyarısı: {TaskResult.RiskLabel(r.BalanceRiskScore)}  " +
+                          $"Asimetri Uyarısı: {TaskResult.RiskLabel(r.AsymmetryRiskScore)}  " +
+                          $"Fleksiyon Uyarısı: {TaskResult.RiskLabel(r.FlexionRiskScore)}{reachText}");
             if (!string.IsNullOrEmpty(r.TaskSummaryTR))
                 sb.AppendLine($"  Not: {r.TaskSummaryTR}");
             sb.AppendLine();

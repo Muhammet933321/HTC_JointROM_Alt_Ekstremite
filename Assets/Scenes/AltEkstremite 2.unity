@@ -4029,6 +4029,7 @@ GameObject:
   - component: {fileID: 257596386}
   - component: {fileID: 257596385}
   - component: {fileID: 257596384}
+  - component: {fileID: 257596394}
   m_Layer: 0
   m_Name: '[Gamification]'
   m_TagString: Untagged
@@ -4144,7 +4145,15 @@ MonoBehaviour:
   rightKneeTracker: {fileID: 0}
   leftAnkleTracker: {fileID: 0}
   rightAnkleTracker: {fileID: 0}
-  useSimulatedInput: 1
+  useAvatarBoneFallback: 1
+  avatarPelvisBone: {fileID: 693157439}
+  leftHipBone: {fileID: 693157429}
+  leftKneeBone: {fileID: 693157428}
+  leftAnkleBone: {fileID: 693157427}
+  rightHipBone: {fileID: 767220106}
+  rightKneeBone: {fileID: 767220105}
+  rightAnkleBone: {fileID: 767220104}
+  useSimulatedInput: 0
   simLeftValgus: 0
   simRightValgus: 0
   simLeftKneeFlexion: 0
@@ -4269,6 +4278,33 @@ MonoBehaviour:
   playDuringMeasurement: 1
   transitionSpeed: 2
   neutralPose: {fileID: 11400000, guid: e8ed77a2b3b5a4246b3926e238e3b1b5, type: 2}
+--- !u!114 &257596394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 257596383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d44e0b828e4f348a548cb5d5e3857f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  biometrics: {fileID: 257596387}
+  calibrator: {fileID: 1203307847}
+  trackingManager: {fileID: 1203307848}
+  ikSolver: {fileID: 1194146646}
+  hmdTransform: {fileID: 308494379}
+  showPanelOnStart: 1
+  panelDistance: 1.45
+  panelVerticalOffset: -0.18
+  panelUpdateInterval: 0.1
+  autoRecordAfterCalibration: 1
+  autoRecordDurationSeconds: 180
+  sampleInterval: 0.1
+  outputFolder: Diagnostics
+  enableControllerShortcuts: 1
+  controllerHoldDuration: 1.5
 --- !u!4 &257596393
 Transform:
   m_ObjectHideFlags: 0
@@ -6128,7 +6164,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &347987456
 Transform:
   m_ObjectHideFlags: 0
@@ -15243,6 +15279,10 @@ PrefabInstance:
     - target: {fileID: -8711249884731782722, guid: 88891bcf811751644a306e9e6557c84c, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0.99987924
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 88891bcf811751644a306e9e6557c84c, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 88891bcf811751644a306e9e6557c84c, type: 3}
       propertyPath: m_LocalPosition.x

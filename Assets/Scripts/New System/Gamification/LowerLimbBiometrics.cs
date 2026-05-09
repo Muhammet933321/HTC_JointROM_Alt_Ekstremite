@@ -13,6 +13,7 @@ using UnityEngine;
 ///   leftAnkleTracker  – lateral malleolus level
 ///   rightAnkleTracker – lateral malleolus level
 /// </summary>
+[DefaultExecutionOrder(200)]
 public class LowerLimbBiometrics : MonoBehaviour
 {
     // ───────────────────────── Tracker References ─────────────────────────
@@ -32,6 +33,27 @@ public class LowerLimbBiometrics : MonoBehaviour
 
     [Tooltip("Right ankle tracker. If null, right valgus is not computed.")]
     public Transform rightAnkleTracker;
+
+    [Header("=== Avatar Bone Fallback (3 Tracker / IK) ===")]
+    [Tooltip("If knee trackers are missing, use the calibrated IK avatar bones as the angle source.")]
+    public bool useAvatarBoneFallback = true;
+
+    [Tooltip("Avatar pelvis/hips bone. Used for pelvis sway and body forward fallback.")]
+    public Transform avatarPelvisBone;
+
+    [Tooltip("Left upper-leg/hip bone, e.g. mixamorig:LeftUpLeg.")]
+    public Transform leftHipBone;
+    [Tooltip("Left knee/shin bone, e.g. mixamorig:LeftLeg.")]
+    public Transform leftKneeBone;
+    [Tooltip("Left ankle/foot bone, e.g. mixamorig:LeftFoot.")]
+    public Transform leftAnkleBone;
+
+    [Tooltip("Right upper-leg/hip bone, e.g. mixamorig:RightUpLeg.")]
+    public Transform rightHipBone;
+    [Tooltip("Right knee/shin bone, e.g. mixamorig:RightLeg.")]
+    public Transform rightKneeBone;
+    [Tooltip("Right ankle/foot bone, e.g. mixamorig:RightFoot.")]
+    public Transform rightAnkleBone;
 
     // ───────────────────────── Simulated Input (Editor) ─────────────────────────
 
@@ -100,10 +122,23 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// <summary>Modified Y-Balance anterior reach while standing on the right leg (% approximate leg length).</summary>
     public float RightStanceAnteriorReachPct { get; private set; }
 
-    /// <summary>True when at least pelvis + one knee + one ankle on each side are available.</summary>
-    public bool IsBilateralAvailable =>
-        pelvisTracker != null && leftKneeTracker != null && rightKneeTracker != null
-        && leftAnkleTracker != null && rightAnkleTracker != null;
+    /// <summary>True when both sides have hip-knee-ankle points from trackers or avatar fallback.</summary>
+    public bool IsBilateralAvailable => IsLeftLegAvailable && IsRightLegAvailable;
+
+    /// <summary>True when the left side has enough points for valgus/flexion calculations.</summary>
+    public bool IsLeftLegAvailable { get; private set; }
+
+    /// <summary>True when the right side has enough points for valgus/flexion calculations.</summary>
+    public bool IsRightLegAvailable { get; private set; }
+
+    /// <summary>True when the left side used avatar bones instead of direct knee tracker data this frame.</summary>
+    public bool IsUsingLeftAvatarFallback { get; private set; }
+
+    /// <summary>True when the right side used avatar bones instead of direct knee tracker data this frame.</summary>
+    public bool IsUsingRightAvatarFallback { get; private set; }
+
+    /// <summary>Short runtime source summary for diagnostics and build validation.</summary>
+    public string DataSourceSummaryTR { get; private set; } = "Kaynak bekleniyor";
 
     // ───────────────────────── Private State ─────────────────────────
 
@@ -113,7 +148,7 @@ public class LowerLimbBiometrics : MonoBehaviour
 
     // ───────────────────────── Unity Lifecycle ─────────────────────────
 
-    private void Update()
+    private void LateUpdate()
     {
         if (useSimulatedInput)
         {
@@ -132,6 +167,12 @@ public class LowerLimbBiometrics : MonoBehaviour
 
     private void ApplySimulatedValues()
     {
+        IsLeftLegAvailable = true;
+        IsRightLegAvailable = true;
+        IsUsingLeftAvatarFallback = false;
+        IsUsingRightAvatarFallback = false;
+        DataSourceSummaryTR = "Simulasyon verisi";
+
         LeftValgusAngle = simLeftValgus;
         RightValgusAngle = simRightValgus;
         LeftKneeFlexion = simLeftKneeFlexion;
@@ -157,25 +198,26 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// </summary>
     private void ComputeValgusAngles()
     {
-        if (pelvisTracker == null) return;
+        bool leftAvailable = TryGetLegPoints(true, out Vector3 leftHip, out Vector3 leftKnee, out Vector3 leftAnkle, out bool leftFallback);
+        bool rightAvailable = TryGetLegPoints(false, out Vector3 rightHip, out Vector3 rightKnee, out Vector3 rightAnkle, out bool rightFallback);
 
-        LeftValgusAngle = pelvisTracker != null && leftKneeTracker != null && leftAnkleTracker != null
-            ? ComputeValgusForSide(pelvisTracker.position, leftKneeTracker.position, leftAnkleTracker.position, isLeft: true)
+        LeftValgusAngle = leftAvailable
+            ? ComputeValgusForSide(leftHip, leftKnee, leftAnkle, isLeft: true)
             : 0f;
 
-        RightValgusAngle = pelvisTracker != null && rightKneeTracker != null && rightAnkleTracker != null
-            ? ComputeValgusForSide(pelvisTracker.position, rightKneeTracker.position, rightAnkleTracker.position, isLeft: false)
+        RightValgusAngle = rightAvailable
+            ? ComputeValgusForSide(rightHip, rightKnee, rightAnkle, isLeft: false)
             : 0f;
+
+        IsLeftLegAvailable = leftAvailable;
+        IsRightLegAvailable = rightAvailable;
+        IsUsingLeftAvatarFallback = leftFallback;
+        IsUsingRightAvatarFallback = rightFallback;
+        UpdateDataSourceSummary();
     }
 
-    private float ComputeValgusForSide(Vector3 pelvisPos, Vector3 kneePos, Vector3 anklePos, bool isLeft)
+    private float ComputeValgusForSide(Vector3 hipCenter, Vector3 kneePos, Vector3 anklePos, bool isLeft)
     {
-        // Approximate hip center: pelvis centre offset laterally by ~10 cm each side
-        float lateralOffset = isLeft ? -0.10f : 0.10f;
-        Vector3 right = Vector3.Cross(worldUp, Vector3.forward).normalized;
-        if (right.sqrMagnitude < 0.001f) right = Vector3.right;
-        Vector3 hipCenter = pelvisPos + right * lateralOffset;
-
         Vector3 vFemur = kneePos - hipCenter;
         Vector3 vTibia = anklePos - kneePos;
 
@@ -184,9 +226,7 @@ public class LowerLimbBiometrics : MonoBehaviour
         // Project onto frontal plane (remove forward/back component, keep left/right + up/down)
         // Frontal plane normal ≈ forward axis of the person.
         // We use world forward as approximation; for full accuracy, pelvis tracker's forward would be used.
-        Vector3 forward = pelvisTracker != null
-            ? pelvisTracker.forward
-            : Vector3.forward;
+        Vector3 forward = GetForwardReference();
 
         Vector3 femurFrontal = Vector3.ProjectOnPlane(vFemur, forward).normalized;
         Vector3 tibiaFrontal = Vector3.ProjectOnPlane(vTibia, forward).normalized;
@@ -209,12 +249,12 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// </summary>
     private void ComputeKneeFlexion()
     {
-        LeftKneeFlexion = (pelvisTracker != null && leftKneeTracker != null && leftAnkleTracker != null)
-            ? ComputeFlexionForSide(pelvisTracker.position, leftKneeTracker.position, leftAnkleTracker.position)
+        LeftKneeFlexion = TryGetLegPoints(true, out Vector3 leftHip, out Vector3 leftKnee, out Vector3 leftAnkle, out _)
+            ? ComputeFlexionForSide(leftHip, leftKnee, leftAnkle)
             : 0f;
 
-        RightKneeFlexion = (pelvisTracker != null && rightKneeTracker != null && rightAnkleTracker != null)
-            ? ComputeFlexionForSide(pelvisTracker.position, rightKneeTracker.position, rightAnkleTracker.position)
+        RightKneeFlexion = TryGetLegPoints(false, out Vector3 rightHip, out Vector3 rightKnee, out Vector3 rightAnkle, out _)
+            ? ComputeFlexionForSide(rightHip, rightKnee, rightAnkle)
             : 0f;
     }
 
@@ -237,14 +277,14 @@ public class LowerLimbBiometrics : MonoBehaviour
 
     private void ComputeSwayMetrics()
     {
-        if (pelvisTracker == null)
+        if (!TryGetPelvisPoint(out Vector3 pelvisPosition))
         {
             PelvisSwayRMS = 0f;
             SwayVelocity = 0f;
             return;
         }
 
-        Vector3 pos = pelvisTracker.position;
+        Vector3 pos = pelvisPosition;
         Vector3 posXZ = new Vector3(pos.x, 0f, pos.z);
 
         // Velocity
@@ -295,48 +335,125 @@ public class LowerLimbBiometrics : MonoBehaviour
 
     private void ComputeReachMetrics()
     {
-        if (pelvisTracker == null || leftAnkleTracker == null || rightAnkleTracker == null)
+        if (!TryGetLegPoints(true, out Vector3 leftHip, out _, out Vector3 leftAnkle, out _) ||
+            !TryGetLegPoints(false, out Vector3 rightHip, out _, out Vector3 rightAnkle, out _))
         {
             LeftStanceAnteriorReachPct = 0f;
             RightStanceAnteriorReachPct = 0f;
             return;
         }
 
-        Vector3 forward = Vector3.ProjectOnPlane(pelvisTracker.forward, worldUp);
+        Vector3 forward = Vector3.ProjectOnPlane(GetForwardReference(), worldUp);
         if (forward.sqrMagnitude < 1e-6f) forward = Vector3.forward;
         forward.Normalize();
 
-        LeftStanceAnteriorReachPct = ComputeAnteriorReachPct(isLeftStance: true, forward);
-        RightStanceAnteriorReachPct = ComputeAnteriorReachPct(isLeftStance: false, forward);
+        LeftStanceAnteriorReachPct = ComputeAnteriorReachPct(leftHip, leftAnkle, rightAnkle, forward);
+        RightStanceAnteriorReachPct = ComputeAnteriorReachPct(rightHip, rightAnkle, leftAnkle, forward);
     }
 
-    private float ComputeAnteriorReachPct(bool isLeftStance, Vector3 forward)
+    private float ComputeAnteriorReachPct(Vector3 stanceHip, Vector3 stanceAnkle, Vector3 reachAnkle, Vector3 forward)
     {
-        Transform stanceAnkle = isLeftStance ? leftAnkleTracker : rightAnkleTracker;
-        Transform reachAnkle = isLeftStance ? rightAnkleTracker : leftAnkleTracker;
-
-        if (stanceAnkle == null || reachAnkle == null) return 0f;
-
-        Vector3 deltaXZ = Vector3.ProjectOnPlane(reachAnkle.position - stanceAnkle.position, worldUp);
+        Vector3 deltaXZ = Vector3.ProjectOnPlane(reachAnkle - stanceAnkle, worldUp);
         float anteriorReach = Mathf.Max(0f, Vector3.Dot(deltaXZ, forward));
-        float legLength = ComputeApproxLegLength(isLeftStance, forward);
+        float legLength = Vector3.Distance(stanceHip, stanceAnkle);
 
         return legLength > 0.01f
             ? 100f * anteriorReach / legLength
             : 0f;
     }
 
-    private float ComputeApproxLegLength(bool isLeft, Vector3 forward)
+    private bool TryGetLegPoints(bool isLeft, out Vector3 hip, out Vector3 knee, out Vector3 ankle, out bool usingAvatarFallback)
     {
-        Transform ankle = isLeft ? leftAnkleTracker : rightAnkleTracker;
-        if (ankle == null || pelvisTracker == null) return 0f;
+        usingAvatarFallback = false;
 
+        Transform kneeTracker = isLeft ? leftKneeTracker : rightKneeTracker;
+        Transform ankleTracker = isLeft ? leftAnkleTracker : rightAnkleTracker;
+        if (pelvisTracker != null && kneeTracker != null && ankleTracker != null)
+        {
+            hip = ComputeApproxHipCenter(pelvisTracker.position, GetForwardReference(), isLeft);
+            knee = kneeTracker.position;
+            ankle = ankleTracker.position;
+            return true;
+        }
+
+        Transform hipBone = isLeft ? leftHipBone : rightHipBone;
+        Transform kneeBone = isLeft ? leftKneeBone : rightKneeBone;
+        Transform ankleBone = isLeft ? leftAnkleBone : rightAnkleBone;
+        if (useAvatarBoneFallback && hipBone != null && kneeBone != null && ankleBone != null)
+        {
+            hip = hipBone.position;
+            knee = kneeBone.position;
+            ankle = ankleBone.position;
+            usingAvatarFallback = true;
+            return true;
+        }
+
+        hip = Vector3.zero;
+        knee = Vector3.zero;
+        ankle = Vector3.zero;
+        return false;
+    }
+
+    private bool TryGetPelvisPoint(out Vector3 pelvisPosition)
+    {
+        if (useAvatarBoneFallback && avatarPelvisBone != null && (leftKneeTracker == null || rightKneeTracker == null))
+        {
+            pelvisPosition = avatarPelvisBone.position;
+            return true;
+        }
+
+        if (pelvisTracker != null)
+        {
+            pelvisPosition = pelvisTracker.position;
+            return true;
+        }
+
+        if (useAvatarBoneFallback && avatarPelvisBone != null)
+        {
+            pelvisPosition = avatarPelvisBone.position;
+            return true;
+        }
+
+        pelvisPosition = Vector3.zero;
+        return false;
+    }
+
+    private Vector3 GetForwardReference()
+    {
+        Transform reference = useAvatarBoneFallback && avatarPelvisBone != null && (leftKneeTracker == null || rightKneeTracker == null)
+            ? avatarPelvisBone
+            : pelvisTracker;
+
+        Vector3 forward = reference != null ? reference.forward : Vector3.forward;
+        forward = Vector3.ProjectOnPlane(forward, worldUp);
+        if (forward.sqrMagnitude < 1e-6f) forward = Vector3.forward;
+        return forward.normalized;
+    }
+
+    private Vector3 ComputeApproxHipCenter(Vector3 pelvisPos, Vector3 forward, bool isLeft)
+    {
         Vector3 lateral = Vector3.Cross(worldUp, forward).normalized;
         if (lateral.sqrMagnitude < 1e-6f) lateral = Vector3.right;
 
         float lateralOffset = isLeft ? -0.10f : 0.10f;
-        Vector3 hipCenter = pelvisTracker.position + lateral * lateralOffset;
-        return Vector3.Distance(hipCenter, ankle.position);
+        return pelvisPos + lateral * lateralOffset;
+    }
+
+    private void UpdateDataSourceSummary()
+    {
+        if (!IsLeftLegAvailable && !IsRightLegAvailable)
+        {
+            DataSourceSummaryTR = "Gecersiz: hip-knee-ankle kaynagi yok";
+            return;
+        }
+
+        if (IsUsingLeftAvatarFallback || IsUsingRightAvatarFallback)
+        {
+            DataSourceSummaryTR = "Avatar IK kemik fallback";
+            return;
+        }
+
+        DataSourceSummaryTR = "Tracker pelvis+knee+ankle";
     }
 
     // ───────────────────────── Gizmos ─────────────────────────

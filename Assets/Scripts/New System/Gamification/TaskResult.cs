@@ -4,19 +4,22 @@ using System;
 /// Immutable data container for the outcome of a single gamification task.
 /// All risk scores are in [0, 1]; game score is in [0, 100].
 ///
-/// Evidence-based scoring — key literature:
-///   [Hewett 2005]  Peak knee abduction moment predicts ACL injury. Valgus >8-10° = risk zone.
-///   [Numata 2017]  2-D DKV cut-off ~10° identifies high-risk female athletes.
+/// Evidence-informed movement-pattern scoring — key literature:
+///   [Hewett 2005]  Peak knee abduction moment is an ACL risk marker; this system uses kinematic proxies, not KAM.
+///   [Numata 2017]  2-D DKV cut-off ~10° supports a valgus warning zone in female athletes.
 ///   [Tamura 2017]  Mean (habitual) valgus reflects neuromuscular control quality.
 ///   [Saki 2024]    Bilateral activation asymmetry between limbs is an independent risk factor.
-///   [Maki 1990]    COP velocity > 2 cm/s predicts falls better than RMS displacement alone.
-///   [Kaptein 2006] Sway velocity fraction reflects reactive (perturbation) balance control.
-///   [Read 2019]    LESS / jump-landing screens are the most practical validated field tools in youth cohorts.
+///   [Maki 1990]    COP velocity informs balance-risk rationale; current implementation uses pelvis sway proxy.
+///   [Kaptein 2006] Sway velocity fraction reflects reactive balance-control rationale.
+///   [Read 2019]    LESS / jump-landing screens are practical field tools; this is not a full LESS score.
 ///   [O'Connor 2020, Bennett 2022] Modified Y-Balance is supportive, but should not be used as a sole injury classifier.
 /// </summary>
 [Serializable]
 public class TaskResult
 {
+    public const string InterpretationScopeTR =
+        "Adolesan/genc sporcularda alt ekstremite hareket-risk paterni taramasi; tani veya tek basina yaralanma tahmini degildir.";
+
     // ───────────────────────── Identity ─────────────────────────
 
     public TaskType TaskType;
@@ -94,7 +97,7 @@ public class TaskResult
     public float ReachRiskScore;
 
     /// <summary>
-    /// Weighted total risk. Weights are task-type-specific (evidence-based matrix).
+    /// Weighted total movement-pattern risk. Weights are task-type-specific and evidence-informed.
     /// </summary>
     public float TotalRiskScore;
 
@@ -103,7 +106,7 @@ public class TaskResult
     /// </summary>
     public float GameScore;
 
-    /// <summary>4-zone clinical grade: Yeşil / Sarı / Turuncu / Kırmızı.</summary>
+    /// <summary>4-zone screening grade: Yeşil / Sarı / Turuncu / Kırmızı.</summary>
     public string RiskGrade;
 
     /// <summary>Short Turkish interpretation string used in UI/report summaries.</summary>
@@ -391,10 +394,10 @@ public class TaskResult
 
     public static string RiskLabel(float risk)
     {
-        if (risk < 0.25f) return "Düşük Risk";
-        if (risk < 0.50f) return "Orta Risk";
-        if (risk < 0.75f) return "Yüksek Risk";
-        return "Kritik Risk";
+        if (risk < 0.25f) return "Düşük Uyarı";
+        if (risk < 0.50f) return "Orta Uyarı";
+        if (risk < 0.75f) return "Yüksek Uyarı";
+        return "Kritik Uyarı";
     }
 
     public static string GetRiskGrade(float totalRisk)

@@ -92,7 +92,7 @@ public class SessionReportWriter : MonoBehaviour
             "TaskType,TaskName,Duration_s," +
             "MeanValgusL_deg,MeanValgusR_deg,MaxValgusL_deg,MaxValgusR_deg," +
             "MeanFlexL_deg,MeanFlexR_deg,MaxFlexL_deg,MaxFlexR_deg," +
-            "MeanSwayRMS_mm,MeanSwayVelocity_ms," +
+            "MeanSwayRMS_mm,MeanSwayVelocity_mps," +
             "SymmetryIndex_pct,MaxLeftStanceAnteriorReach_pct,MaxRightStanceAnteriorReach_pct," +
             "ValgusRisk,AsymmetryRisk,FlexionRisk,BalanceRisk,ReachRisk,TotalRisk," +
             "GameScore,TaskSummaryTR");
@@ -144,6 +144,7 @@ public class SessionReportWriter : MonoBehaviour
         var sb = new StringBuilder();
         sb.AppendLine("{");
         sb.AppendLine($"  \"sessionTimestamp\": \"{timestamp}\",");
+        sb.AppendLine($"  \"interpretationScopeTR\": \"{EscapeJson(TaskResult.InterpretationScopeTR)}\",");
         sb.AppendLine($"  \"taskCount\": {results.Count},");
         sb.AppendLine("  \"tasks\": [");
 
@@ -159,7 +160,7 @@ public class SessionReportWriter : MonoBehaviour
             sb.AppendLine($"      \"valgus\": {{ \"meanL\": {F(r.MeanValgusLeft)}, \"meanR\": {F(r.MeanValgusRight)}, \"maxL\": {F(r.MaxValgusLeft)}, \"maxR\": {F(r.MaxValgusRight)} }},");
             sb.AppendLine($"      \"flexion\": {{ \"meanL\": {F(r.MeanFlexLeft)}, \"meanR\": {F(r.MeanFlexRight)}, \"maxL\": {F(r.MaxFlexLeft)}, \"maxR\": {F(r.MaxFlexRight)} }},");
             sb.AppendLine($"      \"swayRMS_mm\": {F(r.MeanSwayRMS * 1000f)},");
-            sb.AppendLine($"      \"swayVelocity\": {F(r.MeanSwayVelocity)},");
+            sb.AppendLine($"      \"swayVelocity_mps\": {F(r.MeanSwayVelocity)},");
             sb.AppendLine($"      \"symmetryIndex\": {F(r.SymmetryIndex)},");
             sb.AppendLine($"      \"reach\": {{ \"leftStancePct\": {F(r.MaxLeftStanceAnteriorReachPct)}, \"rightStancePct\": {F(r.MaxRightStanceAnteriorReachPct)} }},");
             sb.AppendLine($"      \"risks\": {{ \"valgus\": {F(r.ValgusRiskScore)}, \"asymmetry\": {F(r.AsymmetryRiskScore)}, \"flexion\": {F(r.FlexionRiskScore)}, \"balance\": {F(r.BalanceRiskScore)}, \"reach\": {F(r.ReachRiskScore)}, \"total\": {F(r.TotalRiskScore)} }},");

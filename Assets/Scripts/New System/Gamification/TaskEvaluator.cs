@@ -39,6 +39,7 @@ public class TaskEvaluator : MonoBehaviour
     private readonly List<float> _si      = new();
     private readonly List<float> _reachLeftStance  = new();
     private readonly List<float> _reachRightStance = new();
+    private float _collectedDuration;
 
     // ───────────────────────── Unity ─────────────────────────
 
@@ -59,6 +60,8 @@ public class TaskEvaluator : MonoBehaviour
     private void Update()
     {
         if (!IsCollecting || biometrics == null) return;
+
+        _collectedDuration += Time.deltaTime;
 
         _valgusL.Add(biometrics.LeftValgusAngle);
         _valgusR.Add(biometrics.RightValgusAngle);
@@ -102,7 +105,7 @@ public class TaskEvaluator : MonoBehaviour
             return TaskResult.Compute(
                 taskType: task.taskType,
                 taskNameTR: task.taskNameTR,
-                measuredDurationSec: 0f,
+                measuredDurationSec: _collectedDuration,
                 meanValgusLeft: 0f,
                 meanValgusRight: 0f,
                 maxValgusLeft: 0f,
@@ -121,12 +124,10 @@ public class TaskEvaluator : MonoBehaviour
                 landingFlexionTargetDeg: task.landingFlexionTargetDeg);
         }
 
-        float measuredDuration = _valgusL.Count * Time.deltaTime;
-
         return TaskResult.Compute(
             taskType:           task.taskType,
             taskNameTR:         task.taskNameTR,
-            measuredDurationSec: measuredDuration,
+            measuredDurationSec: _collectedDuration,
 
             meanValgusLeft:  Mean(_valgusL),
             meanValgusRight: Mean(_valgusR),
@@ -159,6 +160,7 @@ public class TaskEvaluator : MonoBehaviour
         _si.Clear();
         _reachLeftStance.Clear();
         _reachRightStance.Clear();
+        _collectedDuration = 0f;
     }
 
     private static float Mean(List<float> list)

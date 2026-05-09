@@ -143,6 +143,7 @@ Bu not, projeye eklenen yeni tarama sistemlerinin neyi ölçtüğünü, kullanı
   ## Kullanım Mantığı
 
 - Bu ekranlar tanı koymak için değil, risk paterni taramak için kullanılır.
+  - Puanlama formülleri, görev ağırlıkları, güvenli tez ifadeleri ve literatür sınırları için `Gamification_Scoring_Evidence_Matrix_TR.md` dokümanı referans alınmalıdır.
 - En savunulabilir ifade:
   - "Kullanıcıda yüksek dinamik diz valgusu paterni izlendi."
   - "Kullanıcıda yük kabulü sırasında sert iniş stratejisi izlendi."
