@@ -167,8 +167,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 0.1, g: 0.1, b: 0.1, a: 0.7}
   m_RaycastTarget: 1
@@ -4030,6 +4030,7 @@ GameObject:
   - component: {fileID: 257596385}
   - component: {fileID: 257596384}
   - component: {fileID: 257596394}
+  - component: {fileID: 257596395}
   m_Layer: 0
   m_Name: '[Gamification]'
   m_TagString: Untagged
@@ -4054,6 +4055,11 @@ MonoBehaviour:
   sequencer: {fileID: 257596391}
   biometrics: {fileID: 257596387}
   gameUI: {fileID: 257596385}
+  ikSolver: {fileID: 1194146646}
+  reportWriter: {fileID: 257596388}
+  replayRecorder: {fileID: 257596395}
+  requireReportWriterForSession: 1
+  requireReplayRecorderForSession: 1
   calibrationPanel: {fileID: 1070417036}
   trackerStatusText: {fileID: 1276603568}
   calibrationInstructText: {fileID: 81467575}
@@ -4295,16 +4301,48 @@ MonoBehaviour:
   trackingManager: {fileID: 1203307848}
   ikSolver: {fileID: 1194146646}
   hmdTransform: {fileID: 308494379}
-  showPanelOnStart: 1
+  showPanelOnStart: 0
   panelDistance: 1.45
   panelVerticalOffset: -0.18
   panelUpdateInterval: 0.1
-  autoRecordAfterCalibration: 1
+  autoRecordAfterCalibration: 0
   autoRecordDurationSeconds: 180
   sampleInterval: 0.1
   outputFolder: Diagnostics
-  enableControllerShortcuts: 1
+  enableControllerShortcuts: 0
   controllerHoldDuration: 1.5
+--- !u!114 &257596395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 257596383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87c3a1c0424642c1bfa5d6d080d13995, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  gameFlow: {fileID: 257596384}
+  sequencer: {fileID: 257596391}
+  evaluator: {fileID: 257596390}
+  reportWriter: {fileID: 257596388}
+  calibrator: {fileID: 1203307847}
+  trackingManager: {fileID: 1203307848}
+  ikSolver: {fileID: 1194146646}
+  biometrics: {fileID: 257596387}
+  autoRecordSession: 1
+  outputFolder: Replays
+  sampleRateHz: 30
+  recordSourceDevices: 1
+  recordIkTargets: 1
+  recordAvatarBones: 1
+  recordAdditionalRecordables: 1
+  recordMetrics: 1
+  recordCountdownAndRestFrames: 1
+  flushInterval: 60
+  autoFindRecordables: 1
+  additionalRecordables: []
 --- !u!4 &257596393
 Transform:
   m_ObjectHideFlags: 0

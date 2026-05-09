@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -528,6 +529,42 @@ public class FullBodyIKSolver : MonoBehaviour
     }
 
     public bool IsCalibrated => _calibrated;
+
+    public void GetReplayAvatarBones(List<Transform> bones, List<string> ids)
+    {
+        if (bones == null || ids == null) return;
+
+        bones.Clear();
+        ids.Clear();
+
+        AddReplayBone(bones, ids, "avatar/hips", hipsBone);
+        AddReplayBone(bones, ids, "avatar/spine", spineBone);
+        AddReplayBone(bones, ids, "avatar/spine1", spine1Bone);
+        AddReplayBone(bones, ids, "avatar/spine2", spine2Bone);
+        AddReplayBone(bones, ids, "avatar/neck", neckBone);
+        AddReplayBone(bones, ids, "avatar/head", headBone);
+        AddReplayBone(bones, ids, "avatar/leftShoulder", leftShoulderBone);
+        AddReplayBone(bones, ids, "avatar/leftUpperArm", leftUpperArmBone);
+        AddReplayBone(bones, ids, "avatar/leftForeArm", leftForeArmBone);
+        AddReplayBone(bones, ids, "avatar/leftHand", leftHandBone);
+        AddReplayBone(bones, ids, "avatar/rightShoulder", rightShoulderBone);
+        AddReplayBone(bones, ids, "avatar/rightUpperArm", rightUpperArmBone);
+        AddReplayBone(bones, ids, "avatar/rightForeArm", rightForeArmBone);
+        AddReplayBone(bones, ids, "avatar/rightHand", rightHandBone);
+        AddReplayBone(bones, ids, "avatar/leftUpLeg", leftUpLegBone);
+        AddReplayBone(bones, ids, "avatar/leftLeg", leftLegBone);
+        AddReplayBone(bones, ids, "avatar/leftFoot", leftFootBone);
+        AddReplayBone(bones, ids, "avatar/rightUpLeg", rightUpLegBone);
+        AddReplayBone(bones, ids, "avatar/rightLeg", rightLegBone);
+        AddReplayBone(bones, ids, "avatar/rightFoot", rightFootBone);
+    }
+
+    private static void AddReplayBone(List<Transform> bones, List<string> ids, string id, Transform bone)
+    {
+        if (bone == null) return;
+        ids.Add(id);
+        bones.Add(bone);
+    }
 
     /// <summary>
     /// Aligns IK target transforms to the avatar's current bone transforms.

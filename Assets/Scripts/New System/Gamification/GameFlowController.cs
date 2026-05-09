@@ -48,6 +48,14 @@ public class GameFlowController : MonoBehaviour
     public LowerLimbBiometrics biometrics;
     public GameUIController gameUI;
 
+    [Header("=== Release Validation ===")]
+    public FullBodyIKSolver ikSolver;
+    public SessionReportWriter reportWriter;
+    public ReplayRecorder replayRecorder;
+
+    [SerializeField] private bool requireReportWriterForSession = true;
+    [SerializeField] private bool requireReplayRecorderForSession = true;
+
     // ───────────────────────── Calibration Panel UI ─────────────────────────
 
     [Header("=== Calibration Panel ===")]
@@ -101,6 +109,8 @@ public class GameFlowController : MonoBehaviour
 
     private void Awake()
     {
+        AutoFindDependencies();
+
         // Disable the calibrator's own Update loop text — we drive the UI ourselves
         if (calibrator != null)
             calibrator.OnCalibrationComplete += HandleCalibrationComplete;
@@ -346,11 +356,12 @@ public class GameFlowController : MonoBehaviour
             return;
         }
 
-        if (!HasCompletedCalibration())
+        if (!ValidateSessionReadiness(out string readinessMessage))
         {
-            Debug.LogWarning("[GameFlowController] Kalibrasyon tamamlanmadan oturum başlatılamaz.");
-            ReturnToCalibration();
-            SetText(calibrationStatusText, "Kalibrasyon tamamlanmadan oturum başlatılamaz.");
+            Debug.LogWarning($"[GameFlowController] Oturum başlatılamaz: {readinessMessage}");
+            if (!HasCompletedCalibration())
+                ReturnToCalibration();
+            SetText(calibrationStatusText, readinessMessage);
             return;
         }
 
@@ -360,7 +371,68 @@ public class GameFlowController : MonoBehaviour
 
     private bool HasCompletedCalibration()
     {
-        return simulatedMode || (calibrator != null && calibrator.IsCalibrated);
+        if (simulatedMode) return true;
+
+        bool calibratorReady = calibrator != null && calibrator.IsCalibrated;
+        bool ikReady = ikSolver != null && ikSolver.IsCalibrated;
+        bool trackersReady = trackingManager != null && trackingManager.IsAssigned;
+        return calibratorReady && ikReady && trackersReady;
+    }
+
+    private bool ValidateSessionReadiness(out string message)
+    {
+        AutoFindDependencies();
+
+        if (sequencer == null)
+        {
+            message = "TaskSequencer atanmamış; oturum başlatılamaz.";
+            return false;
+        }
+
+        bool hasTasks = sequencer.sessionConfig != null
+            ? sequencer.sessionConfig.tasks != null && sequencer.sessionConfig.tasks.Count > 0
+            : sequencer.taskSequence != null && sequencer.taskSequence.Count > 0;
+        if (!hasTasks)
+        {
+            message = "Oturum görev listesi boş; TaskSequencer sessionConfig veya taskSequence doldurulmalı.";
+            return false;
+        }
+
+        if (!HasCompletedCalibration())
+        {
+            message = "Kalibrasyon, IK ve tracker ataması tamamlanmadan oturum başlatılamaz.";
+            return false;
+        }
+
+        if (!simulatedMode && biometrics != null && biometrics.useSimulatedInput)
+        {
+            message = "Biometrics simulatedInput açık; gerçek headset oturumu için kapalı olmalı.";
+            return false;
+        }
+
+        if (requireReportWriterForSession && reportWriter == null)
+        {
+            message = "SessionReportWriter bulunamadı; görev sonuç raporu kaydedilemez.";
+            return false;
+        }
+
+        if (requireReplayRecorderForSession)
+        {
+            if (replayRecorder == null)
+            {
+                message = "ReplayRecorder bulunamadı; oyun tekrarı kaydı alınamaz.";
+                return false;
+            }
+
+            if (!replayRecorder.IsReadyForSession(out string replayReason))
+            {
+                message = replayReason;
+                return false;
+            }
+        }
+
+        message = "Oturum hazır.";
+        return true;
     }
 
     private void ReturnToCalibration()
@@ -411,6 +483,18 @@ public class GameFlowController : MonoBehaviour
 
         Debug.Log("[GameFlowController] Biometrics tracker'ları bağlandı. " +
                   $"Pelvis=T{pelvisIdx} LeftKnee=T{leftKneeIdx} RightKnee=T{rightKneeIdx}");
+    }
+
+    private void AutoFindDependencies()
+    {
+        if (calibrator == null) calibrator = FindObjectOfType<FullBodyCalibrator>();
+        if (trackingManager == null) trackingManager = FindObjectOfType<FullBodyTrackingManager>();
+        if (sequencer == null) sequencer = FindObjectOfType<TaskSequencer>();
+        if (biometrics == null) biometrics = FindObjectOfType<LowerLimbBiometrics>();
+        if (gameUI == null) gameUI = FindObjectOfType<GameUIController>();
+        if (ikSolver == null) ikSolver = FindObjectOfType<FullBodyIKSolver>();
+        if (reportWriter == null) reportWriter = FindObjectOfType<SessionReportWriter>();
+        if (replayRecorder == null) replayRecorder = FindObjectOfType<ReplayRecorder>();
     }
 
     // ───────────────────────── Input Helpers ─────────────────────────

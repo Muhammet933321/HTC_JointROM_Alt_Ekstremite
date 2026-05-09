@@ -462,6 +462,17 @@ public class FullBodyTrackingManager : MonoBehaviour
 
     public bool IsAssigned => _assigned;
     public bool IsMappingCalibrated => _mappingCalibrated;
+    public Transform HmdTransform => hmdTransform;
+    public Transform LeftControllerTransform => leftControllerTransform;
+    public Transform RightControllerTransform => rightControllerTransform;
+    public Transform HeadIKTarget => headIKTarget;
+    public Transform LeftHandIKTarget => leftHandIKTarget;
+    public Transform RightHandIKTarget => rightHandIKTarget;
+    public Transform PelvisIKTarget => pelvisIKTarget;
+    public Transform LeftFootIKTarget => leftFootIKTarget;
+    public Transform RightFootIKTarget => rightFootIKTarget;
+    public Transform LeftKneeIKTarget => leftKneeIKTarget;
+    public Transform RightKneeIKTarget => rightKneeIKTarget;
 
     /// <summary>
     /// Returns the tracker Transform at the given index, or null if out of range / unassigned.

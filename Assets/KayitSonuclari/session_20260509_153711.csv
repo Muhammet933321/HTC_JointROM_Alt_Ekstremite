@@ -1,0 +1,16 @@
+﻿TaskType,TaskName,Duration_s,MeanValgusL_deg,MeanValgusR_deg,MaxValgusL_deg,MaxValgusR_deg,MeanFlexL_deg,MeanFlexR_deg,MaxFlexL_deg,MaxFlexR_deg,MeanSwayRMS_mm,MeanSwayVelocity_ms,SymmetryIndex_pct,MaxLeftStanceAnteriorReach_pct,MaxRightStanceAnteriorReach_pct,ValgusRisk,AsymmetryRisk,FlexionRisk,BalanceRisk,ReachRisk,TotalRisk,GameScore,TaskSummaryTR
+Standing,Dik Duruş,10.927,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,10.742,0.014,0.000,6.989,0.000,0.000,0.000,1.000,0.286,0.000,0.243,75.677,Fleksiyon stratejisi yetersiz görünüyor.
+LandingScreen,İniş Tarama,13.225,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,28.829,0.083,0.000,13.124,0.000,0.000,0.000,1.000,1.000,0.000,0.550,45.000,İniş sert; diz ve kalça bükülmesi yetersiz.
+MiniSquat,Mini Squat,16.654,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,10.187,0.029,0.000,7.847,0.000,0.000,0.000,1.000,0.443,0.000,0.339,66.149,Fleksiyon stratejisi yetersiz görünüyor.
+SingleLegSquat_R,Tek Ayak Squat (Sağ),13.323,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,39.827,0.109,0.000,24.619,9.429,0.000,0.000,1.000,1.000,0.000,0.600,40.000,Squat derinliği yetersiz; güvenli yük kabulü sınırlı.
+SingleLegSquat_L,Tek Ayak Squat (Sol),12.758,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,34.253,0.099,0.000,11.299,42.793,0.000,0.000,1.000,1.000,0.000,0.600,40.000,Squat derinliği yetersiz; güvenli yük kabulü sınırlı.
+ModifiedYBalanceAnterior_R,mY-Balance Ön Uzanma (Sağ),12.315,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,20.999,0.060,0.000,32.323,4.698,0.000,0.000,1.000,1.000,1.000,0.800,20.000,Uzanma mesafesi kısa ve stance denge kontrolü zayıf.
+ModifiedYBalanceAnterior_L,mY-Balance Ön Uzanma (Sol),12.655,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,40.446,0.098,0.000,16.140,36.481,0.000,0.000,1.000,1.000,1.000,0.800,20.000,Uzanma mesafesi kısa ve stance denge kontrolü zayıf.
+LeanRight,Sağa Eğilme,8.109,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,20.987,0.045,0.000,8.901,0.000,0.000,0.000,1.000,0.892,0.000,0.412,58.777,Denge kontrolü öncelikli takip gerektiriyor.
+LeanLeft,Sola Eğilme,8.386,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,20.059,0.063,0.000,8.105,10.117,0.000,0.000,1.000,1.000,0.000,0.450,55.000,Denge kontrolü öncelikli takip gerektiriyor.
+LeanForward,Öne Eğilme,4.723,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,20.544,0.059,0.000,8.876,0.000,0.000,0.000,1.000,1.000,0.000,0.450,55.000,Denge kontrolü öncelikli takip gerektiriyor.
+SingleLegBalance_R,Sağ Ayak Dengesi,10.446,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,24.520,0.052,0.000,4.756,15.701,0.000,0.000,1.000,1.000,0.000,0.700,30.000,Denge kontrolü öncelikli takip gerektiriyor.
+SingleLegBalance_L,Sol Ayak Dengesi,11.647,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,5.350,0.012,0.000,0.000,13.908,0.000,0.000,1.000,0.143,0.000,0.228,77.154,Fleksiyon stratejisi yetersiz görünüyor.
+WalkSimulation,Yürüme Simülasyonu,13.179,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,159.763,0.353,0.000,20.983,17.892,0.000,0.000,1.000,1.000,0.000,0.400,60.000,Denge kontrolü öncelikli takip gerektiriyor.
+
+Session Average,,,,,,,,,,,,,,,,,,,,,,49.443,

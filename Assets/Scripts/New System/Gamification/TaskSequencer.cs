@@ -41,6 +41,12 @@ public class TaskSequencer : MonoBehaviour
     /// <summary>Fired when the complete session finishes.</summary>
     public event Action<List<TaskResult>> OnSessionCompleted;
 
+    /// <summary>Fired when a session coroutine starts running.</summary>
+    public event Action OnSessionStarted;
+
+    /// <summary>Fired when a running session is stopped before normal completion.</summary>
+    public event Action OnSessionStopped;
+
     /// <summary>Countdown tick: fires each second with remaining count (3, 2, 1).</summary>
     public event Action<int> OnCountdownTick;
 
@@ -113,6 +119,7 @@ public class TaskSequencer : MonoBehaviour
             _sessionCoroutine = null;
         }
 
+        OnSessionStopped?.Invoke();
         ResetState();
         Debug.Log("[TaskSequencer] Session stopped by user.");
     }
@@ -134,6 +141,7 @@ public class TaskSequencer : MonoBehaviour
     {
         IsRunning = true;
         CurrentTaskIndex = -1;
+        OnSessionStarted?.Invoke();
 
         for (int i = 0; i < taskSequence.Count; i++)
         {

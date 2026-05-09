@@ -1,0 +1,16 @@
+﻿TaskType,TaskName,Duration_s,MeanValgusL_deg,MeanValgusR_deg,MaxValgusL_deg,MaxValgusR_deg,MeanFlexL_deg,MeanFlexR_deg,MaxFlexL_deg,MaxFlexR_deg,MeanSwayRMS_mm,MeanSwayVelocity_mps,SymmetryIndex_pct,MaxLeftStanceAnteriorReach_pct,MaxRightStanceAnteriorReach_pct,ValgusRisk,AsymmetryRisk,FlexionRisk,BalanceRisk,ReachRisk,TotalRisk,GameScore,TaskSummaryTR
+Standing,Dik Duruş,10.003,-0.298,-0.369,-0.084,-0.107,9.180,8.448,15.216,14.844,3.964,0.009,8.479,0.065,1.382,0.001,0.000,0.000,0.106,0.000,0.053,99.704,Belirgin bir yüksek-risk paterni görülmedi.
+LandingScreen,İniş Tarama,12.016,-7.965,-6.254,1.497,7.503,32.341,30.213,86.599,87.857,30.078,0.117,16.436,4.599,8.580,0.150,0.429,0.000,1.000,0.000,0.282,71.848,İnişten sonra denge toparlanması yavaş.
+MiniSquat,Mini Squat,15.026,-4.273,-5.893,1.693,2.275,33.061,29.691,89.226,88.434,25.578,0.062,20.444,2.248,5.276,0.015,0.696,0.000,1.000,0.000,0.310,68.974,Denge kontrolü öncelikli takip gerektiriyor.
+SingleLegSquat_R,Tek Ayak Squat (Sağ),12.008,-27.083,2.317,0.654,12.522,61.635,12.942,105.430,54.207,43.513,0.108,101.747,58.245,12.061,0.435,0.000,0.000,1.000,0.000,0.424,57.595,Tek ayak squat sırasında denge kontrolü zayıf.
+SingleLegSquat_L,Tek Ayak Squat (Sol),12.019,1.498,-7.550,13.382,3.970,15.741,42.675,61.012,98.039,60.787,0.139,80.801,8.665,46.328,0.480,0.000,0.000,1.000,0.000,0.442,55.805,Tek ayak squat sırasında denge kontrolü zayıf.
+ModifiedYBalanceAnterior_R,mY-Balance Ön Uzanma (Sağ),12.006,-3.069,1.666,14.742,11.884,23.835,14.504,68.813,74.074,48.306,0.111,80.809,28.913,97.170,0.273,0.000,0.000,1.000,0.000,0.355,64.532,Reach sırasında salınım arttı; dinamik denge zorlandı.
+ModifiedYBalanceAnterior_L,mY-Balance Ön Uzanma (Sol),11.996,1.406,-0.846,14.284,1.447,19.235,13.202,67.926,63.813,48.104,0.109,65.059,88.283,15.584,0.527,0.000,0.000,1.000,0.000,0.405,59.465,Reach sırasında salınım arttı; dinamik denge zorlandı.
+LeanRight,Sağa Eğilme,8.009,-9.294,6.844,-0.474,28.093,12.880,10.817,33.091,29.178,12.427,0.043,15.908,6.418,1.225,0.760,0.394,0.000,0.785,0.000,0.601,39.889,Valgus kontrolü öncelikli takip gerektiriyor.
+LeanLeft,Sola Eğilme,8.019,0.453,-5.511,2.574,0.999,13.660,11.612,29.201,32.923,29.976,0.077,20.216,4.862,15.376,0.039,0.681,0.000,1.000,0.000,0.532,46.793,Denge kontrolü öncelikli takip gerektiriyor.
+LeanForward,Öne Eğilme,8.008,-0.876,0.021,13.026,5.507,38.941,38.645,57.816,58.056,23.840,0.060,3.105,5.993,0.415,0.449,0.000,0.000,1.000,0.000,0.485,51.519,Denge kontrolü öncelikli takip gerektiriyor.
+SingleLegBalance_R,Sağ Ayak Dengesi,10.002,-43.013,2.961,15.536,7.839,86.881,7.138,114.202,10.083,32.878,0.055,150.154,66.255,0.000,0.192,0.000,0.496,1.000,0.000,0.682,31.789,Denge kontrolü öncelikli takip gerektiriyor.
+SingleLegBalance_L,Sol Ayak Dengesi,10.001,0.437,-24.326,1.401,5.265,6.624,90.354,13.080,110.475,22.751,0.050,163.452,1.556,65.334,0.097,0.000,0.346,1.000,0.000,0.631,36.912,Denge kontrolü öncelikli takip gerektiriyor.
+WalkSimulation,Yürüme Simülasyonu,12.006,-0.557,-2.582,2.880,0.771,11.886,10.310,55.551,46.358,156.643,0.333,59.815,60.215,61.131,0.053,1.000,0.000,1.000,0.000,0.568,43.155,Denge kontrolü öncelikli takip gerektiriyor.
+
+Session Average,,,,,,,,,,,,,,,,,,,,,,55.998,
