@@ -1,0 +1,460 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{gensymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\definecolor{calibblue}{rgb}{0.08,0.22,0.58}
+\definecolor{datagreen}{rgb}{0.10,0.42,0.22}
+\definecolor{replaypurple}{rgb}{0.38,0.18,0.62}
+\definecolor{warnorange}{rgb}{0.72,0.32,0.08}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Hafta 5 -- Kalibrasyon, Veri Dogrulama, Replay ve Analiz}
+\fancyhead[R]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Hafta 5 Geliştirme Raporu:\\[4pt]
+    \textcolor{calibblue}{Zorunlu Kalibrasyon Akışı},\\[4pt]
+    \textcolor{datagreen}{Veri Doğrulama ve Kayıt Aktarımı},\\[4pt]
+    \textcolor{replaypurple}{Replay Sistemi} ve\\[4pt]
+    \textcolor{warnorange}{Detaylı Analiz Araçları}}\\[12pt]
+    {\normalsize Mayıs 2026}
+\end{center}
+
+\vspace{6pt}
+
+\begin{abstract}
+Bu rapor, proje geliştirme sürecinin beşinci haftasında tamamlanan
+kalibrasyon güvenliği, veri doğrulama, kayıt saklama, replay ve analiz
+araçları çalışmalarını belgelemektedir. Hafta~4'te sistem; ghost avatar
+demo gösterimleri, üst ekstremite takip katmanları ve tez taslağı ile
+kullanıcıya gösterilebilir ve akademik olarak raporlanabilir hale
+getirilmişti. Hafta~5'te ise odak, bu yapının gerçek build ve headset
+testlerine hazırlanmasına kaymıştır. Bu kapsamda kalibrasyon yapılmadan
+oyunun başlatılması engellenmiş, sonuçların doğru yorumlanması için
+JSON/CSV raporları ve diagnostics kayıtları incelenmiş, örnek oyun
+oturumlarından elde edilen veriler bilgisayara aktarılmış, tam oturum
+replay sistemi eklenmiş ve kopyalanan kayıtların ayrıntılı analizini
+sağlayan Unity Editor araçları geliştirilmiştir.
+\end{abstract}
+
+\tableofcontents
+\vspace{8pt}
+
+% ================================================================
+\section{Rapor Kapsamı ve Hafta 4 Üzerine Eklenenler}
+\label{sec:kapsam}
+
+Hafta~4 raporu üç ana teslim etrafında yapılandırılmıştı: görev bazlı
+örnek hareketleri gösteren ghost avatar demo sistemi, daha kararlı üst
+ekstremite takip katmanı ve bitirme tezi taslağı. Bu çalışmalar sistemin
+kullanıcıya anlatılabilir, görsel olarak yönlendirilebilir ve akademik
+biçimde raporlanabilir hale gelmesini sağlamıştı.
+
+Hafta~5'te bu temel üzerine eklenen ana fikir şudur: sistem artık yalnızca
+sahnede çalışan bir prototip değil, \textbf{kalibrasyon zorunluluğu olan},
+\textbf{oturum sonunda veri saklayan}, \textbf{headset'ten bilgisayara
+aktarılabilen}, \textbf{Unity içinde tekrar oynatılabilen} ve
+\textbf{ayrıntılı analiz edilebilen} bir araştırma aracına dönüştürülmüştür.
+
+\begin{table}[H]
+\centering
+\caption{Hafta 4 ve Hafta 5 odak farkı}
+\label{tab:hafta45}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Başlık} & \textbf{Hafta 4} & \textbf{Hafta 5} \\
+\midrule
+Kullanıcı yönlendirme & Ghost avatar ile örnek hareket gösterimi & Kalibrasyon tamamlanmadan oturum başlatmayı engelleyen akış \\
+Veri üretimi & Görev motoru ve skor hesaplama altyapısı & JSON/CSV rapor, diagnostics CSV ve replay veri paketleri \\
+Test yaklaşımı & Editor ve sahne kurulum odaklı doğrulama & Build/headset örnek oturumları ve kopyalanan kayıtların incelenmesi \\
+Sonradan inceleme & Tez taslağı ve raporlanabilir mimari & Replay oynatma, timeline, frame analizi ve toplu rapor export \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu haftanın çalışmaları beş somut başlıkta toplanabilir:
+
+\begin{enumerate}[nosep]
+    \item Kalibrasyon yapılmadan oyunun başlatılamaması,
+    \item Sonuç doğruluğu için rapor ve diagnostics testleri,
+    \item Örnek oyun oturumlarının oynanması ve verilerin \texttt{KayitSonuclari} klasörüne aktarılması,
+    \item Tam oturum replay kayıt ve oynatma sisteminin eklenmesi,
+    \item Kayıtların ayrıntılı incelenmesi için Unity Editor analiz araçlarının yazılması.
+\end{enumerate}
+
+% ================================================================
+\section{Kalibrasyon Yapılmadan Oyunun Başlatılamaz Hale Getirilmesi}
+\label{sec:kalibrasyon}
+
+Hafta~5'in ilk kritik düzeltmesi, oyunun kalibrasyon yapılmadan
+başlayabilmesi problemine yöneliktir. Önceki geliştirme aşamalarında editor
+testlerini kolaylaştırmak için simülasyon modu ve otomatik başlatma
+seçenekleri bulunmaktaydı. Ancak gerçek headset/build testlerinde bu durum
+araştırma verisinin güvenilirliğini zayıflatır; çünkü görev sonuçları
+kalibre edilmemiş tracker-avatar eşleşmesine dayanabilir.
+
+Bu nedenle aktif hardware sahnesinde gerçek test akışı şu şekilde
+kilitlenmiştir:
+
+\begin{center}
+\textit{Tracker bekleme $\rightarrow$ kalibrasyon yönergesi $\rightarrow$
+kalibrasyon tutma $\rightarrow$ kalibrasyon tamamlandı $\rightarrow$
+kullanıcı başlatır $\rightarrow$ oturum ve kayıt başlar}
+\end{center}
+
+\subsection{Session Başlatma Öncesi Validasyon}
+
+\texttt{GameFlowController.StartSession()} artık yalnızca
+\texttt{FullBodyCalibrator.IsCalibrated} durumuna bakmakla kalmaz; gerçek
+oturum için bir dizi hazırlık koşulunu da kontrol eder. Bu kontrol,
+kalibrasyon kapısının yalnızca görsel bir ekran değil, gerçek bir çalışma
+zamanı güvenlik bariyeri olmasını sağlar.
+
+\begin{table}[H]
+\centering
+\caption{Oturum başlatma öncesi kontrol edilen koşullar}
+\label{tab:session_gate}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Koşul} & \textbf{Amaç} \\
+\midrule
+\texttt{FullBodyCalibrator.IsCalibrated} & Kullanıcının T-poz kalibrasyonunu tamamladığını doğrulamak \\
+\texttt{FullBodyIKSolver.IsCalibrated} & Avatar IK kalibrasyonunun geçerli olduğunu doğrulamak \\
+\texttt{FullBodyTrackingManager.IsAssigned} & Trackerların pelvis/ayak rollerine atanmış olduğunu doğrulamak \\
+\texttt{LowerLimbBiometrics.useSimulatedInput = false} & Gerçek headset testinde simüle veri kullanılmasını engellemek \\
+\texttt{SessionReportWriter} & Görev sonuçlarının oturum sonunda dosyaya yazılmasını garanti etmek \\
+\texttt{ReplayRecorder} & Oyun başladığında replay kaydının alınmasını garanti etmek \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu yapı sayesinde operatör veya kullanıcı başlatma butonuna erken basarsa
+sistem oturumu başlatmaz ve kalibrasyon ekranına geri döner. Böylece
+araştırma verisine kalibrasyonsuz kayıt karışması önlenir.
+
+\subsection{Final Sahne Ayarları}
+
+Aktif oyun sahnesinde test/build akışı için yapılan temel ayarlar şunlardır:
+
+\begin{itemize}[nosep]
+    \item \texttt{GameFlowController.simulatedMode = false},
+    \item \texttt{GameFlowController.autoStartAfterCalibration = false},
+    \item \texttt{TaskSequencer.autoStartOnAwake = false},
+    \item \texttt{LowerLimbBiometrics.useSimulatedInput = false},
+    \item \texttt{SessionReportWriter.writeJson = true},
+    \item \texttt{ReplayRecorder.autoRecordSession = true}.
+\end{itemize}
+
+Ek olarak diagnostics panelinin final kullanıcı akışını karıştırmaması için
+otomatik diagnostics kaydı ve panel görünürlüğü kapatılmıştır. Diagnostics
+araçları tamamen kaldırılmamıştır; gerektiğinde test amacıyla tekrar
+açılabilecek şekilde sahnede korunmuştur.
+
+% ================================================================
+\section{Sonuç Doğruluğu İçin Testler ve Veri Yorumlama Güvenliği}
+\label{sec:dogrulama}
+
+Kalibrasyon kapısı tamamlandıktan sonra ikinci büyük çalışma, sistemin ürettiği
+sonuçların doğru yorumlanabilir olup olmadığının incelenmesidir. Burada amaç,
+sistemi tıbbi tanı koyan veya tek başına yaralanma tahmini yapan bir araç gibi
+sunmak değildir. Kullanılan ifade çerçevesi özellikle
+\textbf{alt ekstremite hareket-risk paterni taraması} olarak sınırlandırılmıştır.
+
+\subsection{JSON ve CSV Raporlarının İncelenmesi}
+
+\texttt{SessionReportWriter} oturum sonunda iki temel çıktı üretir:
+
+\begin{itemize}[nosep]
+    \item \texttt{session\_YYYYMMDD\_HHMMSS.csv},
+    \item \texttt{session\_YYYYMMDD\_HHMMSS.json}.
+\end{itemize}
+
+Bu dosyalarda her görev için süre, valgus, fleksiyon, pelvis salınımı,
+simetri indeksi, reach yüzdesi, alt risk bileşenleri, toplam risk, oyun skoru
+ve kısa Türkçe yorum saklanmaktadır. Böylece oyun sırasında görülen özet
+sonuçlar yalnızca geçici UI metni olarak kalmaz; sonradan tekrar incelenebilen
+dosyalar halinde korunur.
+
+\subsection{Üç Tracker Kurulumunda Avatar Kemik Fallback Kullanımı}
+
+Mevcut hardware kurulumunda pelvis ve iki ayak/shin tracker olmak üzere üç
+tracker kullanılmaktadır. Bu nedenle diz tracker verisi doğrudan mevcut
+değildir. Alt ekstremite açılarının hesaplanabilmesi için
+\texttt{LowerLimbBiometrics} içinde avatar IK kemik fallback hattı
+kullanılmıştır. Bu sayede kalça-diz-ayak bileği ilişkisi, canlı IK ile sürülen
+avatar kemikleri üzerinden çıkarılabilmektedir.
+
+Bu yaklaşım, özellikle diz trackerı bulunmayan build testlerinde süreklilik
+sağlar. Bununla birlikte rapor dili, bu verinin bir klinik tanı yerine
+tarama ve hareket paterni göstergesi olduğunu açıkça korur.
+
+\subsection{Diagnostics CSV ile Kalite Kontrol}
+
+Kalibrasyon ve açı doğruluğunu denemek için diagnostics CSV kayıtları da
+kullanılmıştır. Bu dosyalar örnekleme bazında aşağıdaki alanları içerir:
+
+\begin{itemize}[nosep]
+    \item kalibrasyon, IK, tracker ataması ve mapping durumları,
+    \item simülasyon girdisi açık/kapalı bilgisi,
+    \item sol/sağ bacak veri kullanılabilirliği,
+    \item avatar fallback kullanımı,
+    \item valgus, fleksiyon, sway, simetri ve reach metrikleri,
+    \item pelvis, diz ve ayak bileği pozisyon örnekleri.
+\end{itemize}
+
+Bu kayıtlar, kalibrasyonun gerçekten tamamlanıp tamamlanmadığını ve açıların
+beklenen büyüklüklerde akıp akmadığını kontrol etmek için kullanılmıştır.
+Özellikle önceki manuel marker denemelerinde controller tuş işaretinin güvenilir
+olmadığı görülmüş; bu nedenle replay bağlamında otomatik görev olayları
+birincil zaman işareti olarak tercih edilmiştir.
+
+% ================================================================
+\section{Örnek Oyun Oturumları ve Verilerin Aktarılması}
+\label{sec:kayitlar}
+
+Hafta~5 içinde örnek oyun oturumları oynanmış ve headset/build tarafından
+üretilen dosyalar bilgisayara aktarılmıştır. Bu dosyalar proje içinde
+\texttt{Assets/KayitSonuclari/} klasörü altında toplanmıştır. Böylece veri
+analizi yalnızca headset üzerinde değil, Unity Editor ve bilgisayar ortamında
+da yapılabilir hale gelmiştir.
+
+Aktarılan kayıt yapısı üç grupta ele alınabilir:
+
+\begin{table}[H]
+\centering
+\caption{Aktarılan kayıt dosyalarının türleri}
+\label{tab:kayit_turleri}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Dosya/Klasör türü} & \textbf{İçerik} \\
+\midrule
+\texttt{session\_*.json} ve \texttt{session\_*.csv} & Görev bazlı sonuçlar, riskler, skorlar ve yorumlar \\
+\texttt{replay\_*/manifest.json} & Replay metadata, oyun zamanı, scene adı, görev listesi, frame/event sayısı \\
+\texttt{replay\_*/events.jsonl} & Oturum olayları, görev başlangıç/bitişleri, countdown, rest ve \texttt{result\_ready} olayları \\
+\texttt{replay\_*/frames.jsonl} & 30 Hz avatar kemik pozları, kaynak cihaz pozları, IK target pozları ve metrik snapshotları \\
+\texttt{lower\_limb\_diagnostics\_*.csv} & Kalibrasyon/tracking/IK kalite kontrol örnekleri \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bu aktarım sürecinin önemli sonucu şudur: oyun verisi artık uygulama kapanınca
+kaybolan bir runtime durumundan çıkarılmış, bilgisayarda tekrar okunabilen ve
+raporlanabilen bir araştırma çıktısına dönüştürülmüştür.
+
+% ================================================================
+\section{Replay Sisteminin Eklenmesi}
+\label{sec:replay}
+
+Hafta~5'in en büyük teknik eklerinden biri tam oturum replay sistemidir. Bu
+sistem video kaydı üretmez; bunun yerine Unity içinde tekrar oynatılabilen
+veri paketi oluşturur. Böylece hem dosya boyutu video kaydına göre daha
+yönetilebilir kalır hem de görev adı, yönerge, zaman çizgisi, metrikler ve
+sonuç olayları aynı yapı içinde saklanır.
+
+\subsection{Kayıt Tarafı: ReplayRecorder}
+
+\texttt{ReplayRecorder}, aktif oyun sahnesindeki gamification kök objesine
+bağlanmıştır. Oturum sequencer üzerinden başladığında replay kaydı otomatik
+olarak başlar ve oturum bittiğinde finalize edilir.
+
+Kaydedilen temel veri grupları şunlardır:
+
+\begin{itemize}[nosep]
+    \item session ve görev metadata'sı,
+    \item Türkçe görev adı ve yönergeler,
+    \item countdown, görev başlangıcı, görev bitişi, rest ve session olayları,
+    \item görev sonu \texttt{result\_ready} eventleri,
+    \item HMD, kontrolcü ve tracker kaynak pozları,
+    \item IK target pozları,
+    \item final avatar kemik pozları,
+    \item canlı metrik snapshotları.
+\end{itemize}
+
+Frame kaydı varsayılan olarak 30 Hz yapılmaktadır. Replay paketinin ana
+dosyaları manifest, event ve frame kayıtlarıdır:
+\begin{center}
+\texttt{manifest.json} \quad \texttt{events.jsonl} \quad \texttt{frames.jsonl}
+\end{center}
+
+\subsection{Oynatma Tarafı: ReplayPlaybackController ve ReplayAvatarDriver}
+
+Replay oynatma tarafında iki temel bileşen geliştirilmiştir:
+
+\begin{table}[H]
+\centering
+\caption{Replay oynatma bileşenleri}
+\label{tab:replay_components}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Bileşen} & \textbf{Görev} \\
+\midrule
+\texttt{ReplayPlaybackController} & Replay klasörünü yükler, frame zaman çizgisini oynatır, UI metriklerini günceller \\
+\texttt{ReplayAvatarDriver} & Kaydedilmiş avatar kemik pozlarını sahnedeki avatar kemiklerine uygular \\
+\texttt{ReplayRecordable} & Gerekirse ek sahne objelerinin transform zincirlerini replay'e dahil eder \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Başlangıçta replay sahnesinde \texttt{Animator} bulunmaması durumunda oynatma
+aracı avatarı bulamıyordu. Hafta~5 sonunda bu durum düzeltilmiş; sistem
+\texttt{SkinnedMeshRenderer.rootBone}, seçili mesh objesi veya doğrudan
+\texttt{mixamorig...:Hips} hiyerarşisi üzerinden de kemik eşleştirebilir hale
+getirilmiştir.
+
+Ek olarak canlı sahnede \texttt{FullBodyIKSolver} aktif kalırsa, replay'in
+uyguladığı kemik pozlarını \texttt{LateUpdate} içinde tekrar bind/IK pozuna
+çekebildiği görülmüştür. Bu nedenle replay yüklenirken canlı tracking/IK
+sürücüleri kapatılmış ve replay pozlarının uygulanması geç \texttt{LateUpdate}
+aşamasına alınmıştır. Overlay üzerinde \texttt{Bones: applied/missing} satırı
+ile kemik eşleşme durumu görülebilmektedir.
+
+% ================================================================
+\section{Detaylı Analiz Aracının Yazılması}
+\label{sec:analiz}
+
+Replay sistemi veri üretimini çözerken, kopyalanan verilerin pratik biçimde
+incelenmesi için ayrıca bir Unity Editor analiz aracı yazılmıştır. Bu araçlar
+\texttt{ReplayArchiveTools.cs} içinde iki menü olarak sunulmuştur:
+
+\begin{itemize}[nosep]
+    \item \texttt{Tools/Gamification/Kayit Analizi},
+    \item \texttt{Tools/Gamification/Replay Sahnesi Hazirla}.
+\end{itemize}
+
+\subsection{Kayıt Analizi Penceresi}
+
+\texttt{Kayit Analizi} penceresi varsayılan olarak
+\texttt{Assets/KayitSonuclari/} klasörünü tarar. \texttt{.meta} dosyalarını
+yok sayar ve oturum raporları, replay paketleri ve diagnostics CSV dosyalarını
+tek listede gösterir.
+
+Replay ve session raporları birebir aynı zaman damgasına sahip olmayabilir.
+Örneğin replay başlangıç zamanı ile session raporunun yazıldığı bitiş zamanı
+farklıdır. Bu nedenle araç önce \texttt{manifest.linkedSessionReportJson}
+alanını kullanır, ardından timestamp yakınlığı ile eşleştirme yapar.
+
+Pencere içinde aşağıdaki sekmeler bulunmaktadır:
+
+\begin{table}[H]
+\centering
+\caption{Kayıt analizi penceresi sekmeleri}
+\label{tab:analysis_tabs}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Sekme} & \textbf{Gösterilen bilgiler} \\
+\midrule
+Özet & Oturum adı, süre, görev sayısı, ortalama skor, risk grade dağılımı \\
+Görevler & Her görev için skor, risk, valgus, fleksiyon, sway, simetri, reach ve yorum \\
+Timeline & \texttt{events.jsonl} içindeki countdown, task start/end, rest ve result eventleri \\
+Frame & \texttt{frames.jsonl} üzerinden stream edilen metrik aralıkları ve phase/task frame dağılımı \\
+Diagnostics & Kalibrasyon, IK, tracking, mapping sürekliliği ve fallback kullanımı \\
+Dosyalar & Replay, manifest, frame, event, session ve diagnostics dosya yolları \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Araç ayrıca seçili kayıt için veya tüm kayıtlar için rapor export edebilir.
+Çıktılar \path{Assets/KayitSonuclari/AnalizRaporlari/} altında Markdown ve CSV
+olarak üretilir.
+
+\subsection{Replay Sahnesini Otomatik Hazırlama}
+
+\texttt{Replay Sahnesi Hazirla} penceresi seçilen replay için sahnedeki gerekli
+objeleri otomatik kurar:
+
+\begin{enumerate}[nosep]
+    \item Replay klasöründe \texttt{frames.jsonl} varlığını kontrol eder,
+    \item Avatar root, mesh veya kemik hiyerarşisini bulur,
+    \item \texttt{ReplayAvatarDriver} ekler veya mevcut olanı kullanır,
+    \item \texttt{[ReplayReview]} objesini oluşturur,
+    \item \texttt{ReplayPlaybackController} ekler ve replay path'ini bağlar,
+    \item İstenirse Play Mode'a geçip replay'i otomatik başlatır.
+\end{enumerate}
+
+Bu araç, replay inceleme sürecini elle component ekleme ve path bağlama
+işlerinden kurtarmaktadır. Böylece headset'ten alınan bir oturum klasörü,
+Unity içinde birkaç tıklama ile hem analiz edilebilir hem de görsel olarak
+tekrar oynatılabilir hale gelmiştir.
+
+% ================================================================
+\section{Hafta 5 Sonunda Oluşan Nihai İş Akışı}
+\label{sec:workflow}
+
+Hafta~5 sonunda hedeflenen uçtan uca akış şu hale gelmiştir:
+
+\begin{enumerate}[nosep]
+    \item Headset/build açılır ve trackerlar beklenir.
+    \item Kullanıcı T-poz kalibrasyonunu tamamlar.
+    \item Kalibrasyon, IK ve tracker ataması geçerli değilse oyun başlatılmaz.
+    \item Kullanıcı oturumu başlatır.
+    \item Görevler sırayla oynanır ve \texttt{TaskEvaluator} her görev sonunda sonuç üretir.
+    \item \texttt{SessionReportWriter} JSON/CSV rapor yazar.
+    \item \texttt{ReplayRecorder} replay paketini finalize eder.
+    \item Dosyalar USB veya dosya aktarımı ile bilgisayara alınır.
+    \item \texttt{Kayit Analizi} aracı sonuçları ve frame/timeline verisini inceler.
+    \item \texttt{Replay Sahnesi Hazirla} aracı seçili oyunu Unity içinde tekrar oynatır.
+\end{enumerate}
+
+Bu akış, projenin araştırma açısından en önemli gereksinimini karşılar:
+oyun sırasında üretilen davranış ve skorlar yalnızca anlık UI verisi olarak
+kalmaz; kaydedilir, aktarılır, analiz edilir ve gerektiğinde görsel olarak
+yeniden oynatılır.
+
+% ================================================================
+\section{Hafta 5 Çıktıları ve Değerlendirme}
+\label{sec:sonuc}
+
+Hafta~5 sonunda proje, veri güvenilirliği ve sonradan inceleme açısından önemli
+bir eşik geçmiştir. Kalibrasyon kapısı sayesinde geçersiz başlangıçlar
+engellenmiş, örnek oyunlardan alınan JSON/CSV/replay dosyaları ile kayıt
+kalıcılığı doğrulanmış, replay sistemi ile oyun oturumları Unity içinde
+yeniden üretilebilir hale getirilmiş ve analiz aracı ile bu veriler daha
+okunabilir bir araştırma çıktısına dönüştürülmüştür.
+
+\begin{table}[H]
+\centering
+\caption{Hafta 5 somut çıktıları}
+\label{tab:week5_outputs}
+\renewcommand{\arraystretch}{1.22}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Çıktı} & \textbf{Sağlanan fayda} \\
+\midrule
+Zorunlu kalibrasyon kapısı & Kalibrasyonsuz veya simüle verili gerçek oturumların başlamasını engelleme \\
+JSON/CSV rapor doğrulaması & Görev sonuçlarının oturum sonunda kalıcı ve incelenebilir olması \\
+Diagnostics CSV incelemesi & Kalibrasyon, IK, tracking ve metrik sürekliliğini kontrol etme \\
+ReplayRecorder & Tam oturumu görev bağlamı, metrikler ve avatar pozlarıyla kaydetme \\
+ReplayPlaybackController ve ReplayAvatarDriver & Kaydedilen oyunu Unity içinde headset olmadan oynatma \\
+Kayit Analizi aracı & Aktarılan tüm kayıtları listeleme, analiz etme ve rapor export etme \\
+Replay Sahnesi Hazırlama aracı & Replay inceleme sahnesini otomatik kurma ve seçili oyunu oynatma \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Genel olarak hafta~5, sistemin prototipten araştırma verisi üreten ve ürettiği
+veriyi geriye dönük inceletebilen bir yapıya geçiş haftası olmuştur.
+
+\end{document}
