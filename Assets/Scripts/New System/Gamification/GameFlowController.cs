@@ -232,11 +232,10 @@ public class GameFlowController : MonoBehaviour
             return;
         }
 
-        // Allow re-calibration with R key or hold A/B again (calibrator still active)
+        // Allow re-calibration with R key before starting the session.
         if (Keyboard.current != null && Keyboard.current[recalibKey].wasPressedThisFrame)
         {
-            if (calibrator != null) calibrator.TriggerCalibration();
-            TransitionTo(GameState.CalibrationInstructions);
+            ReturnToCalibration();
         }
     }
 
@@ -245,7 +244,12 @@ public class GameFlowController : MonoBehaviour
         // Press A/B or Space to restart
         bool singlePress = GetStartButtonSinglePress();
         if (singlePress)
-            TransitionTo(GameState.CalibrationComplete);
+        {
+            if (simulatedMode)
+                TransitionTo(GameState.CalibrationComplete);
+            else
+                ReturnToCalibration();
+        }
     }
 
     // ───────────────────────── Transitions ─────────────────────────
@@ -341,8 +345,34 @@ public class GameFlowController : MonoBehaviour
             Debug.LogWarning("[GameFlowController] TaskSequencer atanmamış!");
             return;
         }
+
+        if (!HasCompletedCalibration())
+        {
+            Debug.LogWarning("[GameFlowController] Kalibrasyon tamamlanmadan oturum başlatılamaz.");
+            ReturnToCalibration();
+            SetText(calibrationStatusText, "Kalibrasyon tamamlanmadan oturum başlatılamaz.");
+            return;
+        }
+
         TransitionTo(GameState.SessionRunning);
         sequencer.StartSession();
+    }
+
+    private bool HasCompletedCalibration()
+    {
+        return simulatedMode || (calibrator != null && calibrator.IsCalibrated);
+    }
+
+    private void ReturnToCalibration()
+    {
+        if (calibrator != null)
+        {
+            calibrator.enabled = true;
+            calibrator.ResetCalibration();
+        }
+
+        bool trackersReady = trackingManager != null && trackingManager.IsAssigned;
+        TransitionTo(trackersReady ? GameState.CalibrationInstructions : GameState.WaitingForTrackers);
     }
 
     // ───────────────────────── Event Handlers ─────────────────────────

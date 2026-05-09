@@ -84,6 +84,7 @@ public class FullBodyCalibrator : MonoBehaviour
     private void PerformCalibration()
     {
         _holdTimer = 0f;
+        IsCalibrated = false;
 
         if (!trackingManager || !trackingManager.IsAssigned)
         {
@@ -101,6 +102,8 @@ public class FullBodyCalibrator : MonoBehaviour
             return;
         }
 
+        ikSolver.ResetCalibration();
+
         // 1. Ensure tracker data is fresh in this frame
         trackingManager.RefreshAndDriveTargetsNow();
 
@@ -112,6 +115,14 @@ public class FullBodyCalibrator : MonoBehaviour
 
         // 4. Compute rotation offsets between targets and bones
         ikSolver.Calibrate();
+
+        if (!ikSolver.IsCalibrated)
+        {
+            Debug.LogWarning("[FullBodyCalibrator] IK Solver kalibrasyonu başarısız oldu.");
+            if (calibrationStatusText)
+                calibrationStatusText.text = "Hata: IK Solver kalibrasyonu tamamlanamadı.";
+            return;
+        }
 
         if (calibrationStatusText)
             calibrationStatusText.text = "✓ Kalibrasyon tamamlandı! Hareket edebilirsiniz.";
@@ -152,11 +163,15 @@ public class FullBodyCalibrator : MonoBehaviour
     /// </summary>
     public void ResetCalibration()
     {
+        _holdTimer = 0f;
+        IsCalibrated = false;
+
         if (ikSolver)
         {
             ikSolver.ResetCalibration();
-            if (calibrationStatusText)
-                calibrationStatusText.text = "Kalibrasyon sıfırlandı. Tekrar kalibre edin.";
         }
+
+        if (calibrationStatusText)
+            calibrationStatusText.text = "Kalibrasyon sıfırlandı. Tekrar kalibre edin.";
     }
 }
