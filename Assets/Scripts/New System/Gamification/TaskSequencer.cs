@@ -143,8 +143,18 @@ public class TaskSequencer : MonoBehaviour
         CurrentTaskIndex = -1;
         OnSessionStarted?.Invoke();
 
+        float sessionStart = Time.time;
+
         for (int i = 0; i < taskSequence.Count; i++)
         {
+            if (sessionConfig != null
+                && sessionConfig.maxSessionDurationSec > 0f
+                && (Time.time - sessionStart) >= sessionConfig.maxSessionDurationSec)
+            {
+                Debug.Log("[TaskSequencer] Maksimum oturum süresi aşıldı — oturum sonlandırıldı.");
+                break;
+            }
+
             TaskDefinition task = taskSequence[i];
             if (task == null) continue;
 

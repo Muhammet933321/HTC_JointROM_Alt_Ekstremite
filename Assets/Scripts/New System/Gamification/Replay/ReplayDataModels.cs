@@ -122,6 +122,7 @@ public class ReplayFrame
     public float taskElapsedSeconds;
     public ReplayCalibrationSnapshot status;
     public ReplayMetricSnapshot metrics;
+    public bool isDataGap;
     public List<ReplayPose> sourcePoses = new();
     public List<ReplayPose> ikTargetPoses = new();
     public List<ReplayPose> avatarBonePoses = new();
@@ -159,6 +160,8 @@ public class ReplayMetricSnapshot
     public float symmetryPct;
     public float leftStanceAnteriorReachPct;
     public float rightStanceAnteriorReachPct;
+    public float leftValgusAngularVelDps;
+    public float rightValgusAngularVelDps;
 
     public static ReplayMetricSnapshot FromBiometrics(LowerLimbBiometrics biometrics)
     {
@@ -178,7 +181,9 @@ public class ReplayMetricSnapshot
             swayVelocityMps = biometrics.SwayVelocity,
             symmetryPct = biometrics.SymmetryIndex,
             leftStanceAnteriorReachPct = biometrics.LeftStanceAnteriorReachPct,
-            rightStanceAnteriorReachPct = biometrics.RightStanceAnteriorReachPct
+            rightStanceAnteriorReachPct = biometrics.RightStanceAnteriorReachPct,
+            leftValgusAngularVelDps  = biometrics.LeftValgusAngularVelocity,
+            rightValgusAngularVelDps = biometrics.RightValgusAngularVelocity
         };
     }
 }

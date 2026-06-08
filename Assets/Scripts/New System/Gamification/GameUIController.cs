@@ -276,6 +276,8 @@ public class GameUIController : MonoBehaviour
                           $"Fleksiyon Uyarısı: {TaskResult.RiskLabel(r.FlexionRiskScore)}{reachText}");
             if (!string.IsNullOrEmpty(r.TaskSummaryTR))
                 sb.AppendLine($"  Not: {r.TaskSummaryTR}");
+            if (!string.IsNullOrEmpty(r.PostureRecommendationTR))
+                sb.AppendLine($"  Öneri: {r.PostureRecommendationTR}");
             sb.AppendLine();
         }
         taskResultsListText.text = sb.ToString();

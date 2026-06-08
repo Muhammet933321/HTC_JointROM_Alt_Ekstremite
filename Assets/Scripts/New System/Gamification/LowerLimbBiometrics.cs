@@ -140,11 +140,39 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// <summary>Short runtime source summary for diagnostics and build validation.</summary>
     public string DataSourceSummaryTR { get; private set; } = "Kaynak bekleniyor";
 
+    /// <summary>Rate of change of left valgus angle (degrees/second).</summary>
+    public float LeftValgusAngularVelocity  { get; private set; }
+
+    /// <summary>Rate of change of right valgus angle (degrees/second).</summary>
+    public float RightValgusAngularVelocity { get; private set; }
+
+    /// <summary>Rate of change of left valgus angular velocity (degrees/second²).</summary>
+    public float LeftValgusAngularAcceleration  { get; private set; }
+
+    /// <summary>Rate of change of right valgus angular velocity (degrees/second²).</summary>
+    public float RightValgusAngularAcceleration { get; private set; }
+
+    /// <summary>Rate of change of left valgus angular acceleration (degrees/second³).</summary>
+    public float LeftValgusJerk  { get; private set; }
+
+    /// <summary>Rate of change of right valgus angular acceleration (degrees/second³).</summary>
+    public float RightValgusJerk { get; private set; }
+
     // ───────────────────────── Private State ─────────────────────────
 
     private readonly Queue<Vector3> _swayBuffer = new();
     private Vector3 _prevPelvisXZ;
     private bool _prevPelvisValid;
+    private float _prevLeftValgus;
+    private float _prevRightValgus;
+    private bool  _prevValgusValid;
+    private float _prevLeftAngVel, _prevRightAngVel;
+    private bool  _prevAngVelValid;
+    private float _prevLeftAngAccel, _prevRightAngAccel;
+    private bool  _prevAngAccelValid;
+    private float _lastValidLeftValgus, _lastValidRightValgus;
+    private float _lastValidLeftFlex,   _lastValidRightFlex;
+    private bool  _lastValgusValid,     _lastFlexValid;
 
     // ───────────────────────── Unity Lifecycle ─────────────────────────
 
@@ -157,6 +185,9 @@ public class LowerLimbBiometrics : MonoBehaviour
         }
 
         ComputeValgusAngles();
+        ComputeValgusAngularVelocity();
+        ComputeValgusAngularAcceleration();
+        ComputeValgusJerk();
         ComputeKneeFlexion();
         ComputeSwayMetrics();
         ComputeSymmetryIndex();
@@ -185,6 +216,12 @@ public class LowerLimbBiometrics : MonoBehaviour
             : 0f;
         LeftStanceAnteriorReachPct = simLeftStanceAnteriorReachPct;
         RightStanceAnteriorReachPct = simRightStanceAnteriorReachPct;
+        LeftValgusAngularVelocity  = 0f;
+        RightValgusAngularVelocity = 0f;
+        LeftValgusAngularAcceleration  = 0f;
+        RightValgusAngularAcceleration = 0f;
+        LeftValgusJerk  = 0f;
+        RightValgusJerk = 0f;
     }
 
     // ───────────────────────── Valgus / Varus ─────────────────────────
@@ -201,13 +238,23 @@ public class LowerLimbBiometrics : MonoBehaviour
         bool leftAvailable = TryGetLegPoints(true, out Vector3 leftHip, out Vector3 leftKnee, out Vector3 leftAnkle, out bool leftFallback);
         bool rightAvailable = TryGetLegPoints(false, out Vector3 rightHip, out Vector3 rightKnee, out Vector3 rightAnkle, out bool rightFallback);
 
-        LeftValgusAngle = leftAvailable
-            ? ComputeValgusForSide(leftHip, leftKnee, leftAnkle, isLeft: true)
-            : 0f;
+        if (leftAvailable)
+        {
+            LeftValgusAngle = ComputeValgusForSide(leftHip, leftKnee, leftAnkle, isLeft: true);
+            _lastValidLeftValgus = LeftValgusAngle;
+            _lastValgusValid = true;
+        }
+        else
+            LeftValgusAngle = _lastValgusValid ? _lastValidLeftValgus : 0f;
 
-        RightValgusAngle = rightAvailable
-            ? ComputeValgusForSide(rightHip, rightKnee, rightAnkle, isLeft: false)
-            : 0f;
+        if (rightAvailable)
+        {
+            RightValgusAngle = ComputeValgusForSide(rightHip, rightKnee, rightAnkle, isLeft: false);
+            _lastValidRightValgus = RightValgusAngle;
+            _lastValgusValid = true;
+        }
+        else
+            RightValgusAngle = _lastValgusValid ? _lastValidRightValgus : 0f;
 
         IsLeftLegAvailable = leftAvailable;
         IsRightLegAvailable = rightAvailable;
@@ -240,6 +287,44 @@ public class LowerLimbBiometrics : MonoBehaviour
         return isLeft ? -angle : angle;
     }
 
+    // ───────────────────────── Valgus Angular Velocity ─────────────────────────
+
+    private void ComputeValgusAngularVelocity()
+    {
+        if (_prevValgusValid && Time.deltaTime > 0f)
+        {
+            LeftValgusAngularVelocity  = (LeftValgusAngle  - _prevLeftValgus)  / Time.deltaTime;
+            RightValgusAngularVelocity = (RightValgusAngle - _prevRightValgus) / Time.deltaTime;
+        }
+        _prevLeftValgus  = LeftValgusAngle;
+        _prevRightValgus = RightValgusAngle;
+        _prevValgusValid = true;
+    }
+
+    private void ComputeValgusAngularAcceleration()
+    {
+        if (_prevAngVelValid && Time.deltaTime > 0f)
+        {
+            LeftValgusAngularAcceleration  = (LeftValgusAngularVelocity  - _prevLeftAngVel)  / Time.deltaTime;
+            RightValgusAngularAcceleration = (RightValgusAngularVelocity - _prevRightAngVel) / Time.deltaTime;
+        }
+        _prevLeftAngVel  = LeftValgusAngularVelocity;
+        _prevRightAngVel = RightValgusAngularVelocity;
+        _prevAngVelValid = true;
+    }
+
+    private void ComputeValgusJerk()
+    {
+        if (_prevAngAccelValid && Time.deltaTime > 0f)
+        {
+            LeftValgusJerk  = (LeftValgusAngularAcceleration  - _prevLeftAngAccel)  / Time.deltaTime;
+            RightValgusJerk = (RightValgusAngularAcceleration - _prevRightAngAccel) / Time.deltaTime;
+        }
+        _prevLeftAngAccel  = LeftValgusAngularAcceleration;
+        _prevRightAngAccel = RightValgusAngularAcceleration;
+        _prevAngAccelValid = true;
+    }
+
     // ───────────────────────── Knee Flexion ─────────────────────────
 
     /// <summary>
@@ -249,13 +334,23 @@ public class LowerLimbBiometrics : MonoBehaviour
     /// </summary>
     private void ComputeKneeFlexion()
     {
-        LeftKneeFlexion = TryGetLegPoints(true, out Vector3 leftHip, out Vector3 leftKnee, out Vector3 leftAnkle, out _)
-            ? ComputeFlexionForSide(leftHip, leftKnee, leftAnkle)
-            : 0f;
+        if (TryGetLegPoints(true, out Vector3 leftHip, out Vector3 leftKnee, out Vector3 leftAnkle, out _))
+        {
+            LeftKneeFlexion = ComputeFlexionForSide(leftHip, leftKnee, leftAnkle);
+            _lastValidLeftFlex = LeftKneeFlexion;
+            _lastFlexValid = true;
+        }
+        else
+            LeftKneeFlexion = _lastFlexValid ? _lastValidLeftFlex : 0f;
 
-        RightKneeFlexion = TryGetLegPoints(false, out Vector3 rightHip, out Vector3 rightKnee, out Vector3 rightAnkle, out _)
-            ? ComputeFlexionForSide(rightHip, rightKnee, rightAnkle)
-            : 0f;
+        if (TryGetLegPoints(false, out Vector3 rightHip, out Vector3 rightKnee, out Vector3 rightAnkle, out _))
+        {
+            RightKneeFlexion = ComputeFlexionForSide(rightHip, rightKnee, rightAnkle);
+            _lastValidRightFlex = RightKneeFlexion;
+            _lastFlexValid = true;
+        }
+        else
+            RightKneeFlexion = _lastFlexValid ? _lastValidRightFlex : 0f;
     }
 
     private static float ComputeFlexionForSide(Vector3 hipPos, Vector3 kneePos, Vector3 anklePos)
@@ -454,6 +549,34 @@ public class LowerLimbBiometrics : MonoBehaviour
         }
 
         DataSourceSummaryTR = "Tracker pelvis+knee+ankle";
+    }
+
+    // ───────────────────────── Quaternion / Rotasyon Matrisi Araçları (Q43) ─────────────────────────
+
+    /// <summary>
+    /// Quaternion'ı 4×4 rotasyon matrisine dönüştürür (standart quaternion-to-matrix formülü).
+    /// Unity'nin sütun-öncelikli (column-major) Matrix4x4 formatına uygundur.
+    /// </summary>
+    public static Matrix4x4 QuaternionToRotationMatrix(Quaternion q)
+    {
+        float x = q.x, y = q.y, z = q.z, w = q.w;
+        return new Matrix4x4(
+            new Vector4(1 - 2*(y*y + z*z),     2*(x*y + z*w),     2*(x*z - y*w), 0f),
+            new Vector4(    2*(x*y - z*w), 1 - 2*(x*x + z*z),     2*(y*z + x*w), 0f),
+            new Vector4(    2*(x*z + y*w),     2*(y*z - x*w), 1 - 2*(x*x + y*y), 0f),
+            new Vector4(0f, 0f, 0f, 1f)
+        );
+    }
+
+    /// <summary>
+    /// İki rijit cisim oryantasyonu arasındaki açıyı (derece) rotasyon matrisi üzerinden hesaplar.
+    /// Konum tabanlı hesaplamaya alternatif; Q46 karşılaştırma testleri için kullanılabilir.
+    /// </summary>
+    public static float AngleBetweenOrientations(Quaternion segA, Quaternion segB)
+    {
+        Matrix4x4 rel = QuaternionToRotationMatrix(Quaternion.Inverse(segA) * segB);
+        float trace = rel.m00 + rel.m11 + rel.m22; // 3×3 kısmın izi
+        return Mathf.Acos(Mathf.Clamp((trace - 1f) / 2f, -1f, 1f)) * Mathf.Rad2Deg;
     }
 
     // ───────────────────────── Gizmos ─────────────────────────

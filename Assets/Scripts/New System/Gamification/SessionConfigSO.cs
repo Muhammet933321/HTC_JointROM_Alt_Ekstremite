@@ -59,6 +59,10 @@ public class SessionConfigSO : ScriptableObject
     [Tooltip("Oturum başında kalibrasyon ekranını zorla (false = kalibrasyon zaten yapılmışsa atla).")]
     public bool forceRecalibrationOnStart = false;
 
+    [Tooltip("Tüm oturum için maksimum toplam süre (saniye). -1 = sınırsız.\n" +
+             "Bu süre aşıldığında mevcut görev tamamlandıktan sonra oturum sonlandırılır.")]
+    public float maxSessionDurationSec = -1f;
+
     // ═══════════════════════════════════════════════════════════════
     // RUNTIME HELPER
     // ═══════════════════════════════════════════════════════════════

@@ -39,7 +39,22 @@ public class TaskEvaluator : MonoBehaviour
     private readonly List<float> _si      = new();
     private readonly List<float> _reachLeftStance  = new();
     private readonly List<float> _reachRightStance = new();
+    private readonly List<float> _valgusVelL = new();
+    private readonly List<float> _valgusVelR = new();
+    private readonly List<float> _jerkL = new();
+    private readonly List<float> _jerkR = new();
     private float _collectedDuration;
+    private int _missingFrames;
+
+    // Eşik üzerinde kalan frame sayaçları (Q84 valgus süresi, Q89 asimetri yüzdesi)
+    private const float ValgusThresholdDeg    = 8f;
+    private const float AsymmetryThresholdPct = 10f;
+    private int _valgusLAboveCount;
+    private int _valgusRAboveCount;
+    private int _asymmetryAboveCount;
+    private int _totalFrames;
+    private const float SampleInterval = 1f / 50f; // 50 Hz sabit örnekleme (Q55)
+    private float _sampleAccumulator = 0f;
 
     // ───────────────────────── Unity ─────────────────────────
 
@@ -62,7 +77,17 @@ public class TaskEvaluator : MonoBehaviour
         if (!IsCollecting || biometrics == null) return;
 
         _collectedDuration += Time.deltaTime;
+        _sampleAccumulator += Time.deltaTime;
 
+        while (_sampleAccumulator >= SampleInterval)
+        {
+            _sampleAccumulator -= SampleInterval;
+            CollectSample();
+        }
+    }
+
+    private void CollectSample()
+    {
         _valgusL.Add(biometrics.LeftValgusAngle);
         _valgusR.Add(biometrics.RightValgusAngle);
         _flexL.Add(biometrics.LeftKneeFlexion);
@@ -72,6 +97,16 @@ public class TaskEvaluator : MonoBehaviour
         _si.Add(biometrics.SymmetryIndex);
         _reachLeftStance.Add(biometrics.LeftStanceAnteriorReachPct);
         _reachRightStance.Add(biometrics.RightStanceAnteriorReachPct);
+        _valgusVelL.Add(biometrics.LeftValgusAngularVelocity);
+        _valgusVelR.Add(biometrics.RightValgusAngularVelocity);
+        _jerkL.Add(biometrics.LeftValgusJerk);
+        _jerkR.Add(biometrics.RightValgusJerk);
+
+        if (biometrics.LeftValgusAngle  > ValgusThresholdDeg)    _valgusLAboveCount++;
+        if (biometrics.RightValgusAngle > ValgusThresholdDeg)    _valgusRAboveCount++;
+        if (biometrics.SymmetryIndex    > AsymmetryThresholdPct) _asymmetryAboveCount++;
+        if (!biometrics.IsLeftLegAvailable && !biometrics.IsRightLegAvailable) _missingFrames++;
+        _totalFrames++;
     }
 
     // ───────────────────────── Task Lifecycle Handlers ─────────────────────────
@@ -106,16 +141,11 @@ public class TaskEvaluator : MonoBehaviour
                 taskType: task.taskType,
                 taskNameTR: task.taskNameTR,
                 measuredDurationSec: _collectedDuration,
-                meanValgusLeft: 0f,
-                meanValgusRight: 0f,
-                maxValgusLeft: 0f,
-                maxValgusRight: 0f,
-                meanFlexLeft: 0f,
-                meanFlexRight: 0f,
-                maxFlexLeft: 0f,
-                maxFlexRight: 0f,
-                meanSwayRMS: 0f,
-                meanSwayVelocity: 0f,
+                meanValgusLeft: 0f, meanValgusRight: 0f,
+                maxValgusLeft: 0f,  maxValgusRight: 0f,
+                meanFlexLeft: 0f,   meanFlexRight: 0f,
+                maxFlexLeft: 0f,    maxFlexRight: 0f,
+                meanSwayRMS: 0f,    meanSwayVelocity: 0f,
                 symmetryIndex: 0f,
                 maxLeftStanceAnteriorReachPct: 0f,
                 maxRightStanceAnteriorReachPct: 0f,
@@ -124,9 +154,11 @@ public class TaskEvaluator : MonoBehaviour
                 landingFlexionTargetDeg: task.landingFlexionTargetDeg);
         }
 
+        float meanDt = _totalFrames > 0 ? _collectedDuration / _totalFrames : 0f;
+
         return TaskResult.Compute(
-            taskType:           task.taskType,
-            taskNameTR:         task.taskNameTR,
+            taskType:            task.taskType,
+            taskNameTR:          task.taskNameTR,
             measuredDurationSec: _collectedDuration,
 
             meanValgusLeft:  Mean(_valgusL),
@@ -139,15 +171,31 @@ public class TaskEvaluator : MonoBehaviour
             maxFlexLeft:     Max(_flexL),
             maxFlexRight:    Max(_flexR),
 
-            meanSwayRMS:     Mean(_sway),
+            meanSwayRMS:      Mean(_sway),
             meanSwayVelocity: Mean(_swayVel),
-            symmetryIndex:   Mean(_si),
+            symmetryIndex:    Mean(_si),
 
-                maxLeftStanceAnteriorReachPct: Max(_reachLeftStance),
-                maxRightStanceAnteriorReachPct: Max(_reachRightStance),
-                swayThreshold:   task.swayRmsThreshold,
-                targetReachPct:  task.targetReachPct,
-                landingFlexionTargetDeg: task.landingFlexionTargetDeg);
+            maxLeftStanceAnteriorReachPct:  Max(_reachLeftStance),
+            maxRightStanceAnteriorReachPct: Max(_reachRightStance),
+            swayThreshold:           task.swayRmsThreshold,
+            targetReachPct:          task.targetReachPct,
+            landingFlexionTargetDeg: task.landingFlexionTargetDeg,
+
+            // Yeni istatistikler
+            minFlexLeft:    Min(_flexL),
+            minFlexRight:   Min(_flexR),
+            stdFlexLeft:    StdDev(_flexL),
+            stdFlexRight:   StdDev(_flexR),
+            valgusLAboveThreshSec: _valgusLAboveCount * meanDt,
+            valgusRAboveThreshSec: _valgusRAboveCount * meanDt,
+            asymmetryAbovePct:     _totalFrames > 0 ? _asymmetryAboveCount * 100f / _totalFrames : 0f,
+            meanValgusAngularVelLeft:  Mean(_valgusVelL),
+            meanValgusAngularVelRight: Mean(_valgusVelR),
+            jerkRmsLeft:  StdDev(_jerkL),
+            jerkRmsRight: StdDev(_jerkR),
+            dataQualityPct: _totalFrames > 0
+                ? (1f - (float)_missingFrames / _totalFrames) * 100f
+                : 100f);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
@@ -160,7 +208,17 @@ public class TaskEvaluator : MonoBehaviour
         _si.Clear();
         _reachLeftStance.Clear();
         _reachRightStance.Clear();
+        _valgusVelL.Clear();
+        _valgusVelR.Clear();
+        _jerkL.Clear();
+        _jerkR.Clear();
         _collectedDuration = 0f;
+        _sampleAccumulator = 0f;
+        _valgusLAboveCount = 0;
+        _valgusRAboveCount = 0;
+        _asymmetryAboveCount = 0;
+        _missingFrames = 0;
+        _totalFrames = 0;
     }
 
     private static float Mean(List<float> list)
@@ -177,5 +235,22 @@ public class TaskEvaluator : MonoBehaviour
         float max = float.MinValue;
         foreach (var v in list) if (v > max) max = v;
         return max;
+    }
+
+    private static float Min(List<float> list)
+    {
+        if (list.Count == 0) return 0f;
+        float min = float.MaxValue;
+        foreach (var v in list) if (v < min) min = v;
+        return min;
+    }
+
+    private static float StdDev(List<float> list)
+    {
+        if (list.Count < 2) return 0f;
+        float mean = Mean(list);
+        float sumSq = 0f;
+        foreach (var v in list) sumSq += (v - mean) * (v - mean);
+        return Mathf.Sqrt(sumSq / list.Count);
     }
 }

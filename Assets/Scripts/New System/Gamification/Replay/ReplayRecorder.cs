@@ -293,6 +293,7 @@ public class ReplayRecorder : MonoBehaviour
             status = CreateCalibrationSnapshot(),
             metrics = recordMetrics ? ReplayMetricSnapshot.FromBiometrics(biometrics) : null
         };
+        frame.isDataGap = biometrics != null && !biometrics.IsLeftLegAvailable && !biometrics.IsRightLegAvailable;
 
         if (recordSourceDevices) CollectSourcePoses(frame.sourcePoses);
         if (recordIkTargets) CollectIkTargetPoses(frame.ikTargetPoses);

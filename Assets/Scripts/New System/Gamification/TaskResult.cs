@@ -41,11 +41,52 @@ public class TaskResult
     public float MeanFlexRight;
     public float MaxFlexLeft;
     public float MaxFlexRight;
+    public float MinFlexLeft;
+    public float MinFlexRight;
+    /// <summary>Range = Max − Min flexion for each side.</summary>
+    public float RangeFlexLeft;
+    public float RangeFlexRight;
+    /// <summary>Population standard deviation of flexion samples.</summary>
+    public float StdFlexLeft;
+    public float StdFlexRight;
 
     // ───────────────────────── Sway ─────────────────────────
 
     public float MeanSwayRMS;
     public float MeanSwayVelocity;
+
+    // ───────────────────────── Threshold Durations ─────────────────────────
+
+    /// <summary>Time left valgus exceeded 8° during the task (seconds).</summary>
+    public float ValgusLAboveThreshSec;
+    /// <summary>Time right valgus exceeded 8° during the task (seconds).</summary>
+    public float ValgusRAboveThreshSec;
+    /// <summary>Percentage of task frames where symmetry index exceeded 10%.</summary>
+    public float AsymmetryAbovePct;
+
+    // ───────────────────────── Angular Velocity ─────────────────────────
+
+    /// <summary>Mean valgus angular velocity left (degrees/second).</summary>
+    public float MeanValgusAngularVelLeft;
+    /// <summary>Mean valgus angular velocity right (degrees/second).</summary>
+    public float MeanValgusAngularVelRight;
+
+    // ───────────────────────── Jerk (Q87) ─────────────────────────
+
+    /// <summary>Population std-dev of valgus jerk samples left (degrees/second³) — proxy for neuromuscular variability.</summary>
+    public float JerkRmsLeft;
+    /// <summary>Population std-dev of valgus jerk samples right (degrees/second³).</summary>
+    public float JerkRmsRight;
+
+    // ───────────────────────── Data Quality (Q34) ─────────────────────────
+
+    /// <summary>Percentage of collected frames with valid tracker data (100% = no missing frames).</summary>
+    public float DataQualityPct;
+
+    // ───────────────────────── Posture Recommendation (Q110) ─────────────────────────
+
+    /// <summary>Turkish prescriptive recommendation based on dominant risk factor.</summary>
+    public string PostureRecommendationTR;
 
     // ───────────────────────── Symmetry ─────────────────────────
 
@@ -133,7 +174,19 @@ public class TaskResult
         float maxRightStanceAnteriorReachPct = 0f,
         float swayThreshold = 0.015f,
         float targetReachPct = 65f,
-        float landingFlexionTargetDeg = 45f)
+        float landingFlexionTargetDeg = 45f,
+        float minFlexLeft  = 0f,
+        float minFlexRight = 0f,
+        float stdFlexLeft  = 0f,
+        float stdFlexRight = 0f,
+        float valgusLAboveThreshSec = 0f,
+        float valgusRAboveThreshSec = 0f,
+        float asymmetryAbovePct = 0f,
+        float meanValgusAngularVelLeft  = 0f,
+        float meanValgusAngularVelRight = 0f,
+        float jerkRmsLeft  = 0f,
+        float jerkRmsRight = 0f,
+        float dataQualityPct = 100f)
     {
         float meanValgusSource = GetTaskSideValue(taskType, meanValgusLeft, meanValgusRight);
         float peakValgusSource = GetTaskSideValue(taskType, maxValgusLeft, maxValgusRight);
@@ -202,10 +255,26 @@ public class TaskResult
             MeanFlexRight = meanFlexRight,
             MaxFlexLeft   = maxFlexLeft,
             MaxFlexRight  = maxFlexRight,
+            MinFlexLeft   = minFlexLeft,
+            MinFlexRight  = minFlexRight,
+            RangeFlexLeft  = maxFlexLeft  - minFlexLeft,
+            RangeFlexRight = maxFlexRight - minFlexRight,
+            StdFlexLeft   = stdFlexLeft,
+            StdFlexRight  = stdFlexRight,
 
             MeanSwayRMS       = meanSwayRMS,
             MeanSwayVelocity  = meanSwayVelocity,
             SymmetryIndex     = symmetryIndex,
+
+            ValgusLAboveThreshSec = valgusLAboveThreshSec,
+            ValgusRAboveThreshSec = valgusRAboveThreshSec,
+            AsymmetryAbovePct     = asymmetryAbovePct,
+            MeanValgusAngularVelLeft  = meanValgusAngularVelLeft,
+            MeanValgusAngularVelRight = meanValgusAngularVelRight,
+            JerkRmsLeft   = jerkRmsLeft,
+            JerkRmsRight  = jerkRmsRight,
+            DataQualityPct = dataQualityPct,
+            PostureRecommendationTR = BuildPostureRecommendationTR(valgusRisk, balanceRisk, flexionRisk, asymmetryRisk),
 
             BilateralValgusAsymmetry = bilateralValgusAsym,
             MaxLeftStanceAnteriorReachPct  = maxLeftStanceAnteriorReachPct,
@@ -388,6 +457,20 @@ public class TaskResult
                     return "Fleksiyon stratejisi yetersiz görünüyor.";
                 return "Belirgin bir yüksek-risk paterni görülmedi.";
         }
+    }
+
+    private static string BuildPostureRecommendationTR(
+        float valgusRisk, float balanceRisk, float flexionRisk, float asymmetryRisk)
+    {
+        if (valgusRisk >= 0.50f)
+            return "Kalça abduktör ve kuadriseps güçlendirme egzersizleri önerilebilir.";
+        if (balanceRisk >= 0.50f)
+            return "Propriyosepsiyon ve dinamik denge egzersizleri önerilebilir.";
+        if (flexionRisk >= 0.50f)
+            return "Diz ve kalça fleksiyon açıklığını artıran mobilite çalışmaları önerilebilir.";
+        if (asymmetryRisk >= 0.50f)
+            return "Sağ-sol asimetriyi azaltmaya yönelik tek taraflı güçlendirme önerilebilir.";
+        return "Genel hareket kalitesi kabul edilebilir; koruyucu egzersizlere devam edilmesi önerilir.";
     }
 
     private static float Clamp01(float v) => Math.Max(0f, Math.Min(1f, v));
