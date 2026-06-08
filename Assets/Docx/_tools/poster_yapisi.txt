@@ -1,0 +1,114 @@
+=== FILE: poster_sablon.pptx ===
+Slide size: 20.99 x 29.7 cm
+Slide count: 1
+Slide masters: 1
+  Master[0] layouts: 11
+    Layout[0] name='Title Slide' placeholders=5
+      ph idx=0 type=CENTER_TITLE (3) name='Title 1'
+      ph idx=1 type=SUBTITLE (4) name='Subtitle 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[1] name='Title and Content' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[2] name='Section Header' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[3] name='Two Content' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=2 type=OBJECT (7) name='Content Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[4] name='Comparison' placeholders=8
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Text Placeholder 2'
+      ph idx=2 type=OBJECT (7) name='Content Placeholder 3'
+      ph idx=3 type=BODY (2) name='Text Placeholder 4'
+      ph idx=4 type=OBJECT (7) name='Content Placeholder 5'
+      ph idx=10 type=DATE (16) name='Date Placeholder 6'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 7'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 8'
+    Layout[5] name='Title Only' placeholders=4
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=10 type=DATE (16) name='Date Placeholder 2'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 3'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 4'
+    Layout[6] name='Blank' placeholders=3
+      ph idx=10 type=DATE (16) name='Date Placeholder 1'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 2'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 3'
+    Layout[7] name='Content with Caption' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=2 type=BODY (2) name='Text Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[8] name='Picture with Caption' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=PICTURE (18) name='Picture Placeholder 2'
+      ph idx=2 type=BODY (2) name='Text Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[9] name='Title and Vertical Text' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Vertical Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[10] name='Vertical Title and Text' placeholders=5
+      ph idx=0 type=TITLE (1) name='Vertical Title 1'
+      ph idx=1 type=BODY (2) name='Vertical Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+
+--- SLIDES ---
+
+Slide[0] layout='Blank' shapes=9
+  Shape[0] Picture name='Resim 2' L=0.03 T=0.01 W=20.99 H=29.69 cm
+  Shape[1] Shape name='TextBox 97' L=0.61 T=4.27 W=6.09 H=0.51 cm
+      P[0] lvl=0 sz=10.92 bold=None font=Times New Roman color=000000 text='PROJE ADI / PROJE NUMARASI'
+  Shape[2] Shape name='TextBox 98' L=10.76 T=4.11 W=4.27 H=1.45 cm
+      P[0] lvl=0 sz=10.92 bold=None font=Times New Roman color=000000 text='PROJE YÜRÜTÜCÜSÜ'
+      P[1] lvl=0 sz=10.92 bold=None font=Times New Roman color=000000 text='PROJE DANIÞMANI'
+      P[2] lvl=0 sz=10.92 bold=None font=Times New Roman color=000000 text='PROJE EKÝBÝ'
+  Shape[3] Shape name='TextBox 99' L=0.87 T=8.33 W=9.18 H=1.75 cm
+      P[0] lvl=0 sz=9.01 bold=True font=Times New Roman Bold color=000000 text='Özet '
+      P[1] lvl=0 sz=9.01 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý). '
+      P[2] lvl=0 sz=9.01 bold=None font=Times New Roman color=000000 text='Beyaz alanlar istenildiði takdirde geniþletilip daraltýlabilir.'
+      P[3] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='Bu alana projenin kýsa özetini, ele aldýðý problemi ve temel yaklaþýmýný yazýnýz.'
+      P[4] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='Anahtar kelimeleri 3–5 adet olacak þekilde özetin sonunda ekleyiniz.'
+  Shape[4] Shape name='TextBox 100' L=10.89 T=8.31 W=9.61 H=1.33 cm
+      P[0] lvl=0 sz=8.64 bold=True font=Times New Roman Bold color=000000 text='Projenin Materyali ve Yöntemi'
+      P[1] lvl=0 sz=8.64 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý) '
+      P[2] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='Yöntemi kýsa ve anlaþýlýr biçimde özetleyiniz.'
+      P[3] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='Akýþ þemasý, tablo, grafik veya görselleri bu kutuya yerleþtirebilirsiniz.'
+  Shape[5] Shape name='TextBox 101' L=0.87 T=16.06 W=9.22 H=2.31 cm
+      P[0] lvl=0 sz=8.64 bold=True font=Times New Roman Bold color=000000 text='Amaç ve Hedefler'
+      P[1] lvl=0 sz=8.64 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý)'
+      P[2] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='Bu bölümde projenin amacý, kapsamý ve ölçülebilir hedefleri maddeler halinde verilebilir.'
+      P[3] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='• Amaç'
+      P[4] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='• Hedef 1'
+      P[5] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='• Hedef 2'
+      P[6] lvl=0 sz=6.76 bold=None font=Times New Roman Italics color=60677A text='• Beklenen baþarý ölçütü'
+  Shape[6] Shape name='TextBox 104' L=10.89 T=16.06 W=9.24 H=1.0 cm
+      P[0] lvl=0 sz=8.64 bold=True font=Times New Roman Bold color=000000 text='Þekil, Grafik, Tablo'
+      P[1] lvl=0 sz=8.64 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý)'
+      P[2] lvl=0 sz=6.77 bold=True font=Times New Roman Bold color=60677A text='(Yöntemle ilgili detaylar burada paylaþýlabilir)'
+  Shape[7] Shape name='TextBox 102' L=0.82 T=24.38 W=9.22 H=0.71 cm
+      P[0] lvl=0 sz=8.64 bold=True font=Times New Roman Bold color=000000 text='Sonuç ve Öneriler'
+      P[1] lvl=0 sz=8.64 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý)'
+  Shape[8] Shape name='TextBox 103' L=10.89 T=24.38 W=9.09 H=0.71 cm
+      P[0] lvl=0 sz=8.64 bold=True font=Times New Roman Bold color=000000 text='Kaynaklar'
+      P[1] lvl=0 sz=8.64 bold=None font=Times New Roman color=000000 text='(21 size, Times New Roman, tek satýr aralýðý, iki yana yaslý)'

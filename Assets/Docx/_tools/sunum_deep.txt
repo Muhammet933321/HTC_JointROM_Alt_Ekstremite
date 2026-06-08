@@ -1,0 +1,138 @@
+=== ProjeVadi Proje Pazarı Sunum_Şablonu.pptx  (50.8 x 28.57 cm, 6 slides) ===
+
+--- Slide[0] layout='Blank' shapes=8 ---
+- Shape name='Freeform 2' L=0.0 T=0.0 W=50.8 H=28.57
+- GroupShape name='Group 3' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 4' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 6' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 7' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='TextBox 8' L=49.05 T=27.03 W=1.17 H=1.37
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='1'
+- Shape name='TextBox 9' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 10' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 11' L=4.06 T=1.55 W=6.85 H=4.85
+
+--- Slide[1] layout='Blank' shapes=11 ---
+- GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 3' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='Freeform 4' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 5' L=2.75 T=-0.05 W=0.16 H=29.98
+  - Shape name='Freeform 6' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 7' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 8' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='Freeform 9' L=0.98 T=12.77 W=3.04 H=3.04
+- GroupShape name='Group 10' L=0.82 T=12.74 W=7.49 H=3.21
+  - Shape name='Freeform 11' L=0.0 T=0.0 W=9.99 H=4.27
+- Shape name='TextBox 12' L=49.05 T=27.03 W=1.17 H=1.15
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='2'
+- Shape name='TextBox 13' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 14' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 15' L=8.55 T=-0.05 W=41.59 H=25.42
+- Shape name='Freeform 16' L=44.93 T=1.32 W=5.0 H=3.54
+
+--- Slide[2] layout='Blank' shapes=10 ---
+- GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 3' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='Freeform 4' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 5' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 6' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='Freeform 7' L=0.98 T=12.77 W=3.04 H=3.04
+- GroupShape name='Group 8' L=0.82 T=12.74 W=7.49 H=3.21
+  - Shape name='Freeform 9' L=0.0 T=0.0 W=9.99 H=4.27
+- Shape name='TextBox 10' L=49.05 T=27.03 W=1.17 H=1.15
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='3'
+- Shape name='TextBox 11' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 12' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 13' L=8.29 T=0.35 W=41.8 H=25.1
+- Shape name='Freeform 14' L=44.93 T=1.32 W=5.0 H=3.54
+
+--- Slide[3] layout='Blank' shapes=12 ---
+- GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 3' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='4'
+- Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98
+  - Shape name='Freeform 7' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98
+  - Shape name='Freeform 9' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 11' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04
+- GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21
+  - Shape name='Freeform 14' L=0.0 T=0.0 W=9.99 H=4.27
+- Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 17' L=8.26 T=-0.3 W=42.11 H=25.66
+- Shape name='Freeform 18' L=44.93 T=1.32 W=5.0 H=3.54
+
+--- Slide[4] layout='Blank' shapes=12 ---
+- GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 3' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='5'
+- Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98
+  - Shape name='Freeform 7' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98
+  - Shape name='Freeform 9' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 11' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04
+- GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21
+  - Shape name='Freeform 14' L=0.0 T=0.0 W=9.99 H=4.27
+- Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 17' L=8.61 T=0.89 W=40.64 H=24.9
+- Shape name='Freeform 18' L=44.42 T=2.64 W=5.0 H=3.54
+
+--- Slide[5] layout='Blank' shapes=12 ---
+- GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5
+  - Shape name='Freeform 3' L=0.0 T=0.11 W=0.21 H=1.78
+- Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15
+    P[0] sz=24.01 bold=True italic=None font=Times New Roman Bold color=CF0A2D
+        text='6'
+- Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25
+- GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98
+  - Shape name='Freeform 7' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98
+  - Shape name='Freeform 9' L=0.0 T=0.07 W=0.21 H=39.84
+- GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73
+  - Shape name='Freeform 11' L=0.0 T=0.11 W=0.26 H=38.1
+- Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04
+- GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21
+  - Shape name='Freeform 14' L=0.0 T=0.0 W=9.99 H=4.27
+- Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='SUNUM ŞABLONU'
+- Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11
+    P[0] sz=24.0 bold=True italic=None font=Times New Roman Bold color=FDF8F9
+        text='2.PROJE VADİ PROJE PAZARI'
+- Shape name='Freeform 17' L=8.5 T=1.04 W=41.62 H=24.11
+- Shape name='Freeform 18' L=44.42 T=2.64 W=5.0 H=3.54

@@ -1,0 +1,171 @@
+=== FILE: ProjeVadi Proje Pazarý Sunum_Þablonu.pptx ===
+Slide size: 50.8 x 28.57 cm
+Slide count: 6
+Slide masters: 1
+  Master[0] layouts: 11
+    Layout[0] name='Title Slide' placeholders=5
+      ph idx=0 type=CENTER_TITLE (3) name='Title 1'
+      ph idx=1 type=SUBTITLE (4) name='Subtitle 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[1] name='Title and Content' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[2] name='Section Header' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[3] name='Two Content' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=2 type=OBJECT (7) name='Content Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[4] name='Comparison' placeholders=8
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Text Placeholder 2'
+      ph idx=2 type=OBJECT (7) name='Content Placeholder 3'
+      ph idx=3 type=BODY (2) name='Text Placeholder 4'
+      ph idx=4 type=OBJECT (7) name='Content Placeholder 5'
+      ph idx=10 type=DATE (16) name='Date Placeholder 6'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 7'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 8'
+    Layout[5] name='Title Only' placeholders=4
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=10 type=DATE (16) name='Date Placeholder 2'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 3'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 4'
+    Layout[6] name='Blank' placeholders=3
+      ph idx=10 type=DATE (16) name='Date Placeholder 1'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 2'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 3'
+    Layout[7] name='Content with Caption' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=OBJECT (7) name='Content Placeholder 2'
+      ph idx=2 type=BODY (2) name='Text Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[8] name='Picture with Caption' placeholders=6
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=PICTURE (18) name='Picture Placeholder 2'
+      ph idx=2 type=BODY (2) name='Text Placeholder 3'
+      ph idx=10 type=DATE (16) name='Date Placeholder 4'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 5'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 6'
+    Layout[9] name='Title and Vertical Text' placeholders=5
+      ph idx=0 type=TITLE (1) name='Title 1'
+      ph idx=1 type=BODY (2) name='Vertical Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+    Layout[10] name='Vertical Title and Text' placeholders=5
+      ph idx=0 type=TITLE (1) name='Vertical Title 1'
+      ph idx=1 type=BODY (2) name='Vertical Text Placeholder 2'
+      ph idx=10 type=DATE (16) name='Date Placeholder 3'
+      ph idx=11 type=FOOTER (15) name='Footer Placeholder 4'
+      ph idx=12 type=SLIDE_NUMBER (13) name='Slide Number Placeholder 5'
+
+--- SLIDES ---
+
+Slide[0] layout='Blank' shapes=8
+  Shape[0] Shape name='Freeform 2' L=0.0 T=0.0 W=50.8 H=28.57 cm
+  Shape[1] GroupShape name='Group 3' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[2] Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[3] GroupShape name='Group 6' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[4] Shape name='TextBox 8' L=49.05 T=27.03 W=1.17 H=1.37 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='1'
+  Shape[5] Shape name='TextBox 9' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[6] Shape name='TextBox 10' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[7] Shape name='Freeform 11' L=4.06 T=1.55 W=6.85 H=4.85 cm
+
+Slide[1] layout='Blank' shapes=11
+  Shape[0] GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[1] Shape name='Freeform 4' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[2] GroupShape name='Group 5' L=2.75 T=-0.05 W=0.16 H=29.98 cm
+  Shape[3] GroupShape name='Group 7' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[4] Shape name='Freeform 9' L=0.98 T=12.77 W=3.04 H=3.04 cm
+  Shape[5] GroupShape name='Group 10' L=0.82 T=12.74 W=7.49 H=3.21 cm
+  Shape[6] Shape name='TextBox 12' L=49.05 T=27.03 W=1.17 H=1.15 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='2'
+  Shape[7] Shape name='TextBox 13' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[8] Shape name='TextBox 14' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[9] Shape name='Freeform 15' L=8.55 T=-0.05 W=41.59 H=25.42 cm
+  Shape[10] Shape name='Freeform 16' L=44.93 T=1.32 W=5.0 H=3.54 cm
+
+Slide[2] layout='Blank' shapes=10
+  Shape[0] GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[1] Shape name='Freeform 4' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[2] GroupShape name='Group 5' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[3] Shape name='Freeform 7' L=0.98 T=12.77 W=3.04 H=3.04 cm
+  Shape[4] GroupShape name='Group 8' L=0.82 T=12.74 W=7.49 H=3.21 cm
+  Shape[5] Shape name='TextBox 10' L=49.05 T=27.03 W=1.17 H=1.15 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='3'
+  Shape[6] Shape name='TextBox 11' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[7] Shape name='TextBox 12' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[8] Shape name='Freeform 13' L=8.29 T=0.35 W=41.8 H=25.1 cm
+  Shape[9] Shape name='Freeform 14' L=44.93 T=1.32 W=5.0 H=3.54 cm
+
+Slide[3] layout='Blank' shapes=12
+  Shape[0] GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[1] Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='4'
+  Shape[2] Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[3] GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98 cm
+  Shape[4] GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98 cm
+  Shape[5] GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[6] Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04 cm
+  Shape[7] GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21 cm
+  Shape[8] Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[9] Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[10] Shape name='Freeform 17' L=8.26 T=-0.3 W=42.11 H=25.66 cm
+  Shape[11] Shape name='Freeform 18' L=44.93 T=1.32 W=5.0 H=3.54 cm
+
+Slide[4] layout='Blank' shapes=12
+  Shape[0] GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[1] Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='5'
+  Shape[2] Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[3] GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98 cm
+  Shape[4] GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98 cm
+  Shape[5] GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[6] Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04 cm
+  Shape[7] GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21 cm
+  Shape[8] Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[9] Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[10] Shape name='Freeform 17' L=8.61 T=0.89 W=40.64 H=24.9 cm
+  Shape[11] Shape name='Freeform 18' L=44.42 T=2.64 W=5.0 H=3.54 cm
+
+Slide[5] layout='Blank' shapes=12
+  Shape[0] GroupShape name='Group 2' L=48.3 T=27.16 W=0.16 H=1.5 cm
+  Shape[1] Shape name='TextBox 4' L=49.05 T=27.03 W=1.17 H=1.15 cm
+      P[0] lvl=0 sz=24.01 bold=True font=Times New Roman Bold color=CF0A2D text='6'
+  Shape[2] Shape name='Freeform 5' L=-0.06 T=-1.1 W=2.47 H=30.25 cm
+  Shape[3] GroupShape name='Group 6' L=2.75 T=-0.05 W=0.16 H=29.98 cm
+  Shape[4] GroupShape name='Group 8' L=3.21 T=-0.4 W=0.16 H=29.98 cm
+  Shape[5] GroupShape name='Group 10' L=2.6 T=-0.08 W=0.19 H=28.73 cm
+  Shape[6] Shape name='Freeform 12' L=0.98 T=12.77 W=3.04 H=3.04 cm
+  Shape[7] GroupShape name='Group 13' L=0.82 T=12.74 W=7.49 H=3.21 cm
+  Shape[8] Shape name='TextBox 15' L=-2.85 T=23.7 W=7.55 H=1.15 cm
+      P[0] lvl=0 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='SUNUM ÞABLONU'
+  Shape[9] Shape name='TextBox 16' L=-6.36 T=5.39 W=14.79 H=1.11 cm
+      P[0] lvl=1 sz=24.0 bold=True font=Times New Roman Bold color=FDF8F9 text='2.PROJE VADÝ PROJE PAZARI'
+  Shape[10] Shape name='Freeform 17' L=8.5 T=1.04 W=41.62 H=24.11 cm
+  Shape[11] Shape name='Freeform 18' L=44.42 T=2.64 W=5.0 H=3.54 cm
